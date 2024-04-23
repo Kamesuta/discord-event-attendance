@@ -1,0 +1,135 @@
+{
+  "root": true,
+  "env": {
+    "es6": true,
+    "node": true
+  },
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "sourceType": "module",
+    "ecmaVersion": 2022,
+    "project": "./tsconfig.json"
+  },
+  "plugins": ["@typescript-eslint", "jsdoc"],
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/eslint-recommended",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:@typescript-eslint/recommended-requiring-type-checking",
+    "plugin:jsdoc/recommended",
+    "prettier"
+  ],
+  "rules": {
+    "quotes": ["error", "single"],
+    "unicode-bom": ["error", "never"],
+    "@typescript-eslint/explicit-function-return-type": "warn",
+    "no-var": "off",
+    "no-restricted-syntax": [
+      "error",
+      {
+        "selector": "VariableDeclaration[kind='var'][declare!=true]",
+        "message": "Unexpected var, use let or const instead."
+      }
+    ],
+    "eqeqeq": "warn",
+    "no-unused-vars": "off",
+    "@typescript-eslint/no-unused-vars": [
+      "warn",
+      {
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_",
+        "caughtErrorsIgnorePattern": "^_"
+      }
+    ],
+    "spaced-comment": ["warn", "always"],
+    // Naming conventions
+    "@typescript-eslint/naming-convention": [
+      "error",
+      {
+        "selector": "default",
+        "format": ["camelCase"]
+      },
+      {
+        "selector": "variable",
+        "format": ["camelCase", "UPPER_CASE"],
+        "leadingUnderscore": "allow"
+      },
+      {
+        "selector": "parameter",
+        "format": ["camelCase"],
+        "leadingUnderscore": "allow"
+      },
+      {
+        "selector": "memberLike",
+        "modifiers": ["private"],
+        "format": ["camelCase"],
+        "leadingUnderscore": "require"
+      },
+      {
+        "selector": "typeLike",
+        "format": ["PascalCase"]
+      },
+      {
+        // Ignore quoted property names
+        "selector": [
+          "classProperty",
+          "objectLiteralProperty",
+          "typeProperty",
+          "classMethod",
+          "objectLiteralMethod",
+          "typeMethod",
+          "accessor",
+          "enumMember"
+        ],
+        "format": null,
+        "modifiers": ["requiresQuotes"]
+      }
+    ],
+    // JsDoc rules
+    "jsdoc/check-param-names": [
+      "error",
+      {
+        "checkDestructured": false
+      }
+    ],
+    "jsdoc/require-param": [
+      "error",
+      {
+        "checkDestructured": false
+      }
+    ],
+    "jsdoc/require-param-description": "error",
+    "jsdoc/require-returns": "error",
+    "jsdoc/require-param-type": "off",
+    "jsdoc/require-returns-type": "off",
+    // Public functions must have JsDoc documentation
+    "jsdoc/require-jsdoc": [
+      "error",
+      {
+        "publicOnly": true,
+        "require": {
+          "ArrowFunctionExpression": true, // const myFunction = () => { ... }
+          "ClassDeclaration": true, // class MyClass { ... }
+          "ClassExpression": true, // const MyClass = class { ... }
+          "FunctionDeclaration": true, // function myFunction() { ... }
+          "FunctionExpression": true, // const myFunction = function() { ... }
+          "MethodDefinition": true // class MyClass { myMethod() { ... } }
+        },
+        "contexts": [
+          "ArrowFunctionExpression",
+          "FunctionDeclaration",
+          "FunctionExpression",
+          "MethodDefinition",
+          "Property",
+          "TSDeclareFunction",
+          "TSEnumDeclaration",
+          "TSInterfaceDeclaration",
+          "TSMethodSignature",
+          "TSPropertySignature",
+          "TSTypeAliasDeclaration",
+          "VariableDeclaration"
+        ]
+      }
+    ]
+  }
+}
