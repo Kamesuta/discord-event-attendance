@@ -1,23 +1,32 @@
-import { logger } from './log.js';
-import { config } from './config.js';
-import { sleep } from './utils.js';
+// 必要なパッケージをインポートする
+import { Client, Events, GatewayIntentBits } from 'discord.js';
+import dotenv from 'dotenv';
+
+import { logger } from './utils/log.js';
+import { config } from './utils/config.js';
+import { sleep } from './utils/utils.js';
+
+// .envファイルを読み込む
+dotenv.config();
 
 /**
- * Main process
- * @returns Promise
+ * Discord Client
  */
-async function main(): Promise<void> {
-  // Output a log message on startup
-  logger.info('Hello, world! こんにちは、世界！ 你好，世界！ नमस्ते, दुनिया!');
+export const client: Client = new Client({
+  // Botで使うGetwayIntents、partials
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.GuildVoiceStates,
+  ],
+});
 
-  // Wait for 1 second
-  await sleep(1000);
+// -----------------------------------------------------------------------------------------------------------
+// イベントハンドラーを登録する
+// -----------------------------------------------------------------------------------------------------------
+client.on(Events.ClientReady, () => {
+  logger.info(`${client.user?.username ?? 'Unknown'} として起動しました!`);
+});
 
-  // Log an output
-  logger.info('Hello, world after 1 second!');
-
-  // Output the configuration
-  logger.info(`config.some_text_setting: ${config.some_text_setting}`);
-}
-
-void main();
+// Discordにログインする
+await client.login(process.env.DISCORD_TOKEN);

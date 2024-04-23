@@ -1,7 +1,7 @@
 {
-  "name": "nodejs-typescript-eslint-template",
+  "name": "discord-event-attendance",
   "version": "1.0.0",
-  "description": "Robust TypeScript Template with eslint for Node.js",
+  "description": "Discordでイベントに出席した人を記録し、統計の表示や出席者の確認ができるBotです。",
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
@@ -34,6 +34,9 @@
     "typescript": "^5.2.2"
   },
   "dependencies": {
+    "@prisma/client": "^5.13.0",
+    "discord.js": "^14.14.1",
+    "dotenv": "^16.4.5",
     "log4js": "^6.9.1",
     "toml": "^3.0.0"
   }
