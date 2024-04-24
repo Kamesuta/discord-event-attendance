@@ -13,8 +13,11 @@ export interface Config {
    */
   /* eslint-disable @typescript-eslint/naming-convention */
 
-  /** Example of a string setting */
-  some_text_setting: string;
+  /** 必要接続分数 */
+  required_time: number;
+
+  /** サーバーID */
+  guild_id: string;
 
   /* eslint-enable @typescript-eslint/naming-convention */
 }
@@ -34,6 +37,11 @@ export const config: Config = parse(
 
 // Check the types
 assert(
-  config.some_text_setting && typeof config.some_text_setting === 'string',
-  'some_text_setting is required.',
+  typeof config.required_time === 'number',
+  'required_time is required and must be a number.',
+);
+
+assert(
+  config.guild_id && typeof config.guild_id === 'string',
+  'guild_id is required and must be a string.',
 );

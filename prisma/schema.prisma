@@ -17,8 +17,9 @@ model Event {
   name      String
   channelId String
   eventId   String
-  startTime DateTime
-  endTime   DateTime
+  active    Boolean @default(true)
+  startTime DateTime @default(now())
+  endTime   DateTime?
 
   voiceLogs VoiceLog[]
   stats     UserStat[]
@@ -46,7 +47,7 @@ model UserStat {
 
   event Event @relation(fields: [eventId], references: [id])
 
-  @@id([eventId, userId])
+  @@id([eventId, userId], name: "id")
 }
 
 model UserMemo {

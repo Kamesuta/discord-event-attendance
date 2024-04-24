@@ -4,8 +4,9 @@ CREATE TABLE `Event` (
     `name` VARCHAR(191) NOT NULL,
     `channelId` VARCHAR(191) NOT NULL,
     `eventId` VARCHAR(191) NOT NULL,
-    `startTime` DATETIME(3) NOT NULL,
-    `endTime` DATETIME(3) NOT NULL,
+    `active` BOOLEAN NOT NULL DEFAULT true,
+    `startTime` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `endTime` DATETIME(3) NULL,
 
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

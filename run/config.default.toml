@@ -1,4 +1,5 @@
-# Example of string setting
-some_text_setting = "setting 設定 设置 सेटिंग"
+# 必要接続分数
+required_time = 10
 
-# ↓ Add your settings here
+# サーバーID
+guild_id = "0000000000000000000"
