@@ -1,0 +1,61 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider          = "mysql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+model Event {
+  id Int @id @default(autoincrement())
+
+  name      String
+  channelId String
+  eventId   String
+  startTime DateTime
+  endTime   DateTime
+
+  voiceLogs VoiceLog[]
+  stats     UserStat[]
+  memos     UserMemo[]
+}
+
+model VoiceLog {
+  id Int @id @default(autoincrement())
+
+  eventId   Int
+  userId    String
+  timestamp DateTime @default(now())
+  join      Boolean
+
+  event Event @relation(fields: [eventId], references: [id])
+}
+
+model UserStat {
+  eventId Int
+  userId  String
+
+  duration Int
+  rank     Int?
+  memo     String?
+
+  event Event @relation(fields: [eventId], references: [id])
+
+  @@id([eventId, userId])
+}
+
+model UserMemo {
+  id Int @id @default(autoincrement())
+
+  eventId Int
+  userId  String
+  gameId  Int
+  rank    Int?
+
+  event Event @relation(fields: [eventId], references: [id])
+}
