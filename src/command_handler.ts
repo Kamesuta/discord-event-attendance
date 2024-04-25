@@ -1,5 +1,7 @@
 import {
   ActionRowBuilder,
+  ApplicationCommandType,
+  ContextMenuCommandBuilder,
   EmbedBuilder,
   Interaction,
   PermissionFlagsBits,
@@ -14,7 +16,7 @@ import { Event } from '@prisma/client';
 /**
  * 出欠確認コマンド (イベント管理者用)
  */
-export const eventCommand = new SlashCommandBuilder()
+const eventCommand = new SlashCommandBuilder()
   .setDescription('出欠確認コマンド (イベント管理者用)')
   .setName('event')
   .setDefaultMemberPermissions(PermissionFlagsBits.ManageEvents)
@@ -44,7 +46,7 @@ export const eventCommand = new SlashCommandBuilder()
 /**
  * イベント参加状況を確認するコマンド
  */
-export const statusCommand = new SlashCommandBuilder()
+const statusCommand = new SlashCommandBuilder()
   .setDescription('イベント参加状況を確認するユーザー')
   .setName('status')
   .addUserOption((option) =>
@@ -62,13 +64,39 @@ export const statusCommand = new SlashCommandBuilder()
       .setRequired(false)
   );
 
+const contextStatusCommand = new ContextMenuCommandBuilder()
+  .setType(ApplicationCommandType.User)
+  .setName('イベントの参加状況を確認');
+
+const contextMarkShowCommand = new ContextMenuCommandBuilder()
+  .setType(ApplicationCommandType.User)
+  .setName('イベント: 出席としてマーク')
+  .setDefaultMemberPermissions(PermissionFlagsBits.ManageEvents);
+
+const contextMarkHideCommand = new ContextMenuCommandBuilder()
+  .setType(ApplicationCommandType.User)
+  .setName('イベント: 欠席としてマーク')
+  .setDefaultMemberPermissions(PermissionFlagsBits.ManageEvents);
+
+const contextMarkClearCommand = new ContextMenuCommandBuilder()
+  .setType(ApplicationCommandType.User)
+  .setName('イベント: 出欠をクリア')
+  .setDefaultMemberPermissions(PermissionFlagsBits.ManageEvents);
+
 /**
  * コマンドを登録します
  */
 export async function registerCommands(): Promise<void> {
   // イベント管理者用のコマンドを登録
   const guild = await client.guilds.fetch(config.guild_id);
-  await guild.commands.set([eventCommand, statusCommand]);
+  await guild.commands.set([
+    eventCommand,
+    statusCommand,
+    contextStatusCommand,
+    contextMarkShowCommand,
+    contextMarkHideCommand,
+    contextMarkClearCommand,
+  ]);
 }
 
 async function showEvent(
@@ -103,9 +131,9 @@ async function showEvent(
 
   // イベントの時間を計算
   const duration = event.endTime
-    ? ` (${
-        Math.floor((event.endTime.getTime() - event.startTime.getTime()) / 1000 / 60)
-      }分)`
+    ? ` (${Math.floor(
+        (event.endTime.getTime() - event.startTime.getTime()) / 1000 / 60
+      )}分)`
     : '';
 
   const embeds = new EmbedBuilder()
@@ -134,7 +162,8 @@ async function showEvent(
             .filter((stat) => stat.show)
             .map((stat) => {
               const count = userCount[stat.userId];
-              const countText = count === 1 ? '(🆕 初参加！)' : ` (${count}回目)`;
+              const countText =
+                count === 1 ? '(🆕 初参加！)' : ` (${count}回目)`;
               return `<@${stat.userId}> ${countText}`;
             })
             .join('\n') || 'なし'
@@ -185,7 +214,7 @@ async function showEvent(
 async function setShowStats(
   event: Event,
   userIds: string[] | undefined,
-  isShow: boolean
+  isShow: boolean | null
 ): Promise<void> {
   // ユーザーの出欠状況を更新
   await prisma.userStat.updateMany({
@@ -327,6 +356,64 @@ export async function onInteractionCreate(
           break;
         }
       }
+    } else if (interaction.isUserContextMenuCommand()) {
+      // コマンドによって処理を分岐
+      switch (interaction.commandName) {
+        // 確認用コマンド
+        case contextStatusCommand.name: {
+          await interaction.deferReply({ ephemeral: true });
+          await showUserStatus(interaction, interaction.targetUser.id);
+          break;
+        }
+        // 出席としてマーク
+        case contextMarkShowCommand.name: {
+          await interaction.deferReply({ ephemeral: true });
+          const event = await getEventFromId(undefined);
+          if (!event) {
+            await interaction.editReply({
+              content: 'イベントが見つかりませんでした',
+            });
+            return;
+          }
+          await setShowStats(event, [interaction.targetUser.id], true);
+          await interaction.editReply({
+            content: `<@${interaction.targetUser.id}> を出席としてマークしました`,
+          });
+          break;
+        }
+        // 欠席としてマーク
+        case contextMarkHideCommand.name: {
+          await interaction.deferReply({ ephemeral: true });
+          const event = await getEventFromId(undefined);
+          if (!event) {
+            await interaction.editReply({
+              content: 'イベントが見つかりませんでした',
+            });
+            return;
+          }
+          await setShowStats(event, [interaction.targetUser.id], false);
+          await interaction.editReply({
+            content: `<@${interaction.targetUser.id}> を欠席としてマークしました`,
+          });
+          break;
+        }
+        // 出欠をクリア
+        case contextMarkClearCommand.name: {
+          await interaction.deferReply({ ephemeral: true });
+          const event = await getEventFromId(undefined);
+          if (!event) {
+            await interaction.editReply({
+              content: 'イベントが見つかりませんでした',
+            });
+            return;
+          }
+          await setShowStats(event, [interaction.targetUser.id], null);
+          await interaction.editReply({
+            content: `<@${interaction.targetUser.id}> の出欠をクリアしました`,
+          });
+          break;
+        }
+      }
     } else if (interaction.isMessageComponent()) {
       // コンポーネントによって処理を分岐
       const match = interaction.customId.match(/event_component_(.+?)_(\d+)/);
@@ -345,12 +432,15 @@ export async function onInteractionCreate(
         }
 
         if (type === 'show' && interaction.isUserSelectMenu()) {
+          // 出席としてマーク
           await setShowStats(event, interaction.values, true);
           await showEvent(interaction, event);
         } else if (type === 'hide' && interaction.isUserSelectMenu()) {
+          // 欠席としてマーク
           await setShowStats(event, interaction.values, false);
           await showEvent(interaction, event);
         } else if (type === 'showother' && interaction.isButton()) {
+          // その他を出席としてマーク
           await setShowStats(event, undefined, true);
           await showEvent(interaction, event);
         }
