@@ -1,6 +1,7 @@
 import { VoiceBasedChannel, VoiceState } from 'discord.js';
 import { prisma } from './index.js';
 import { config } from './utils/config.js';
+import { tallyAttendanceTime } from './attendance_time.js';
 
 // 入退室ログを記録します
 async function createVoiceLog(
@@ -38,6 +39,10 @@ async function createVoiceLog(
         join ? '参加' : '退出'
       }しました。`
     );
+    if (!join) {
+      // 参加時間を集計する
+      await tallyAttendanceTime(event.id, userId);
+    }
   } catch (error) {
     console.error('ログの記録に失敗しました。', error);
   }
@@ -52,19 +57,23 @@ export async function onVoiceStateUpdate(
   oldState: VoiceState,
   newState: VoiceState
 ): Promise<void> {
-  if (oldState.channel === newState.channel) return;
+  try {
+    if (oldState.channel === newState.channel) return;
 
-  if (newState.channel) {
-    // ユーザーがボイスチャンネルに参加たとき
-    const userId = newState.member?.id;
-    if (userId) {
-      await createVoiceLog(newState.channel, userId, true);
+    if (newState.channel) {
+      // ユーザーがボイスチャンネルに参加たとき
+      const userId = newState.member?.id;
+      if (userId) {
+        await createVoiceLog(newState.channel, userId, true);
+      }
+    } else if (oldState.channel) {
+      // ユーザーがボイスチャンネルから退出したとき
+      const userId = oldState.member?.id;
+      if (userId) {
+        await createVoiceLog(oldState.channel, userId, false);
+      }
     }
-  } else if (oldState.channel) {
-    // ユーザーがボイスチャンネルから退出したとき
-    const userId = oldState.member?.id;
-    if (userId) {
-      await createVoiceLog(oldState.channel, userId, false);
-    }
+  } catch (error) {
+    console.error('onVoiceStateUpdate中にエラーが発生しました。', error);
   }
 }

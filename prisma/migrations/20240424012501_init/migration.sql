@@ -29,6 +29,7 @@ CREATE TABLE `UserStat` (
     `duration` INTEGER NOT NULL,
     `rank` INTEGER NULL,
     `memo` VARCHAR(191) NULL,
+    `show` BOOLEAN NULL,
 
     PRIMARY KEY (`eventId`, `userId`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

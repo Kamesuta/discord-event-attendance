@@ -44,6 +44,7 @@ model UserStat {
   duration Int
   rank     Int?
   memo     String?
+  show     Boolean?
 
   event Event @relation(fields: [eventId], references: [id])
 
