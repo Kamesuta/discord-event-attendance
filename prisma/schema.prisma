@@ -17,13 +17,14 @@ model Event {
   name      String
   channelId String
   eventId   String
-  active    Boolean @default(true)
-  startTime DateTime @default(now())
+  active    Boolean   @default(true)
+  startTime DateTime  @default(now())
   endTime   DateTime?
 
-  voiceLogs VoiceLog[]
-  stats     UserStat[]
-  memos     UserMemo[]
+  voiceLogs      VoiceLog[]
+  stats          UserStat[]
+  games          GameResult[]
+  UserGameResult UserGameResult[]
 }
 
 model VoiceLog {
@@ -34,7 +35,8 @@ model VoiceLog {
   timestamp DateTime @default(now())
   join      Boolean
 
-  event Event @relation(fields: [eventId], references: [id])
+  event Event     @relation(fields: [eventId], references: [id])
+  stat  UserStat  @relation(fields: [eventId, userId], references: [eventId, userId])
 }
 
 model UserStat {
@@ -42,22 +44,34 @@ model UserStat {
   userId  String
 
   duration Int
-  rank     Int?
-  memo     String?
   show     Boolean?
 
-  event Event @relation(fields: [eventId], references: [id])
+  VoiceLog VoiceLog[]
+  event    Event      @relation(fields: [eventId], references: [id])
 
   @@id([eventId, userId], name: "id")
 }
 
-model UserMemo {
+model GameResult {
+  id Int @id @default(autoincrement())
+
+  eventId Int
+  name    String
+  url     String?
+
+  users UserGameResult[]
+  event Event            @relation(fields: [eventId], references: [id])
+}
+
+model UserGameResult {
   id Int @id @default(autoincrement())
 
   eventId Int
   userId  String
   gameId  Int
-  rank    Int?
+  rank    Int
+  xp      Int
 
-  event Event @relation(fields: [eventId], references: [id])
+  event Event      @relation(fields: [eventId], references: [id])
+  game  GameResult @relation(fields: [gameId], references: [id])
 }

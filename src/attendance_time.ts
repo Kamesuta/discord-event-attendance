@@ -1,3 +1,4 @@
+import { Event } from '@prisma/client';
 import { prisma } from './index.js';
 
 /**
@@ -34,6 +35,10 @@ function calculateTime(logs: { timestamp: Date; join: boolean }[]): number {
       joinTime = null;
     }
   }
+  if (joinTime !== null) {
+    // 参加中の場合
+    totalTime += new Date().getTime() - joinTime;
+  }
   return totalTime;
 }
 
@@ -65,4 +70,26 @@ export async function tallyAttendanceTime(
       duration: totalTime,
     },
   });
+}
+
+/**
+ * 参加時間を集計し、DBに保存する
+ * @param event イベント
+ */
+export async function updateAttendanceTimeIfEventActive(
+  event: Event
+): Promise<void> {
+  if (event.active) {
+    // アクティブなイベントに参加しているユーザーを取得する
+    const userStats = await prisma.voiceLog.findMany({
+      where: {
+        eventId: event.id,
+      },
+    });
+    const participants = new Set(userStats.map((user) => user.userId));
+
+    for (const userId of participants) {
+      await tallyAttendanceTime(event.id, userId);
+    }
+  }
 }

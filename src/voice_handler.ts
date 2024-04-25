@@ -9,24 +9,41 @@ async function createVoiceLog(
   userId: string,
   join: boolean
 ): Promise<void> {
-  // 指定のサーバー以外無視
-  if (channel.guild.id !== config.guild_id) {
-    return;
-  }
-
-  // イベント開催中のボイスチャンネルにいるかどうかを確認する
-  const event = await prisma.event.findFirst({
-    where: {
-      channelId: channel.id,
-      active: true,
-    },
-  });
-  if (!event) {
-    return;
-  }
-
   // ログを記録する
   try {
+    // 指定のサーバー以外無視
+    if (channel.guild.id !== config.guild_id) {
+      return;
+    }
+
+    // イベント開催中のボイスチャンネルにいるかどうかを確認する
+    const event = await prisma.event.findFirst({
+      where: {
+        channelId: channel.id,
+        active: true,
+      },
+    });
+    if (!event) {
+      return;
+    }
+
+    // ユーザー情報を初期化
+    await prisma.userStat.upsert({
+      where: {
+        id: {
+          eventId: event.id,
+          userId,
+        },
+      },
+      update: {},
+      create: {
+        eventId: event.id,
+        userId,
+        duration: 0,
+      },
+    });
+
+    // ログを記録する
     await prisma.voiceLog.create({
       data: {
         eventId: event.id,

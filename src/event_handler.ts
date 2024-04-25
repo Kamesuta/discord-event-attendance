@@ -1,9 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { GuildScheduledEvent, PartialGuildScheduledEvent } from 'discord.js';
 import { config } from './utils/config.js';
-import {
-  tallyAttendanceTime,
-} from './attendance_time.js';
+import { tallyAttendanceTime } from './attendance_time.js';
 
 const prisma = new PrismaClient();
 
@@ -28,15 +26,23 @@ async function startEvent(scheduledEvent: GuildScheduledEvent): Promise<void> {
     );
 
     // VCに既に参加しているユーザーに対してもログを記録する
-    for (const [_, member] of scheduledEvent.channel.members) {
-      await prisma.voiceLog.create({
-        data: {
-          eventId: attendance.id,
-          userId: member.id,
-          join: true,
-        },
-      });
-    }
+    const members = Array.from(scheduledEvent.channel.members.values());
+    // ユーザー情報を初期化
+    await prisma.userStat.createMany({
+      data: members.map((member) => ({
+        eventId: attendance.id,
+        userId: member.id,
+        duration: 0,
+      })),
+    });
+    // VC参加ログを記録する
+    await prisma.voiceLog.createMany({
+      data: members.map((member) => ({
+        eventId: attendance.id,
+        userId: member.id,
+        join: true,
+      })),
+    });
   } catch (error) {
     console.error('イベントの開始に失敗しました:', error);
   }

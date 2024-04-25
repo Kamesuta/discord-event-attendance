@@ -27,20 +27,29 @@ CREATE TABLE `UserStat` (
     `eventId` INTEGER NOT NULL,
     `userId` VARCHAR(191) NOT NULL,
     `duration` INTEGER NOT NULL,
-    `rank` INTEGER NULL,
-    `memo` VARCHAR(191) NULL,
     `show` BOOLEAN NULL,
 
     PRIMARY KEY (`eventId`, `userId`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `UserMemo` (
+CREATE TABLE `GameResult` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `eventId` INTEGER NOT NULL,
+    `name` VARCHAR(191) NOT NULL,
+    `url` VARCHAR(191) NULL,
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `UserGameResult` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `eventId` INTEGER NOT NULL,
     `userId` VARCHAR(191) NOT NULL,
     `gameId` INTEGER NOT NULL,
-    `rank` INTEGER NULL,
+    `rank` INTEGER NOT NULL,
+    `xp` INTEGER NOT NULL,
 
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -49,7 +58,16 @@ CREATE TABLE `UserMemo` (
 ALTER TABLE `VoiceLog` ADD CONSTRAINT `VoiceLog_eventId_fkey` FOREIGN KEY (`eventId`) REFERENCES `Event`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE `VoiceLog` ADD CONSTRAINT `VoiceLog_eventId_userId_fkey` FOREIGN KEY (`eventId`, `userId`) REFERENCES `UserStat`(`eventId`, `userId`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE `UserStat` ADD CONSTRAINT `UserStat_eventId_fkey` FOREIGN KEY (`eventId`) REFERENCES `Event`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `UserMemo` ADD CONSTRAINT `UserMemo_eventId_fkey` FOREIGN KEY (`eventId`) REFERENCES `Event`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `GameResult` ADD CONSTRAINT `GameResult_eventId_fkey` FOREIGN KEY (`eventId`) REFERENCES `Event`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `UserGameResult` ADD CONSTRAINT `UserGameResult_eventId_fkey` FOREIGN KEY (`eventId`) REFERENCES `Event`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `UserGameResult` ADD CONSTRAINT `UserGameResult_gameId_fkey` FOREIGN KEY (`gameId`) REFERENCES `GameResult`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
