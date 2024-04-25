@@ -6,8 +6,7 @@ import { logger } from './utils/log.js';
 import { PrismaClient } from '@prisma/client';
 import { onVoiceStateUpdate } from './voice_handler.js';
 import { onGuildScheduledEventUpdate } from './event_handler.js';
-import { eventCommand, onInteractionCreate } from './command_handler.js';
-import { config } from './utils/config.js';
+import { onInteractionCreate, registerCommands } from './command_handler.js';
 
 // .envファイルを読み込む
 dotenv.config();
@@ -37,8 +36,7 @@ client.on(Events.ClientReady, async () => {
   logger.info(`${client.user?.username ?? 'Unknown'} として起動しました!`);
 
   // イベント管理者用のコマンドを登録
-  const guild = await client.guilds.fetch(config.guild_id);
-  await guild.commands.create(eventCommand);
+  await registerCommands();
 });
 client.on(Events.VoiceStateUpdate, onVoiceStateUpdate);
 client.on(Events.GuildScheduledEventUpdate, onGuildScheduledEventUpdate);

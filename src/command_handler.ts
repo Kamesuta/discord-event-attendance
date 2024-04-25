@@ -1,14 +1,13 @@
 import {
   ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
   EmbedBuilder,
   Interaction,
+  PermissionFlagsBits,
   RepliableInteraction,
   SlashCommandBuilder,
   UserSelectMenuBuilder,
 } from 'discord.js';
-import { prisma } from './index.js';
+import { client, prisma } from './index.js';
 import { config } from './utils/config.js';
 import { Event } from '@prisma/client';
 
@@ -18,6 +17,7 @@ import { Event } from '@prisma/client';
 export const eventCommand = new SlashCommandBuilder()
   .setDescription('出欠確認コマンド (イベント管理者用)')
   .setName('event')
+  .setDefaultMemberPermissions(PermissionFlagsBits.ManageEvents)
   .addSubcommand((subcommand) =>
     subcommand
       .setName('review')
@@ -41,6 +41,36 @@ export const eventCommand = new SlashCommandBuilder()
       )
   );
 
+/**
+ * イベント参加状況を確認するコマンド
+ */
+export const statusCommand = new SlashCommandBuilder()
+  .setDescription('イベント参加状況を確認するユーザー')
+  .setName('status')
+  .addUserOption((option) =>
+    option
+      .setName('user')
+      .setDescription('イベント参加状況を確認するユーザー')
+      .setRequired(false)
+  )
+  .addBooleanOption((option) =>
+    option
+      .setName('show')
+      .setDescription(
+        'コマンドの結果をチャットに表示しますか？ (デフォルトは非公開)'
+      )
+      .setRequired(false)
+  );
+
+/**
+ * コマンドを登録します
+ */
+export async function registerCommands(): Promise<void> {
+  // イベント管理者用のコマンドを登録
+  const guild = await client.guilds.fetch(config.guild_id);
+  await guild.commands.set([eventCommand, statusCommand]);
+}
+
 async function showEvent(
   interaction: RepliableInteraction,
   event: Event,
@@ -57,8 +87,30 @@ async function showEvent(
     },
   });
 
+  // ユーザーごとに参加回数をカウント
+  const userCount = Object.fromEntries(
+    await Promise.all(
+      stats.map(async (stat) => {
+        const count = await prisma.userStat.count({
+          where: {
+            userId: stat.userId,
+          },
+        });
+        return [stat.userId, count] as const;
+      })
+    )
+  );
+
+  // イベントの時間を計算
+  const duration = event.endTime
+    ? ` (${
+        Math.floor((event.endTime.getTime() - event.startTime.getTime()) / 1000 / 60)
+      }分)`
+    : '';
+
   const embeds = new EmbedBuilder()
-    .setTitle(`イベント情報: ${event.name}`)
+    .setTitle(`🏁「${event.name}」イベントに参加してくれた人！`)
+    .setURL(`https://discord.com/events/${config.guild_id}/${event.eventId}`)
     .setDescription(
       publish
         ? 'イベントの参加者を表示します\n(観戦していただけの人は欠席扱いです)'
@@ -69,12 +121,22 @@ async function showEvent(
       text: '「/status <名前>」でユーザーの過去イベントの参加状況を確認できます',
     })
     .addFields({
+      name: '開催日時',
+      value: `${event.startTime.toLocaleString()} 〜 ${
+        event.endTime?.toLocaleString() ?? '未定'
+      } ${duration}`,
+    })
+    .addFields({
       name: '参加者',
       value: publish
         ? // 公開モードの場合は参加者のみ表示
           stats
             .filter((stat) => stat.show)
-            .map((stat) => `<@${stat.userId}>`)
+            .map((stat) => {
+              const count = userCount[stat.userId];
+              const countText = count === 1 ? '(🆕 初参加！)' : ` (${count}回目)`;
+              return `<@${stat.userId}> ${countText}`;
+            })
             .join('\n') || 'なし'
         : // 非公開モードの場合は全員表示 (現在のステータスも表示)
           stats
@@ -161,6 +223,59 @@ async function getEventFromId(
   });
 }
 
+async function showUserStatus(
+  interaction: RepliableInteraction,
+  userId: string
+): Promise<void> {
+  // ユーザーの過去のイベント参加状況を表示
+  const stats = await prisma.userStat.findMany({
+    where: {
+      userId,
+      show: true,
+    },
+    include: {
+      event: true,
+    },
+  });
+
+  // 全イベント数を取得
+  const eventCount = await prisma.event.count();
+
+  // ユーザーを取得
+  const user = await interaction.guild?.members.fetch(userId);
+
+  const embeds = new EmbedBuilder()
+    .setTitle('イベント参加状況')
+    .setDescription(`<@${userId}> さんの過去のイベント参加状況です`)
+    .setAuthor(
+      !user
+        ? null
+        : {
+            name: user.displayName,
+            iconURL: user.displayAvatarURL() ?? undefined,
+          }
+    )
+    .setColor('#ff8c00')
+    .addFields({
+      name: '参加イベント数',
+      value: `${stats.length} / ${eventCount} 回`,
+    })
+    .addFields({
+      name: '参加イベントリスト',
+      value:
+        stats
+          .map((stat) => {
+            if (!stat.event) return '- 不明';
+            return `- [${stat.event.name}](https://discord.com/events/${config.guild_id}/${stat.event.eventId})`;
+          })
+          .join('\n') || 'なし',
+    });
+
+  await interaction.editReply({
+    embeds: [embeds],
+  });
+}
+
 /**
  * イベントコマンドを処理します
  * @param interaction インタラクション
@@ -170,26 +285,46 @@ export async function onInteractionCreate(
 ): Promise<void> {
   try {
     if (interaction.isChatInputCommand()) {
-      if (interaction.commandName === eventCommand.name) {
-        // サブコマンドによって処理を分岐
-        let isShow = false;
-        switch (interaction.options.getSubcommand()) {
-          case 'show':
-            isShow = true;
-          // fallthrough
-          case 'review': {
-            await interaction.deferReply({ ephemeral: !isShow });
-            const eventId = interaction.options.getString('event_id');
-            const event = await getEvent(eventId ?? undefined);
-            if (!event) {
-              await interaction.editReply({
-                content: 'イベントが見つかりませんでした',
-              });
-              return;
+      // コマンドによって処理を分岐
+      switch (interaction.commandName) {
+        // 管理者用コマンド
+        case eventCommand.name: {
+          // サブコマンドによって処理を分岐
+          let isShow = false;
+          switch (interaction.options.getSubcommand()) {
+            case 'show':
+              isShow = true;
+            // fallthrough
+            case 'review': {
+              await interaction.deferReply({ ephemeral: !isShow });
+              const eventId = interaction.options.getString('event_id');
+              const event = await getEvent(eventId ?? undefined);
+              if (!event) {
+                await interaction.editReply({
+                  content: 'イベントが見つかりませんでした',
+                });
+                return;
+              }
+              await showEvent(interaction, event, isShow);
+              break;
             }
-            await showEvent(interaction, event, isShow);
-            break;
+            case 'status': {
+              await interaction.deferReply({ ephemeral: true });
+              const user =
+                interaction.options.getUser('user') ?? interaction.user;
+              await showUserStatus(interaction, user.id);
+              break;
+            }
           }
+          break;
+        }
+        // 確認用コマンド
+        case statusCommand.name: {
+          const show = interaction.options.getBoolean('show') ?? false;
+          await interaction.deferReply({ ephemeral: !show });
+          const user = interaction.options.getUser('user') ?? interaction.user;
+          await showUserStatus(interaction, user.id);
+          break;
         }
       }
     } else if (interaction.isMessageComponent()) {
