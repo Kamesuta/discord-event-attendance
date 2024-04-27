@@ -77,17 +77,17 @@ const contextStatusCommand = new ContextMenuCommandBuilder()
 
 const contextMarkShowCommand = new ContextMenuCommandBuilder()
   .setType(ApplicationCommandType.User)
-  .setName('イベント: 出席としてマーク')
+  .setName('[O]出席としてマーク')
   .setDefaultMemberPermissions(PermissionFlagsBits.ManageEvents);
 
 const contextMarkHideCommand = new ContextMenuCommandBuilder()
   .setType(ApplicationCommandType.User)
-  .setName('イベント: 欠席としてマーク')
+  .setName('[X]欠席としてマーク')
   .setDefaultMemberPermissions(PermissionFlagsBits.ManageEvents);
 
 const contextMarkClearCommand = new ContextMenuCommandBuilder()
   .setType(ApplicationCommandType.User)
-  .setName('イベント: 出欠をクリア')
+  .setName('[_]出欠をクリア')
   .setDefaultMemberPermissions(PermissionFlagsBits.ManageEvents);
 
 /**
@@ -194,7 +194,10 @@ async function showEvent(
         .setPlaceholder('参加した人を選択')
         .setMinValues(0)
         .setMaxValues(25)
-        .setDefaultUsers(stats.map((stat) => stat.userId))
+        // まだステータスが未設定のユーザーをデフォルトで選択
+        .setDefaultUsers(
+          stats.filter((stat) => stat.show === null).map((stat) => stat.userId)
+        )
     ),
     // 除外プルダウン
     new ActionRowBuilder<UserSelectMenuBuilder>().addComponents(
@@ -203,15 +206,11 @@ async function showEvent(
         .setPlaceholder('参加していない人を選択')
         .setMinValues(0)
         .setMaxValues(25)
-        .setDefaultUsers(stats.map((stat) => stat.userId))
+        // まだステータスが未設定のユーザーをデフォルトで選択
+        .setDefaultUsers(
+          stats.filter((stat) => stat.show === null).map((stat) => stat.userId)
+        )
     ),
-    // // その他を表示ボタン
-    // new ActionRowBuilder<ButtonBuilder>().addComponents(
-    //   new ButtonBuilder()
-    //     .setCustomId(`event_component_showother_${event.id}`)
-    //     .setLabel('その他を表示')
-    //     .setStyle(ButtonStyle.Primary)
-    // ),
   ];
 
   // イベントの出欠状況を表示
@@ -408,7 +407,7 @@ export async function onInteractionCreate(
           }
           await setShowStats(event, [interaction.targetUser.id], true);
           await interaction.editReply({
-            content: `<@${interaction.targetUser.id}> を出席としてマークしました`,
+            content: `<@${interaction.targetUser.id}> を☑️出席としてマークしました`,
           });
           break;
         }
@@ -424,7 +423,7 @@ export async function onInteractionCreate(
           }
           await setShowStats(event, [interaction.targetUser.id], false);
           await interaction.editReply({
-            content: `<@${interaction.targetUser.id}> を欠席としてマークしました`,
+            content: `<@${interaction.targetUser.id}> を❌欠席としてマークしました`,
           });
           break;
         }
@@ -440,7 +439,7 @@ export async function onInteractionCreate(
           }
           await setShowStats(event, [interaction.targetUser.id], null);
           await interaction.editReply({
-            content: `<@${interaction.targetUser.id}> の出欠をクリアしました`,
+            content: `<@${interaction.targetUser.id}> の⬛出欠をクリアしました`,
           });
           break;
         }
@@ -465,15 +464,19 @@ export async function onInteractionCreate(
         if (type === 'show' && interaction.isUserSelectMenu()) {
           // 出席としてマーク
           await setShowStats(event, interaction.values, true);
-          await showEvent(interaction, event);
+          await interaction.editReply({
+            content: `${interaction.values
+              .map((userId) => `<@${userId}>`)
+              .join('')} を☑️出席としてマークしました`,
+          });
         } else if (type === 'hide' && interaction.isUserSelectMenu()) {
           // 欠席としてマーク
           await setShowStats(event, interaction.values, false);
-          await showEvent(interaction, event);
-        } else if (type === 'showother' && interaction.isButton()) {
-          // その他を出席としてマーク
-          await setShowStats(event, undefined, true);
-          await showEvent(interaction, event);
+          await interaction.editReply({
+            content: `${interaction.values
+              .map((userId) => `<@${userId}>`)
+              .join('')} を❌欠席としてマークしました`,
+          });
         }
       }
     }
