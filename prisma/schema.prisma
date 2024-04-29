@@ -35,8 +35,8 @@ model VoiceLog {
   timestamp DateTime @default(now())
   join      Boolean
 
-  event Event     @relation(fields: [eventId], references: [id])
-  stat  UserStat  @relation(fields: [eventId, userId], references: [eventId, userId])
+  event Event    @relation(fields: [eventId], references: [id])
+  stat  UserStat @relation(fields: [eventId, userId], references: [eventId, userId])
 }
 
 model UserStat {
@@ -58,6 +58,7 @@ model GameResult {
   eventId Int
   name    String
   url     String?
+  image   String? @db.VarChar(512)
 
   users UserGameResult[]
   event Event            @relation(fields: [eventId], references: [id])

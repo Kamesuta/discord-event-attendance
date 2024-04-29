@@ -54,10 +54,19 @@ export function createGameCommand(
     .addStringOption((option) =>
       option.setName('url').setDescription('試合のURL').setRequired(false)
     )
+    .addAttachmentOption((option) =>
+      option.setName('image').setDescription('試合の画像').setRequired(false)
+    )
     .addNumberOption((option) =>
       option
         .setName('xp_multiplier')
         .setDescription('XP倍率')
+        .setRequired(false)
+    )
+    .addNumberOption((option) =>
+      option
+        .setName('edit_id')
+        .setDescription('編集する試合ID')
         .setRequired(false)
     );
 }
@@ -81,21 +90,38 @@ export async function addGameResult(
   const xpMultiplier = interaction.options.getNumber('xp_multiplier') ?? 1;
 
   // ランクを取得
-  const ranks = [...Array(5).keys()]
+  const ranks = [...Array(8).keys()]
     .map((i) => interaction.options.getUser(`rank${i + 1}`))
     .filter((item): item is NonNullable<typeof item> => item !== null);
 
   // URLを取得
   const url = interaction.options.getString('url');
+  const image = interaction.options.getAttachment('image');
+
+  // 編集する試合IDを取得
+  const editGameId = interaction.options.getNumber('edit_id');
 
   // 試合の結果を記録
-  const game = await prisma.gameResult.create({
-    data: {
-      eventId: event.id,
-      name: gameName,
-      url,
-    },
-  });
+  const game =
+    editGameId !== null
+      ? await prisma.gameResult.update({
+          where: {
+            id: editGameId,
+          },
+          data: {
+            name: gameName,
+            url,
+            image: image?.proxyURL,
+          },
+        })
+      : await prisma.gameResult.create({
+          data: {
+            eventId: event.id,
+            name: gameName,
+            url,
+            image: image?.proxyURL,
+          },
+        });
 
   // 回目を取得
   const resultCount = await prisma.gameResult.count({
@@ -131,10 +157,16 @@ export async function addGameResult(
           )
           .join('\n') || 'なし',
     })
+    .setFooter({
+      text: `試合ID: ${game.id}`,
+    })
     .setColor('#ff8c00');
 
   if (url) {
     embeds.setURL(url);
+  }
+  if (image) {
+    embeds.setImage(image.proxyURL);
   }
 
   await interaction.editReply({
