@@ -124,11 +124,7 @@ export async function addGameResult(
         });
 
   // 回目を取得
-  const resultCount = await prisma.gameResult.count({
-    where: {
-      eventId: event.id,
-    },
-  });
+  const resultCount = await getGameResultNumbering(event.id, game.id);
 
   // ランクを保存
   await prisma.userGameResult.createMany({
@@ -204,4 +200,30 @@ export async function getUserGameResults(userId: string): Promise<string> {
       })
       .join('\n') || 'なし'
   );
+}
+
+/**
+ * 何回目の試合かを取得する
+ * @param eventId イベントID
+ * @param gameId 試合ID
+ * @returns 何回目の試合か
+ */
+export async function getGameResultNumbering(
+  eventId: number,
+  gameId: number
+): Promise<number> {
+  const {
+    0: { num: resultCount },
+  } = await prisma.$queryRaw<[{ num: number }]>`
+    SELECT num
+    FROM (
+      SELECT
+        ROW_NUMBER() over (ORDER BY id ASC) num,
+        id
+      FROM gameResult
+      WHERE eventId = ${eventId}
+    ) as t
+    WHERE t.id = ${gameId};
+  `;
+  return resultCount;
 }
