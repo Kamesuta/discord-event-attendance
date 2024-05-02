@@ -281,6 +281,10 @@ async function getEventFromId(
     where: {
       id: eventId,
     },
+    orderBy: {
+      startTime: 'desc',
+    },
+    take: 1,
   });
 }
 
