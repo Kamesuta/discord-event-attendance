@@ -4,9 +4,12 @@ import {
   ContextMenuCommandBuilder,
   EmbedBuilder,
   Interaction,
+  ModalBuilder,
   PermissionFlagsBits,
   RepliableInteraction,
   SlashCommandBuilder,
+  TextInputBuilder,
+  TextInputStyle,
   UserSelectMenuBuilder,
 } from 'discord.js';
 import { client, prisma } from './index.js';
@@ -113,6 +116,11 @@ const contextMarkClearCommand = new ContextMenuCommandBuilder()
   .setName('[_]出欠をクリア')
   .setDefaultMemberPermissions(PermissionFlagsBits.ManageEvents);
 
+const contextSetMemoCommand = new ContextMenuCommandBuilder()
+  .setType(ApplicationCommandType.User)
+  .setName('メモを設定')
+  .setDefaultMemberPermissions(PermissionFlagsBits.ManageEvents);
+
 /**
  * コマンドを登録します
  */
@@ -126,6 +134,7 @@ export async function registerCommands(): Promise<void> {
     contextMarkShowCommand,
     contextMarkHideCommand,
     contextMarkClearCommand,
+    contextSetMemoCommand,
   ]);
 }
 
@@ -195,17 +204,19 @@ async function showEvent(
             .filter((stat) => stat.show)
             .map((stat) => {
               const count = userCount[stat.userId];
+              const memo = stat.memo ? ` ${stat.memo}` : '';
               const countText =
-                count === 1 ? '(🆕 初参加！)' : ` (${count}回目)`;
+                count === 1 ? '(🆕 初参加！)' : ` (${count}回目)${memo}`;
               return `<@${stat.userId}> ${countText}`;
             })
             .join('\n') || 'なし'
         : // 非公開モードの場合は全員表示 (現在のステータスも表示)
           stats
             .map((stat) => {
+              const memo = stat.memo ? ` (**メモ**: ${stat.memo})` : '';
               const mark = stat.show === null ? '⬛' : stat.show ? '☑️' : '❌';
               const duration = Math.floor(stat.duration / 1000 / 60);
-              return `${mark} <@${stat.userId}>: ${duration}分`;
+              return `${mark} <@${stat.userId}>: ${duration}分${memo}`;
             })
             .join('\n') || 'なし',
     });
@@ -510,6 +521,46 @@ export async function onInteractionCreate(
           });
           break;
         }
+        // メモを設定
+        case contextSetMemoCommand.name: {
+          const event = await getEventFromId(undefined);
+          if (!event) {
+            await interaction.reply({
+              ephemeral: true,
+              content: 'イベントが見つかりませんでした',
+            });
+            return;
+          }
+
+          // 現在のメモを取得
+          const userStat = await prisma.userStat.findFirst({
+            where: {
+              eventId: event.id,
+              userId: interaction.targetUser.id,
+            },
+          });
+
+          // メモ入力欄を作成
+          const textInput = new TextInputBuilder()
+            .setCustomId('memo')
+            .setLabel('メモを入力してください (空白で削除)')
+            .setMinLength(0)
+            .setMaxLength(512)
+            .setStyle(TextInputStyle.Short)
+            .setValue(userStat?.memo ?? '');
+          
+          // メモ入力モーダルを表示
+          await interaction.showModal(new ModalBuilder()
+            .setTitle('メモ入力')
+            .setCustomId(`event_modal_memo_${interaction.targetUser.id}_${event.id}`)
+            .addComponents(
+              new ActionRowBuilder<TextInputBuilder>().addComponents(
+                textInput
+              )
+            )
+          );
+          break;
+        }
       }
     } else if (interaction.isMessageComponent()) {
       // コンポーネントによって処理を分岐
@@ -544,6 +595,58 @@ export async function onInteractionCreate(
               .map((userId) => `<@${userId}>`)
               .join('')} を❌欠席としてマークしました`,
           });
+        }
+      }
+    } else if (interaction.isModalSubmit()) {
+      // コンポーネントによって処理を分岐
+      const match = interaction.customId.match(/event_modal_(.+?)_(\d+)_(\d+)/);
+      if (match) {
+        const [_, type, userId, eventId] = match;
+
+        await interaction.deferReply({ ephemeral: true });
+        const event = await getEventFromId(
+          eventId ? parseInt(eventId) : undefined
+        );
+        if (!event) {
+          await interaction.editReply({
+            content: 'イベントが見つかりませんでした',
+          });
+          return;
+        }
+
+        if (type === 'memo') {
+          const memo = interaction.components[0]?.components[0]?.value;
+          if (memo === undefined || memo === '') {
+            await prisma.userStat.update({
+              where: {
+                id: {
+                  eventId: event.id,
+                  userId,
+                },
+              },
+              data: {
+                memo: null,
+              },
+            });
+            await interaction.editReply({
+              content: 'メモを削除しました',
+            });
+          } else {
+            await prisma.userStat.update({
+              where: {
+                id: {
+                  eventId: event.id,
+                  userId,
+                },
+              },
+              data: {
+                memo,
+              },
+            });
+            await interaction.editReply({
+              content: 'メモを更新しました',
+            });
+          }
         }
       }
     }

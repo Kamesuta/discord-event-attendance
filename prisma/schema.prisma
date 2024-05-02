@@ -45,6 +45,7 @@ model UserStat {
 
   duration Int
   show     Boolean?
+  memo     String? @db.VarChar(512)
 
   VoiceLog VoiceLog[]
   event    Event      @relation(fields: [eventId], references: [id])
