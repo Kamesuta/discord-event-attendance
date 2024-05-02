@@ -5,7 +5,12 @@ import { tallyAttendanceTime } from './attendance_time.js';
 
 const prisma = new PrismaClient();
 
-async function startEvent(scheduledEvent: GuildScheduledEvent): Promise<void> {
+/**
+ * スケジュールイベントが開始されたときのイベントハンドラー
+ * @param scheduledEvent 開始されたイベント
+ * @returns 開始されたイベント
+ */
+export async function startEvent(scheduledEvent: GuildScheduledEvent): Promise<void> {
   if (!scheduledEvent.channel?.isVoiceBased()) {
     console.warn(
       `VCが指定されていないイベントは無視します: ${scheduledEvent.name}`
@@ -48,7 +53,12 @@ async function startEvent(scheduledEvent: GuildScheduledEvent): Promise<void> {
   }
 }
 
-async function endEvent(scheduledEvent: GuildScheduledEvent): Promise<void> {
+/**
+ * スケジュールイベントが終了されたときのイベントハンドラー
+ * @param scheduledEvent 終了されたイベント
+ * @returns 終了されたイベント
+ */
+export async function endEvent(scheduledEvent: GuildScheduledEvent): Promise<void> {
   if (!scheduledEvent.channel?.isVoiceBased()) {
     console.warn(
       `VCが指定されていないイベントは無視します: ${scheduledEvent.name}`

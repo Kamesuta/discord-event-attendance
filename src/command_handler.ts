@@ -18,6 +18,7 @@ import {
   createGameCommand,
   getUserGameResults,
 } from './game_command_handler.js';
+import { endEvent, startEvent } from './event_handler.js';
 
 /**
  * 出欠確認コマンド (イベント管理者用)
@@ -41,6 +42,28 @@ const eventCommand = new SlashCommandBuilder()
     subcommand
       .setName('show')
       .setDescription('イベントの出欠状況を表示します')
+      .addStringOption((option) =>
+          option
+            .setName('event_id')
+            .setDescription('イベントID (省略時は最新のイベントを表示)')
+            .setRequired(false)
+      )
+  )
+  .addSubcommand((subcommand) =>
+    subcommand
+      .setName('start')
+      .setDescription('手動でイベントを開始します')
+      .addStringOption((option) =>
+        option
+          .setName('event_id')
+          .setDescription('DiscordのイベントID')
+          .setRequired(true)
+      )
+  )
+  .addSubcommand((subcommand) =>
+    subcommand
+      .setName('stop')
+      .setDescription('手動でイベントを終了します')
       .addStringOption((option) =>
         option
           .setName('event_id')
@@ -358,6 +381,46 @@ export async function onInteractionCreate(
               const user =
                 interaction.options.getUser('user') ?? interaction.user;
               await showUserStatus(interaction, user.id);
+              break;
+            }
+            case 'start': {
+              // イベントを開始
+              await interaction.deferReply({ ephemeral: true });
+              const eventId = interaction.options.getString(
+                'event_id'
+              );
+              const scheduledEvent = !eventId
+                ? undefined
+                : await interaction.guild?.scheduledEvents.fetch(eventId);
+              if (!scheduledEvent) {
+                await interaction.editReply({
+                  content: 'Discordイベントが見つかりませんでした',
+                });
+                return;
+              }
+              await startEvent(scheduledEvent);
+              await interaction.editReply({
+                content: `イベント「${scheduledEvent.name}」を開始しました`,
+              });
+              break;
+            }
+            case 'stop': {
+              // イベントを終了
+              await interaction.deferReply({ ephemeral: true });
+              const eventId = interaction.options.getString('event_id');
+              const scheduledEvent = !eventId
+                ? undefined
+                : await interaction.guild?.scheduledEvents.fetch(eventId);
+              if (!scheduledEvent) {
+                await interaction.editReply({
+                  content: 'Discordイベントが見つかりませんでした',
+                });
+                return;
+              }
+              await endEvent(scheduledEvent);
+              await interaction.editReply({
+                content: `イベント「${scheduledEvent.name}」を終了しました`,
+              });
               break;
             }
             case 'game': {
