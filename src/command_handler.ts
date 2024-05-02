@@ -543,7 +543,7 @@ export async function onInteractionCreate(
           // メモ入力欄を作成
           const textInput = new TextInputBuilder()
             .setCustomId('memo')
-            .setLabel('メモを入力してください (空白で削除)')
+            .setLabel('メモを入力してください (「!」を入力で削除)')
             .setMinLength(0)
             .setMaxLength(512)
             .setStyle(TextInputStyle.Short)
@@ -616,7 +616,7 @@ export async function onInteractionCreate(
 
         if (type === 'memo') {
           const memo = interaction.components[0]?.components[0]?.value;
-          if (memo === undefined || memo === '') {
+          if (memo === undefined || memo === '' || memo === '!') {
             await prisma.userStat.update({
               where: {
                 id: {
