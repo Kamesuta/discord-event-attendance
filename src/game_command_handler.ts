@@ -1,6 +1,7 @@
 import {
   ChatInputCommandInteraction,
   EmbedBuilder,
+  RepliableInteraction,
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
 import { prisma } from './index.js';
@@ -163,6 +164,72 @@ export async function addGameResult(
   }
   if (image) {
     embeds.setImage(image.proxyURL);
+  }
+
+  await interaction.editReply({
+    embeds: [embeds],
+  });
+}
+
+/**
+ * ユーザーの戦績を表示する
+ * @param interaction インタラクション
+ * @param gameId 試合ID
+ */
+export async function showGameResults(
+  interaction: RepliableInteraction,
+  gameId: number
+): Promise<void> {
+  // 戦績
+  const gameResult = await prisma.gameResult.findUnique({
+    where: {
+      id: gameId,
+    },
+    include: {
+      event: true,
+      users: true,
+    },
+  });
+
+  // 戦績が見つからない場合
+  if (!gameResult) {
+    await interaction.reply('試合が見つかりませんでした');
+    return;
+  }
+
+  // 回目を取得
+  const resultCount = await getGameResultNumbering(gameResult.eventId, gameId);
+
+  // 表示
+  const embeds = new EmbedBuilder()
+    .setTitle(`🎮「${gameResult.name}」の結果`)
+    .setDescription(`第 ${resultCount} 回目の試合結果です`)
+    .addFields({
+      name: '順位',
+      value:
+        gameResult.users
+          .map(
+            (user) =>
+              `${user.rank}位: <@${user.userId}> (${user.xp}XP)`
+          )
+          .join('\n') || 'なし',
+    })
+    .addFields({
+      name: 'イベント情報',
+      value: gameResult.event
+        ? `[${gameResult.event.name}](https://discord.com/events/${config.guild_id}/${gameResult.event.eventId})`
+        : 'なし',
+    })
+    .setFooter({
+      text: `試合ID: ${gameResult.id}`,
+    })
+    .setColor('#ff8c00');
+
+  if (gameResult.url) {
+    embeds.setURL(gameResult.url);
+  }
+  if (gameResult.image) {
+    embeds.setImage(gameResult.image);
   }
 
   await interaction.editReply({

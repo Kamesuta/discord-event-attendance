@@ -20,6 +20,7 @@ import {
   addGameResult,
   createGameCommand,
   getUserGameResults,
+  showGameResults,
 } from './game_command_handler.js';
 import { endEvent, startEvent } from './event_handler.js';
 
@@ -80,21 +81,64 @@ const eventCommand = new SlashCommandBuilder()
  * イベント参加状況を確認するコマンド
  */
 const statusCommand = new SlashCommandBuilder()
-  .setDescription('イベント参加状況を確認するユーザー')
   .setName('status')
-  .addUserOption((option) =>
-    option
+  .setDescription('イベント参加状況を確認')
+  .addSubcommand((subcommand) =>
+    subcommand
       .setName('user')
-      .setDescription('イベント参加状況を確認するユーザー')
-      .setRequired(false)
-  )
-  .addBooleanOption((option) =>
-    option
-      .setName('show')
-      .setDescription(
-        'コマンドの結果をチャットに表示しますか？ (デフォルトは非公開)'
+      .setDescription('ユーザーの過去のイベント参加状況を確認')
+      .addUserOption((option) =>
+        option
+          .setName('user')
+          .setDescription('イベント参加状況を確認するユーザー')
+          .setRequired(false)
       )
-      .setRequired(false)
+      .addBooleanOption((option) =>
+        option
+          .setName('show')
+          .setDescription(
+            'コマンドの結果をチャットに表示しますか？ (デフォルトは非公開)'
+          )
+          .setRequired(false)
+      )
+  )
+  .addSubcommand((subcommand) =>
+    subcommand
+      .setName('event')
+      .setDescription('イベントの出欠状況を確認')
+      .addStringOption((option) =>
+        option
+          .setName('event_id')
+          .setDescription('イベントID (省略時は最新のイベントを表示)')
+          .setRequired(false)
+      )
+      .addBooleanOption((option) =>
+        option
+          .setName('show')
+          .setDescription(
+            'コマンドの結果をチャットに表示しますか？ (デフォルトは非公開)'
+          )
+          .setRequired(false)
+      )
+  )
+  .addSubcommand((subcommand) =>
+    subcommand
+      .setName('game')
+      .setDescription('ゲームの勝敗を表示')
+      .addStringOption((option) =>
+        option
+          .setName('game_id')
+          .setDescription('試合ID')
+          .setRequired(false)
+      )
+      .addBooleanOption((option) =>
+        option
+          .setName('show')
+          .setDescription(
+            'コマンドの結果をチャットに表示しますか？ (デフォルトは非公開)'
+          )
+          .setRequired(false)
+      )
   );
 
 const contextStatusCommand = new ContextMenuCommandBuilder()
@@ -457,10 +501,50 @@ export async function onInteractionCreate(
         }
         // 確認用コマンド
         case statusCommand.name: {
-          const show = interaction.options.getBoolean('show') ?? false;
-          await interaction.deferReply({ ephemeral: !show });
-          const user = interaction.options.getUser('user') ?? interaction.user;
-          await showUserStatus(interaction, user.id);
+          switch (interaction.options.getSubcommand()) {
+            case 'user': {
+              // ユーザーの過去のイベント参加状況を表示
+              const show = interaction.options.getBoolean('show') ?? false;
+              await interaction.deferReply({ ephemeral: !show });
+              const user = interaction.options.getUser('user') ?? interaction.user;
+              await showUserStatus(interaction, user.id);
+              break;
+            }
+            case 'event': {
+              // イベントの出欠状況を表示
+              const show = interaction.options.getBoolean('show') ?? false;
+              await interaction.deferReply({ ephemeral: !show });
+              const eventId = interaction.options.getString('event_id');
+              const event = await getEvent(eventId ?? undefined);
+              if (!event) {
+                await interaction.editReply({
+                  content: 'イベントが見つかりませんでした',
+                });
+                return;
+              }
+              await showEvent(interaction, event, true);
+              break;
+            }
+            case 'game': {
+              // ゲームの勝敗を表示
+              const show = interaction.options.getBoolean('show') ?? false;
+              await interaction.deferReply({ ephemeral: !show });
+              const gameId = interaction.options.getString('game_id');
+              const game = await prisma.gameResult.findFirst({
+                where: {
+                  id: parseInt(gameId ?? '0'),
+                },
+              });
+              if (!game) {
+                await interaction.editReply({
+                  content: '試合が見つかりませんでした',
+                });
+                return;
+              }
+              await showGameResults(interaction, game.id);
+              break;
+            }
+          }
           break;
         }
       }
