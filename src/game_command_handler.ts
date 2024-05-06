@@ -46,7 +46,7 @@ export function createGameCommand(
     .addUserOption((option) =>
       option.setName('rank8').setDescription('8位のユーザー').setRequired(false)
     )
-    .addStringOption((option) =>
+    .addIntegerOption((option) =>
       option
         .setName('event_id')
         .setDescription('イベントID (省略時は最新のイベントを操作)')
@@ -64,7 +64,7 @@ export function createGameCommand(
         .setDescription('XP倍率')
         .setRequired(false)
     )
-    .addNumberOption((option) =>
+    .addIntegerOption((option) =>
       option
         .setName('edit_id')
         .setDescription('編集する試合ID')
@@ -100,7 +100,7 @@ export async function addGameResult(
   const image = interaction.options.getAttachment('image');
 
   // 編集する試合IDを取得
-  const editGameId = interaction.options.getNumber('edit_id');
+  const editGameId = interaction.options.getInteger('edit_id');
 
   // 試合の結果を記録
   const game =

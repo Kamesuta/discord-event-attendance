@@ -35,7 +35,7 @@ const eventCommand = new SlashCommandBuilder()
     subcommand
       .setName('review')
       .setDescription('イベントの出欠状況を表示します (自分のみに表示)')
-      .addStringOption((option) =>
+      .addIntegerOption((option) =>
         option
           .setName('event_id')
           .setDescription('イベントID (省略時は最新のイベントを表示)')
@@ -46,7 +46,7 @@ const eventCommand = new SlashCommandBuilder()
     subcommand
       .setName('show')
       .setDescription('イベントの出欠状況を表示します')
-      .addStringOption((option) =>
+      .addIntegerOption((option) =>
           option
             .setName('event_id')
             .setDescription('イベントID (省略時は最新のイベントを表示)')
@@ -57,7 +57,7 @@ const eventCommand = new SlashCommandBuilder()
     subcommand
       .setName('start')
       .setDescription('手動でイベントを開始します')
-      .addStringOption((option) =>
+      .addIntegerOption((option) =>
         option
           .setName('event_id')
           .setDescription('DiscordのイベントID')
@@ -68,7 +68,7 @@ const eventCommand = new SlashCommandBuilder()
     subcommand
       .setName('stop')
       .setDescription('手動でイベントを終了します')
-      .addStringOption((option) =>
+      .addIntegerOption((option) =>
         option
           .setName('event_id')
           .setDescription('イベントID (省略時は最新のイベントを表示)')
@@ -106,7 +106,7 @@ const statusCommand = new SlashCommandBuilder()
     subcommand
       .setName('event')
       .setDescription('イベントの出欠状況を確認')
-      .addStringOption((option) =>
+      .addIntegerOption((option) =>
         option
           .setName('event_id')
           .setDescription('イベントID (省略時は最新のイベントを表示)')
@@ -125,7 +125,7 @@ const statusCommand = new SlashCommandBuilder()
     subcommand
       .setName('game')
       .setDescription('ゲームの勝敗を表示')
-      .addStringOption((option) =>
+      .addIntegerOption((option) =>
         option
           .setName('game_id')
           .setDescription('試合ID')
@@ -232,7 +232,7 @@ async function showEvent(
     )
     .setColor('#ff8c00')
     .setFooter({
-      text: '「/status <名前>」でユーザーの過去イベントの参加状況を確認できます',
+      text: `「/status user <名前>」でユーザーの過去イベントの参加状況を確認できます\nイベントID: ${event.id}`,
     })
     .addFields({
       name: '開催日時',
@@ -423,8 +423,8 @@ export async function onInteractionCreate(
             case 'review': {
               // 公開前のメンバー確認
               await interaction.deferReply({ ephemeral: !isShow });
-              const eventId = interaction.options.getString('event_id');
-              const event = await getEvent(eventId ?? undefined);
+              const eventId = interaction.options.getInteger('event_id');
+              const event = await getEventFromId(eventId ?? undefined);
               if (!event) {
                 await interaction.editReply({
                   content: 'イベントが見つかりませんでした',
@@ -466,10 +466,11 @@ export async function onInteractionCreate(
             case 'stop': {
               // イベントを終了
               await interaction.deferReply({ ephemeral: true });
-              const eventId = interaction.options.getString('event_id');
-              const scheduledEvent = !eventId
+              const eventId = interaction.options.getInteger('event_id');
+              const event = await getEventFromId(eventId ?? undefined);
+              const scheduledEvent = !event
                 ? undefined
-                : await interaction.guild?.scheduledEvents.fetch(eventId);
+                : await interaction.guild?.scheduledEvents.fetch(event.eventId);
               if (!scheduledEvent) {
                 await interaction.editReply({
                   content: 'Discordイベントが見つかりませんでした',
@@ -485,8 +486,8 @@ export async function onInteractionCreate(
             case 'game': {
               // ゲームの勝敗を記録
               await interaction.deferReply({ ephemeral: false });
-              const eventId = interaction.options.getString('event_id');
-              const event = await getEvent(eventId ?? undefined);
+              const eventId = interaction.options.getInteger('event_id');
+              const event = await getEventFromId(eventId ?? undefined);
               if (!event) {
                 await interaction.editReply({
                   content: 'イベントが見つかりませんでした',
@@ -514,8 +515,8 @@ export async function onInteractionCreate(
               // イベントの出欠状況を表示
               const show = interaction.options.getBoolean('show') ?? false;
               await interaction.deferReply({ ephemeral: !show });
-              const eventId = interaction.options.getString('event_id');
-              const event = await getEvent(eventId ?? undefined);
+              const eventId = interaction.options.getInteger('event_id');
+              const event = await getEventFromId(eventId ?? undefined);
               if (!event) {
                 await interaction.editReply({
                   content: 'イベントが見つかりませんでした',
@@ -529,10 +530,10 @@ export async function onInteractionCreate(
               // ゲームの勝敗を表示
               const show = interaction.options.getBoolean('show') ?? false;
               await interaction.deferReply({ ephemeral: !show });
-              const gameId = interaction.options.getString('game_id');
+              const gameId = interaction.options.getInteger('game_id');
               const game = await prisma.gameResult.findFirst({
                 where: {
-                  id: parseInt(gameId ?? '0'),
+                  id: gameId ?? undefined,
                 },
               });
               if (!game) {
