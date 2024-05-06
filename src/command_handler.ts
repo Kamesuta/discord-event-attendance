@@ -181,8 +181,7 @@ export async function registerCommands(): Promise<void> {
 
 async function showEvent(
   interaction: RepliableInteraction,
-  event: Event,
-  publish = false
+  event: Event
 ): Promise<void> {
   // 集計
   await updateAttendanceTimeIfEventActive(event);
@@ -223,11 +222,8 @@ async function showEvent(
   const embeds = new EmbedBuilder()
     .setTitle(`🏁「${event.name}」イベントに参加してくれた人！`)
     .setURL(`https://discord.com/events/${config.guild_id}/${event.eventId}`)
-    .setDescription(
-      publish
-        ? 'イベントの参加者を表示します\n(観戦していただけの人は欠席扱いです)'
-        : '出席、欠席のステータスです。\n下のプルダウンからステータスを変更できます。'
-    )
+    .setDescription(event.description ?? '説明なし')
+    .setThumbnail(event.coverImage)
     .setColor('#ff8c00')
     .setFooter({
       text: `「/status user <名前>」でユーザーの過去イベントの参加状況を確認できます\nイベントID: ${event.id}`,
@@ -239,28 +235,64 @@ async function showEvent(
       } ${duration}`,
     })
     .addFields({
+      name: '参加者 (観戦していただけの人は欠席扱いです)',
+      value:
+        // 公開モードの場合は参加者のみ表示
+        stats
+          .filter((stat) => stat.show)
+          .map((stat) => {
+            const count = userCount[stat.userId];
+            const memo = stat.memo ? ` ${stat.memo}` : '';
+            const countText =
+              count === 1 ? '(🆕 初参加！)' : ` (${count}回目)${memo}`;
+            return `<@${stat.userId}> ${countText}`;
+          })
+          .join('\n') || 'なし',
+    });
+
+  // イベントの出欠状況を表示
+  await interaction.editReply({
+    embeds: [embeds],
+  });
+}
+
+async function reviewEvent(
+  interaction: RepliableInteraction,
+  event: Event
+): Promise<void> {
+  // 集計
+  await updateAttendanceTimeIfEventActive(event);
+
+  // イベントの出欠状況を表示
+  const stats = await prisma.userStat.findMany({
+    where: {
+      eventId: event.id,
+      duration: {
+        // 必要接続分数を満たしているユーザーのみを抽出する (config.required_time分以上参加している)
+        gt: config.required_time * 60 * 1000,
+      },
+    },
+  });
+
+  const embeds = new EmbedBuilder()
+    .setTitle(`🏁「${event.name}」イベントに参加してくれた人を選択してください`)
+    .setURL(`https://discord.com/events/${config.guild_id}/${event.eventId}`)
+    .setDescription(
+      '出席、欠席のステータスです。\n下のプルダウンからステータスを変更できます。'
+    )
+    .setColor('#ff8c00')
+    .addFields({
       name: '参加者',
-      value: publish
-        ? // 公開モードの場合は参加者のみ表示
-          stats
-            .filter((stat) => stat.show)
-            .map((stat) => {
-              const count = userCount[stat.userId];
-              const memo = stat.memo ? ` ${stat.memo}` : '';
-              const countText =
-                count === 1 ? '(🆕 初参加！)' : ` (${count}回目)${memo}`;
-              return `<@${stat.userId}> ${countText}`;
-            })
-            .join('\n') || 'なし'
-        : // 非公開モードの場合は全員表示 (現在のステータスも表示)
-          stats
-            .map((stat) => {
-              const memo = stat.memo ? ` (**メモ**: ${stat.memo})` : '';
-              const mark = stat.show === null ? '⬛' : stat.show ? '☑️' : '❌';
-              const duration = Math.floor(stat.duration / 1000 / 60);
-              return `${mark} <@${stat.userId}>: ${duration}分${memo}`;
-            })
-            .join('\n') || 'なし',
+      value:
+        // 非公開モードの場合は全員表示 (現在のステータスも表示)
+        stats
+          .map((stat) => {
+            const memo = stat.memo ? ` (**メモ**: ${stat.memo})` : '';
+            const mark = stat.show === null ? '⬛' : stat.show ? '☑️' : '❌';
+            const duration = Math.floor(stat.duration / 1000 / 60);
+            return `${mark} <@${stat.userId}>: ${duration}分${memo}`;
+          })
+          .join('\n') || 'なし',
     });
 
   const components = [
@@ -292,7 +324,7 @@ async function showEvent(
   // イベントの出欠状況を表示
   await interaction.editReply({
     embeds: [embeds],
-    components: publish ? [] : components,
+    components,
   });
 }
 
@@ -312,18 +344,6 @@ async function setShowStats(
     data: {
       show: isShow,
     },
-  });
-}
-
-async function getEvent(eventId: string | undefined): Promise<Event | null> {
-  return await prisma.event.findFirst({
-    where: {
-      eventId,
-    },
-    orderBy: {
-      startTime: 'desc',
-    },
-    take: 1,
   });
 }
 
@@ -412,15 +432,9 @@ export async function onInteractionCreate(
         // 管理者用コマンド
         case eventCommand.name: {
           // サブコマンドによって処理を分岐
-          let isShow = false;
           switch (interaction.options.getSubcommand()) {
-            case 'show':
-              // 全体に公開
-              isShow = true;
-            // fallthrough
-            case 'review': {
-              // 公開前のメンバー確認
-              await interaction.deferReply({ ephemeral: !isShow });
+            case 'show': {
+              await interaction.deferReply({ ephemeral: false });
               const eventId = interaction.options.getInteger('event_id');
               const event = await getEventFromId(eventId ?? undefined);
               if (!event) {
@@ -429,7 +443,21 @@ export async function onInteractionCreate(
                 });
                 return;
               }
-              await showEvent(interaction, event, isShow);
+              await showEvent(interaction, event);
+              break;
+            }
+            case 'review': {
+              // 公開前のメンバー確認
+              await interaction.deferReply({ ephemeral: true });
+              const eventId = interaction.options.getInteger('event_id');
+              const event = await getEventFromId(eventId ?? undefined);
+              if (!event) {
+                await interaction.editReply({
+                  content: 'イベントが見つかりませんでした',
+                });
+                return;
+              }
+              await reviewEvent(interaction, event);
               break;
             }
             case 'status': {
@@ -520,7 +548,7 @@ export async function onInteractionCreate(
                 });
                 return;
               }
-              await showEvent(interaction, event, true);
+              await showEvent(interaction, event);
               break;
             }
             case 'game': {
