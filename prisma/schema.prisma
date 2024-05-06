@@ -14,11 +14,14 @@ datasource db {
 model Event {
   id Int @id @default(autoincrement())
 
-  name      String
-  channelId String
-  eventId   String
-  active    Boolean   @default(true)
-  startTime DateTime  @default(now())
+  eventId     String  @unique
+  name        String
+  channelId   String
+  description String? @db.VarChar(4096)
+  coverImage  String? @db.VarChar(512)
+
+  active    Boolean   @default(false)
+  startTime DateTime?
   endTime   DateTime?
 
   voiceLogs      VoiceLog[]
@@ -45,7 +48,7 @@ model UserStat {
 
   duration Int
   show     Boolean?
-  memo     String? @db.VarChar(512)
+  memo     String?  @db.VarChar(512)
 
   VoiceLog VoiceLog[]
   event    Event      @relation(fields: [eventId], references: [id])

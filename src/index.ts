@@ -5,7 +5,7 @@ import dotenv from 'dotenv';
 import { logger } from './utils/log.js';
 import { PrismaClient } from '@prisma/client';
 import { onVoiceStateUpdate } from './voice_handler.js';
-import { onGuildScheduledEventUpdate } from './event_handler.js';
+import { onGuildScheduledEventCreate, onGuildScheduledEventUpdate } from './event_handler.js';
 import { onInteractionCreate, registerCommands } from './command_handler.js';
 
 // .envファイルを読み込む
@@ -39,6 +39,7 @@ client.on(Events.ClientReady, async () => {
   await registerCommands();
 });
 client.on(Events.VoiceStateUpdate, onVoiceStateUpdate);
+client.on(Events.GuildScheduledEventCreate, onGuildScheduledEventCreate);
 client.on(Events.GuildScheduledEventUpdate, onGuildScheduledEventUpdate);
 client.on(Events.InteractionCreate, onInteractionCreate);
 

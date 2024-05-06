@@ -6,11 +6,12 @@ import { tallyAttendanceTime } from './attendance_time.js';
 const prisma = new PrismaClient();
 
 /**
- * スケジュールイベントが開始されたときのイベントハンドラー
- * @param scheduledEvent 開始されたイベント
- * @returns 開始されたイベント
+ * スケジュールイベントが作成されたときのイベントハンドラー
+ * @param scheduledEvent 作成されたイベント
  */
-export async function startEvent(scheduledEvent: GuildScheduledEvent): Promise<void> {
+export async function createEvent(
+  scheduledEvent: GuildScheduledEvent
+): Promise<void> {
   if (!scheduledEvent.channel?.isVoiceBased()) {
     console.warn(
       `VCが指定されていないイベントは無視します: ${scheduledEvent.name}`
@@ -19,11 +20,56 @@ export async function startEvent(scheduledEvent: GuildScheduledEvent): Promise<v
   }
 
   try {
-    const attendance = await prisma.event.create({
+    await prisma.event.create({
       data: {
+        eventId: scheduledEvent.id,
+
         name: scheduledEvent.name,
         channelId: scheduledEvent.channel.id,
+        description: scheduledEvent.description,
+        coverImage: scheduledEvent.coverImageURL(),
+      },
+    });
+    console.log(`イベントを作成しました: Name=${scheduledEvent.name}`);
+  } catch (error) {
+    console.error('イベントの作成に失敗しました:', error);
+  }
+}
+
+/**
+ * スケジュールイベントが開始されたときのイベントハンドラー
+ * @param scheduledEvent 開始されたイベント
+ * @returns 開始されたイベント
+ */
+export async function startEvent(
+  scheduledEvent: GuildScheduledEvent
+): Promise<void> {
+  if (!scheduledEvent.channel?.isVoiceBased()) {
+    console.warn(
+      `VCが指定されていないイベントは無視します: ${scheduledEvent.name}`
+    );
+    return;
+  }
+
+  try {
+    const attendance = await prisma.event.upsert({
+      where: {
         eventId: scheduledEvent.id,
+      },
+      update: {
+        active: true,
+        startTime: new Date(),
+      },
+      create: {
+        eventId: scheduledEvent.id,
+
+        active: true,
+        startTime: new Date(),
+
+        name: scheduledEvent.name,
+        channelId: scheduledEvent.channel.id,
+        description: scheduledEvent.description,
+        coverImage: scheduledEvent.coverImageURL(),
       },
     });
     console.log(
@@ -58,7 +104,9 @@ export async function startEvent(scheduledEvent: GuildScheduledEvent): Promise<v
  * @param scheduledEvent 終了されたイベント
  * @returns 終了されたイベント
  */
-export async function endEvent(scheduledEvent: GuildScheduledEvent): Promise<void> {
+export async function endEvent(
+  scheduledEvent: GuildScheduledEvent
+): Promise<void> {
   if (!scheduledEvent.channel?.isVoiceBased()) {
     console.warn(
       `VCが指定されていないイベントは無視します: ${scheduledEvent.name}`
@@ -102,6 +150,28 @@ export async function endEvent(scheduledEvent: GuildScheduledEvent): Promise<voi
     }
   } catch (error) {
     console.error('イベントの終了に失敗しました:', error);
+  }
+}
+
+/**
+ * スケジュールイベントが作成されたときのイベントハンドラー
+ * @param scheduledEvent 作成されたイベント
+ */
+export async function onGuildScheduledEventCreate(
+  scheduledEvent: GuildScheduledEvent
+): Promise<void> {
+  try {
+    // 指定のサーバー以外無視
+    if (scheduledEvent.guild?.id !== config.guild_id) {
+      return;
+    }
+
+    await createEvent(scheduledEvent);
+  } catch (error) {
+    console.error(
+      'onGuildScheduledEventCreate中にエラーが発生しました。',
+      error
+    );
   }
 }
 

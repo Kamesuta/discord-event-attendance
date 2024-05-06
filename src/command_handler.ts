@@ -47,10 +47,10 @@ const eventCommand = new SlashCommandBuilder()
       .setName('show')
       .setDescription('イベントの出欠状況を表示します')
       .addIntegerOption((option) =>
-          option
-            .setName('event_id')
-            .setDescription('イベントID (省略時は最新のイベントを表示)')
-            .setRequired(false)
+        option
+          .setName('event_id')
+          .setDescription('イベントID (省略時は最新のイベントを表示)')
+          .setRequired(false)
       )
   )
   .addSubcommand((subcommand) =>
@@ -126,10 +126,7 @@ const statusCommand = new SlashCommandBuilder()
       .setName('game')
       .setDescription('ゲームの勝敗を表示')
       .addIntegerOption((option) =>
-        option
-          .setName('game_id')
-          .setDescription('試合ID')
-          .setRequired(false)
+        option.setName('game_id').setDescription('試合ID').setRequired(false)
       )
       .addBooleanOption((option) =>
         option
@@ -216,11 +213,12 @@ async function showEvent(
   );
 
   // イベントの時間を計算
-  const duration = event.endTime
-    ? ` (${Math.floor(
-        (event.endTime.getTime() - event.startTime.getTime()) / 1000 / 60
-      )}分)`
-    : '';
+  const duration =
+    event.startTime && event.endTime
+      ? ` (${Math.floor(
+          (event.endTime.getTime() - event.startTime.getTime()) / 1000 / 60
+        )}分)`
+      : '';
 
   const embeds = new EmbedBuilder()
     .setTitle(`🏁「${event.name}」イベントに参加してくれた人！`)
@@ -236,7 +234,7 @@ async function showEvent(
     })
     .addFields({
       name: '開催日時',
-      value: `${event.startTime.toLocaleString()} 〜 ${
+      value: `${event.startTime?.toLocaleString() ?? '未定'} 〜 ${
         event.endTime?.toLocaleString() ?? '未定'
       } ${duration}`,
     })
@@ -445,9 +443,7 @@ export async function onInteractionCreate(
             case 'start': {
               // イベントを開始
               await interaction.deferReply({ ephemeral: true });
-              const eventId = interaction.options.getString(
-                'event_id'
-              );
+              const eventId = interaction.options.getString('event_id');
               const scheduledEvent = !eventId
                 ? undefined
                 : await interaction.guild?.scheduledEvents.fetch(eventId);
@@ -507,7 +503,8 @@ export async function onInteractionCreate(
               // ユーザーの過去のイベント参加状況を表示
               const show = interaction.options.getBoolean('show') ?? false;
               await interaction.deferReply({ ephemeral: !show });
-              const user = interaction.options.getUser('user') ?? interaction.user;
+              const user =
+                interaction.options.getUser('user') ?? interaction.user;
               await showUserStatus(interaction, user.id);
               break;
             }
@@ -633,16 +630,19 @@ export async function onInteractionCreate(
             .setMaxLength(512)
             .setStyle(TextInputStyle.Short)
             .setValue(userStat?.memo ?? '');
-          
+
           // メモ入力モーダルを表示
-          await interaction.showModal(new ModalBuilder()
-            .setTitle('メモ入力')
-            .setCustomId(`event_modal_memo_${interaction.targetUser.id}_${event.id}`)
-            .addComponents(
-              new ActionRowBuilder<TextInputBuilder>().addComponents(
-                textInput
+          await interaction.showModal(
+            new ModalBuilder()
+              .setTitle('メモ入力')
+              .setCustomId(
+                `event_modal_memo_${interaction.targetUser.id}_${event.id}`
               )
-            )
+              .addComponents(
+                new ActionRowBuilder<TextInputBuilder>().addComponents(
+                  textInput
+                )
+              )
           );
           break;
         }
