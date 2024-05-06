@@ -1,2 +1,2 @@
 -- AlterTable
-ALTER TABLE `userstat` ADD COLUMN `memo` VARCHAR(512) NULL;
+ALTER TABLE `UserStat` ADD COLUMN `memo` VARCHAR(512) NULL;

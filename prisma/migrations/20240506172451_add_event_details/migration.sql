@@ -5,7 +5,7 @@
 
 */
 -- AlterTable
-ALTER TABLE `event` ADD COLUMN `coverImage` VARCHAR(512) NULL,
+ALTER TABLE `Event` ADD COLUMN `coverImage` VARCHAR(512) NULL,
     ADD COLUMN `description` VARCHAR(4096) NULL,
     MODIFY `active` BOOLEAN NOT NULL DEFAULT false,
     MODIFY `startTime` DATETIME(3) NULL;

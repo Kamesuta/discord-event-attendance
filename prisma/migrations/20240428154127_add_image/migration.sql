@@ -1,2 +1,2 @@
 -- AlterTable
-ALTER TABLE `gameresult` ADD COLUMN `image` VARCHAR(512) NULL;
+ALTER TABLE `GameResult` ADD COLUMN `image` VARCHAR(512) NULL;
