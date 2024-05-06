@@ -14,61 +14,82 @@ import { config } from './utils/config.js';
  * @returns サブコマンド
  */
 export function createGameCommand(
-  subcommand: SlashCommandSubcommandBuilder
+  subcommand: SlashCommandSubcommandBuilder,
 ): SlashCommandSubcommandBuilder {
   return subcommand
     .setName('game')
     .setDescription('ゲームの勝敗を記録します')
     .addStringOption((option) =>
-      option.setName('game_name').setDescription('ゲーム名').setRequired(true)
+      option.setName('game_name').setDescription('ゲーム名').setRequired(true),
     )
     .addUserOption((option) =>
-      option.setName('rank1').setDescription('1位のユーザー').setRequired(true)
+      option.setName('rank1').setDescription('1位のユーザー').setRequired(true),
     )
     .addUserOption((option) =>
-      option.setName('rank2').setDescription('2位のユーザー').setRequired(false)
+      option
+        .setName('rank2')
+        .setDescription('2位のユーザー')
+        .setRequired(false),
     )
     .addUserOption((option) =>
-      option.setName('rank3').setDescription('3位のユーザー').setRequired(false)
+      option
+        .setName('rank3')
+        .setDescription('3位のユーザー')
+        .setRequired(false),
     )
     .addUserOption((option) =>
-      option.setName('rank4').setDescription('4位のユーザー').setRequired(false)
+      option
+        .setName('rank4')
+        .setDescription('4位のユーザー')
+        .setRequired(false),
     )
     .addUserOption((option) =>
-      option.setName('rank5').setDescription('5位のユーザー').setRequired(false)
+      option
+        .setName('rank5')
+        .setDescription('5位のユーザー')
+        .setRequired(false),
     )
     .addUserOption((option) =>
-      option.setName('rank6').setDescription('6位のユーザー').setRequired(false)
+      option
+        .setName('rank6')
+        .setDescription('6位のユーザー')
+        .setRequired(false),
     )
     .addUserOption((option) =>
-      option.setName('rank7').setDescription('7位のユーザー').setRequired(false)
+      option
+        .setName('rank7')
+        .setDescription('7位のユーザー')
+        .setRequired(false),
     )
     .addUserOption((option) =>
-      option.setName('rank8').setDescription('8位のユーザー').setRequired(false)
+      option
+        .setName('rank8')
+        .setDescription('8位のユーザー')
+        .setRequired(false),
     )
     .addIntegerOption((option) =>
       option
         .setName('event_id')
         .setDescription('イベントID (省略時は最新のイベントを操作)')
-        .setRequired(false)
+        .setRequired(false),
     )
     .addStringOption((option) =>
-      option.setName('url').setDescription('試合のURL').setRequired(false)
+      option.setName('url').setDescription('試合のURL').setRequired(false),
     )
     .addAttachmentOption((option) =>
-      option.setName('image').setDescription('試合の画像').setRequired(false)
+      option.setName('image').setDescription('試合の画像').setRequired(false),
     )
     .addNumberOption((option) =>
       option
         .setName('xp_multiplier')
         .setDescription('XP倍率')
-        .setRequired(false)
+        .setRequired(false),
     )
     .addIntegerOption((option) =>
       option
         .setName('edit_id')
         .setDescription('編集する試合ID')
-        .setRequired(false)
+        .setRequired(false),
     );
 }
 
@@ -79,7 +100,7 @@ export function createGameCommand(
  */
 export async function addGameResult(
   interaction: ChatInputCommandInteraction,
-  event: Event
+  event: Event,
 ): Promise<void> {
   // ゲームの名前を取得
   const gameName = interaction.options.getString('game_name') ?? 'ゲーム';
@@ -149,8 +170,8 @@ export async function addGameResult(
           .map(
             (rank, i) =>
               `${i + 1}位: <@${rank.id}> (${Math.floor(
-                rankXpTable[i] * xpMultiplier
-              )}XP)`
+                rankXpTable[i] * xpMultiplier,
+              )}XP)`,
           )
           .join('\n') || 'なし',
     })
@@ -178,7 +199,7 @@ export async function addGameResult(
  */
 export async function showGameResults(
   interaction: RepliableInteraction,
-  gameId: number
+  gameId: number,
 ): Promise<void> {
   // 戦績
   const gameResult = await prisma.gameResult.findUnique({
@@ -208,10 +229,7 @@ export async function showGameResults(
       name: '順位',
       value:
         gameResult.users
-          .map(
-            (user) =>
-              `${user.rank}位: <@${user.userId}> (${user.xp}XP)`
-          )
+          .map((user) => `${user.rank}位: <@${user.userId}> (${user.xp}XP)`)
           .join('\n') || 'なし',
     })
     .addFields({
@@ -277,7 +295,7 @@ export async function getUserGameResults(userId: string): Promise<string> {
  */
 export async function getGameResultNumbering(
   eventId: number,
-  gameId: number
+  gameId: number,
 ): Promise<number> {
   const {
     0: { num: resultCount },

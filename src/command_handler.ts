@@ -39,8 +39,8 @@ const eventCommand = new SlashCommandBuilder()
         option
           .setName('event_id')
           .setDescription('イベントID (省略時は最新のイベントを表示)')
-          .setRequired(false)
-      )
+          .setRequired(false),
+      ),
   )
   .addSubcommand((subcommand) =>
     subcommand
@@ -50,8 +50,8 @@ const eventCommand = new SlashCommandBuilder()
         option
           .setName('event_id')
           .setDescription('イベントID (省略時は最新のイベントを表示)')
-          .setRequired(false)
-      )
+          .setRequired(false),
+      ),
   )
   .addSubcommand((subcommand) =>
     subcommand
@@ -61,8 +61,8 @@ const eventCommand = new SlashCommandBuilder()
         option
           .setName('event_id')
           .setDescription('DiscordのイベントID')
-          .setRequired(true)
-      )
+          .setRequired(true),
+      ),
   )
   .addSubcommand((subcommand) =>
     subcommand
@@ -72,8 +72,8 @@ const eventCommand = new SlashCommandBuilder()
         option
           .setName('event_id')
           .setDescription('イベントID (省略時は最新のイベントを表示)')
-          .setRequired(false)
-      )
+          .setRequired(false),
+      ),
   )
   .addSubcommand(createGameCommand);
 
@@ -91,16 +91,16 @@ const statusCommand = new SlashCommandBuilder()
         option
           .setName('user')
           .setDescription('イベント参加状況を確認するユーザー')
-          .setRequired(false)
+          .setRequired(false),
       )
       .addBooleanOption((option) =>
         option
           .setName('show')
           .setDescription(
-            'コマンドの結果をチャットに表示しますか？ (デフォルトは非公開)'
+            'コマンドの結果をチャットに表示しますか？ (デフォルトは非公開)',
           )
-          .setRequired(false)
-      )
+          .setRequired(false),
+      ),
   )
   .addSubcommand((subcommand) =>
     subcommand
@@ -110,32 +110,32 @@ const statusCommand = new SlashCommandBuilder()
         option
           .setName('event_id')
           .setDescription('イベントID (省略時は最新のイベントを表示)')
-          .setRequired(false)
+          .setRequired(false),
       )
       .addBooleanOption((option) =>
         option
           .setName('show')
           .setDescription(
-            'コマンドの結果をチャットに表示しますか？ (デフォルトは非公開)'
+            'コマンドの結果をチャットに表示しますか？ (デフォルトは非公開)',
           )
-          .setRequired(false)
-      )
+          .setRequired(false),
+      ),
   )
   .addSubcommand((subcommand) =>
     subcommand
       .setName('game')
       .setDescription('ゲームの勝敗を表示')
       .addIntegerOption((option) =>
-        option.setName('game_id').setDescription('試合ID').setRequired(false)
+        option.setName('game_id').setDescription('試合ID').setRequired(false),
       )
       .addBooleanOption((option) =>
         option
           .setName('show')
           .setDescription(
-            'コマンドの結果をチャットに表示しますか？ (デフォルトは非公開)'
+            'コマンドの結果をチャットに表示しますか？ (デフォルトは非公開)',
           )
-          .setRequired(false)
-      )
+          .setRequired(false),
+      ),
   );
 
 const contextStatusCommand = new ContextMenuCommandBuilder()
@@ -181,7 +181,7 @@ export async function registerCommands(): Promise<void> {
 
 async function showEvent(
   interaction: RepliableInteraction,
-  event: Event
+  event: Event,
 ): Promise<void> {
   // 集計
   await updateAttendanceTimeIfEventActive(event);
@@ -207,15 +207,15 @@ async function showEvent(
           },
         });
         return [stat.userId, count] as const;
-      })
-    )
+      }),
+    ),
   );
 
   // イベントの時間を計算
   const duration =
     event.startTime && event.endTime
       ? ` (${Math.floor(
-          (event.endTime.getTime() - event.startTime.getTime()) / 1000 / 60
+          (event.endTime.getTime() - event.startTime.getTime()) / 1000 / 60,
         )}分)`
       : '';
 
@@ -258,7 +258,7 @@ async function showEvent(
 
 async function reviewEvent(
   interaction: RepliableInteraction,
-  event: Event
+  event: Event,
 ): Promise<void> {
   // 集計
   await updateAttendanceTimeIfEventActive(event);
@@ -278,7 +278,7 @@ async function reviewEvent(
     .setTitle(`🏁「${event.name}」イベントに参加してくれた人を選択してください`)
     .setURL(`https://discord.com/events/${config.guild_id}/${event.eventId}`)
     .setDescription(
-      '出席、欠席のステータスです。\n下のプルダウンからステータスを変更できます。'
+      '出席、欠席のステータスです。\n下のプルダウンからステータスを変更できます。',
     )
     .setColor('#ff8c00')
     .addFields({
@@ -304,8 +304,8 @@ async function reviewEvent(
         .setMaxValues(25)
         // まだステータスが未設定のユーザーをデフォルトで選択
         .setDefaultUsers(
-          stats.filter((stat) => stat.show === null).map((stat) => stat.userId)
-        )
+          stats.filter((stat) => stat.show === null).map((stat) => stat.userId),
+        ),
     ),
     // 除外プルダウン
     new ActionRowBuilder<UserSelectMenuBuilder>().addComponents(
@@ -316,8 +316,8 @@ async function reviewEvent(
         .setMaxValues(25)
         // まだステータスが未設定のユーザーをデフォルトで選択
         .setDefaultUsers(
-          stats.filter((stat) => stat.show === null).map((stat) => stat.userId)
-        )
+          stats.filter((stat) => stat.show === null).map((stat) => stat.userId),
+        ),
     ),
   ];
 
@@ -331,7 +331,7 @@ async function reviewEvent(
 async function setShowStats(
   event: Event,
   userIds: string[] | undefined,
-  isShow: boolean | null
+  isShow: boolean | null,
 ): Promise<void> {
   // ユーザーの出欠状況を更新
   await prisma.userStat.updateMany({
@@ -348,7 +348,7 @@ async function setShowStats(
 }
 
 async function getEventFromId(
-  eventId: number | undefined
+  eventId: number | undefined,
 ): Promise<Event | null> {
   return await prisma.event.findFirst({
     where: {
@@ -363,7 +363,7 @@ async function getEventFromId(
 
 async function showUserStatus(
   interaction: RepliableInteraction,
-  userId: string
+  userId: string,
 ): Promise<void> {
   // ユーザーの過去のイベント参加状況を表示
   const stats = await prisma.userStat.findMany({
@@ -391,7 +391,7 @@ async function showUserStatus(
         : {
             name: user.displayName,
             iconURL: user.displayAvatarURL() ?? undefined,
-          }
+          },
     )
     .setColor('#ff8c00')
     .addFields({
@@ -423,7 +423,7 @@ async function showUserStatus(
  * @param interaction インタラクション
  */
 export async function onInteractionCreate(
-  interaction: Interaction
+  interaction: Interaction,
 ): Promise<void> {
   try {
     if (interaction.isChatInputCommand()) {
@@ -664,13 +664,13 @@ export async function onInteractionCreate(
             new ModalBuilder()
               .setTitle('メモ入力')
               .setCustomId(
-                `event_modal_memo_${interaction.targetUser.id}_${event.id}`
+                `event_modal_memo_${interaction.targetUser.id}_${event.id}`,
               )
               .addComponents(
                 new ActionRowBuilder<TextInputBuilder>().addComponents(
-                  textInput
-                )
-              )
+                  textInput,
+                ),
+              ),
           );
           break;
         }
@@ -683,7 +683,7 @@ export async function onInteractionCreate(
 
         await interaction.deferReply({ ephemeral: true });
         const event = await getEventFromId(
-          eventId ? parseInt(eventId) : undefined
+          eventId ? parseInt(eventId) : undefined,
         );
         if (!event) {
           await interaction.editReply({
@@ -718,7 +718,7 @@ export async function onInteractionCreate(
 
         await interaction.deferReply({ ephemeral: true });
         const event = await getEventFromId(
-          eventId ? parseInt(eventId) : undefined
+          eventId ? parseInt(eventId) : undefined,
         );
         if (!event) {
           await interaction.editReply({

@@ -9,7 +9,7 @@ import { prisma } from './index.js';
  */
 export async function calculateAttendanceTime(
   eventId: number,
-  userId: string
+  userId: string,
 ): Promise<number> {
   const logs = await prisma.voiceLog.findMany({
     where: {
@@ -49,7 +49,7 @@ function calculateTime(logs: { timestamp: Date; join: boolean }[]): number {
  */
 export async function tallyAttendanceTime(
   eventId: number,
-  userId: string
+  userId: string,
 ): Promise<void> {
   const totalTime = await calculateAttendanceTime(eventId, userId);
 
@@ -77,7 +77,7 @@ export async function tallyAttendanceTime(
  * @param event イベント
  */
 export async function updateAttendanceTimeIfEventActive(
-  event: Event
+  event: Event,
 ): Promise<void> {
   if (event.active) {
     // アクティブなイベントに参加しているユーザーを取得する

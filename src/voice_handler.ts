@@ -7,7 +7,7 @@ import { tallyAttendanceTime } from './attendance_time.js';
 async function createVoiceLog(
   channel: VoiceBasedChannel,
   userId: string,
-  join: boolean
+  join: boolean,
 ): Promise<void> {
   // ログを記録する
   try {
@@ -54,7 +54,7 @@ async function createVoiceLog(
     console.log(
       `ユーザー(${userId})がイベント(ID:${event.id},Name:${event.name})に${
         join ? '参加' : '退出'
-      }しました。`
+      }しました。`,
     );
     if (!join) {
       // 参加時間を集計する
@@ -72,7 +72,7 @@ async function createVoiceLog(
  */
 export async function onVoiceStateUpdate(
   oldState: VoiceState,
-  newState: VoiceState
+  newState: VoiceState,
 ): Promise<void> {
   try {
     if (oldState.channel === newState.channel) return;

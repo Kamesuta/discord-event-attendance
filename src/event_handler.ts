@@ -10,11 +10,11 @@ const prisma = new PrismaClient();
  * @param scheduledEvent 作成されたイベント
  */
 export async function createEvent(
-  scheduledEvent: GuildScheduledEvent
+  scheduledEvent: GuildScheduledEvent,
 ): Promise<void> {
   if (!scheduledEvent.channel?.isVoiceBased()) {
     console.warn(
-      `VCが指定されていないイベントは無視します: ${scheduledEvent.name}`
+      `VCが指定されていないイベントは無視します: ${scheduledEvent.name}`,
     );
     return;
   }
@@ -42,11 +42,11 @@ export async function createEvent(
  * @returns 開始されたイベント
  */
 export async function startEvent(
-  scheduledEvent: GuildScheduledEvent
+  scheduledEvent: GuildScheduledEvent,
 ): Promise<void> {
   if (!scheduledEvent.channel?.isVoiceBased()) {
     console.warn(
-      `VCが指定されていないイベントは無視します: ${scheduledEvent.name}`
+      `VCが指定されていないイベントは無視します: ${scheduledEvent.name}`,
     );
     return;
   }
@@ -73,7 +73,7 @@ export async function startEvent(
       },
     });
     console.log(
-      `イベントを開始しました: ID=${attendance.id}, Name=${scheduledEvent.name}`
+      `イベントを開始しました: ID=${attendance.id}, Name=${scheduledEvent.name}`,
     );
 
     // VCに既に参加しているユーザーに対してもログを記録する
@@ -105,11 +105,11 @@ export async function startEvent(
  * @returns 終了されたイベント
  */
 export async function endEvent(
-  scheduledEvent: GuildScheduledEvent
+  scheduledEvent: GuildScheduledEvent,
 ): Promise<void> {
   if (!scheduledEvent.channel?.isVoiceBased()) {
     console.warn(
-      `VCが指定されていないイベントは無視します: ${scheduledEvent.name}`
+      `VCが指定されていないイベントは無視します: ${scheduledEvent.name}`,
     );
     return;
   }
@@ -158,7 +158,7 @@ export async function endEvent(
  * @param scheduledEvent 作成されたイベント
  */
 export async function onGuildScheduledEventCreate(
-  scheduledEvent: GuildScheduledEvent
+  scheduledEvent: GuildScheduledEvent,
 ): Promise<void> {
   try {
     // 指定のサーバー以外無視
@@ -170,7 +170,7 @@ export async function onGuildScheduledEventCreate(
   } catch (error) {
     console.error(
       'onGuildScheduledEventCreate中にエラーが発生しました。',
-      error
+      error,
     );
   }
 }
@@ -182,7 +182,7 @@ export async function onGuildScheduledEventCreate(
  */
 export async function onGuildScheduledEventUpdate(
   oldScheduledEvent: GuildScheduledEvent | PartialGuildScheduledEvent | null,
-  newScheduledEvent: GuildScheduledEvent
+  newScheduledEvent: GuildScheduledEvent,
 ): Promise<void> {
   try {
     if (!oldScheduledEvent) return;
@@ -200,7 +200,7 @@ export async function onGuildScheduledEventUpdate(
   } catch (error) {
     console.error(
       'onGuildScheduledEventUpdate中にエラーが発生しました。',
-      error
+      error,
     );
   }
 }

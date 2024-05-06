@@ -5,7 +5,10 @@ import dotenv from 'dotenv';
 import { logger } from './utils/log.js';
 import { PrismaClient } from '@prisma/client';
 import { onVoiceStateUpdate } from './voice_handler.js';
-import { onGuildScheduledEventCreate, onGuildScheduledEventUpdate } from './event_handler.js';
+import {
+  onGuildScheduledEventCreate,
+  onGuildScheduledEventUpdate,
+} from './event_handler.js';
 import { onInteractionCreate, registerCommands } from './command_handler.js';
 
 // .envファイルを読み込む
