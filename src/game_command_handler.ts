@@ -305,7 +305,7 @@ export async function getGameResultNumbering(
       SELECT
         ROW_NUMBER() over (ORDER BY id ASC) num,
         id
-      FROM gameResult
+      FROM GameResult
       WHERE eventId = ${eventId}
     ) as t
     WHERE t.id = ${gameId};
