@@ -59,6 +59,11 @@ export async function startEvent(
       update: {
         active: true,
         startTime: new Date(),
+
+        name: scheduledEvent.name,
+        channelId: scheduledEvent.channel.id,
+        description: scheduledEvent.description,
+        coverImage: scheduledEvent.coverImageURL(),
       },
       create: {
         eventId: scheduledEvent.id,
