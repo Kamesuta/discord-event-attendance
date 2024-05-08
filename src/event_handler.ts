@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { Event, PrismaClient } from '@prisma/client';
 import { GuildScheduledEvent, PartialGuildScheduledEvent } from 'discord.js';
 import { config } from './utils/config.js';
 import { tallyAttendanceTime } from './attendance_time.js';
@@ -43,7 +43,7 @@ export async function createEvent(
  */
 export async function startEvent(
   scheduledEvent: GuildScheduledEvent,
-): Promise<void> {
+): Promise<Event | undefined> {
   if (!scheduledEvent.channel?.isVoiceBased()) {
     console.warn(
       `VCが指定されていないイベントは無視します: ${scheduledEvent.name}`,
@@ -99,8 +99,42 @@ export async function startEvent(
         join: true,
       })),
     });
+
+    return attendance;
   } catch (error) {
     console.error('イベントの開始に失敗しました:', error);
+  }
+}
+
+/**
+ * イベント情報をDiscord側から取得して更新する
+ * @param scheduledEvent イベント
+ */
+export async function updateEvent(
+  scheduledEvent: GuildScheduledEvent,
+): Promise<void> {
+  if (!scheduledEvent.channel?.isVoiceBased()) {
+    console.warn(
+      `VCが指定されていないイベントは無視します: ${scheduledEvent.name}`,
+    );
+    return;
+  }
+
+  try {
+    await prisma.event.update({
+      where: {
+        eventId: scheduledEvent.id,
+      },
+      data: {
+        name: scheduledEvent.name,
+        channelId: scheduledEvent.channel.id,
+        description: scheduledEvent.description,
+        coverImage: scheduledEvent.coverImageURL(),
+      },
+    });
+    console.log(`イベント情報を更新しました: Name=${scheduledEvent.name}`);
+  } catch (error) {
+    console.error('イベント情報の更新に失敗しました:', error);
   }
 }
 
