@@ -6,6 +6,11 @@ import { tallyAttendanceTime } from './attendance_time.js';
 const prisma = new PrismaClient();
 
 /**
+ * イベントのカバー画像のサイズ
+ */
+const coverImageSize = 2048;
+
+/**
  * スケジュールイベントが作成されたときのイベントハンドラー
  * @param scheduledEvent 作成されたイベント
  */
@@ -27,7 +32,7 @@ export async function createEvent(
         name: scheduledEvent.name,
         channelId: scheduledEvent.channel.id,
         description: scheduledEvent.description,
-        coverImage: scheduledEvent.coverImageURL(),
+        coverImage: scheduledEvent.coverImageURL({ size: coverImageSize }),
       },
     });
     console.log(`イベントを作成しました: Name=${scheduledEvent.name}`);
@@ -63,7 +68,7 @@ export async function startEvent(
         name: scheduledEvent.name,
         channelId: scheduledEvent.channel.id,
         description: scheduledEvent.description,
-        coverImage: scheduledEvent.coverImageURL(),
+        coverImage: scheduledEvent.coverImageURL({ size: coverImageSize }),
       },
       create: {
         eventId: scheduledEvent.id,
@@ -74,7 +79,7 @@ export async function startEvent(
         name: scheduledEvent.name,
         channelId: scheduledEvent.channel.id,
         description: scheduledEvent.description,
-        coverImage: scheduledEvent.coverImageURL(),
+        coverImage: scheduledEvent.coverImageURL({ size: coverImageSize }),
       },
     });
     console.log(
@@ -129,7 +134,7 @@ export async function updateEvent(
         name: scheduledEvent.name,
         channelId: scheduledEvent.channel.id,
         description: scheduledEvent.description,
-        coverImage: scheduledEvent.coverImageURL(),
+        coverImage: scheduledEvent.coverImageURL({ size: coverImageSize }),
       },
     });
     console.log(`イベント情報を更新しました: Name=${scheduledEvent.name}`);
