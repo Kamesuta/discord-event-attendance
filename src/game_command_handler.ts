@@ -235,7 +235,7 @@ export async function showGameResults(
     .addFields({
       name: 'イベント情報',
       value: gameResult.event
-        ? `[${gameResult.event.name}](https://discord.com/events/${config.guild_id}/${gameResult.event.eventId})`
+        ? `[${gameResult.event.name} (イベントID: ${gameResult.event.id})](https://discord.com/events/${config.guild_id}/${gameResult.event.eventId})`
         : 'なし',
     })
     .setFooter({

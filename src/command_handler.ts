@@ -8,6 +8,7 @@ import {
   PermissionFlagsBits,
   RepliableInteraction,
   SlashCommandBuilder,
+  StringSelectMenuBuilder,
   TextInputBuilder,
   TextInputStyle,
   UserSelectMenuBuilder,
@@ -219,6 +220,27 @@ async function showEvent(
         )}分)`
       : '';
 
+  // ユーザーごとのXP合計を取得
+  const userXp = (
+    await Promise.all(
+      stats.map(async (stat) => {
+        const xp = await prisma.userGameResult.aggregate({
+          where: {
+            eventId: event.id,
+            userId: stat.userId,
+          },
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          _sum: {
+            xp: true,
+          },
+        });
+        return [stat.userId, xp._sum.xp ?? 0] as const;
+      }),
+    )
+  )
+    .filter(([, xp]) => xp > 0)
+    .sort(([, a], [, b]) => b - a);
+
   const embeds = new EmbedBuilder()
     .setTitle(`🏁「${event.name}」イベントに参加してくれた人！`)
     .setURL(`https://discord.com/events/${config.guild_id}/${event.eventId}`)
@@ -226,7 +248,7 @@ async function showEvent(
     .setThumbnail(event.coverImage)
     .setColor('#ff8c00')
     .setFooter({
-      text: `「/status user <名前>」でユーザーの過去イベントの参加状況を確認できます\nイベントID: ${event.id}`,
+      text: `「/status user <名前>」でユーザーの過去イベントの参加状況を確認できます\n下記プルダウンから各試合結果を確認できます\nイベントID: ${event.id}`,
     })
     .addFields({
       name: '開催日時',
@@ -248,11 +270,45 @@ async function showEvent(
             return `<@${stat.userId}> ${countText}`;
           })
           .join('\n') || 'なし',
+    })
+    .addFields({
+      name: '戦績',
+      value:
+        userXp
+          .map(([userId, xp], i) => `${i + 1}位: <@${userId}> (${xp}XP)`)
+          .join('\n') || 'なし',
     });
+
+  // 試合結果
+  const gameResults = await prisma.gameResult.findMany({
+    where: {
+      eventId: event.id,
+    },
+    include: {
+      users: true,
+    },
+  });
+
+  // 試合結果のプルダウンを追加
+  const components =
+    new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+      new StringSelectMenuBuilder()
+        .setCustomId(`event_component_game_${event.id}`)
+        .setPlaceholder('確認したい試合結果を選択')
+        .setMinValues(1)
+        .setMaxValues(1)
+        .addOptions(
+          gameResults.map((game) => ({
+            label: `${game.name} (試合ID: ${game.id})`,
+            value: game.id.toString(),
+          })),
+        ),
+    );
 
   // イベントの出欠状況を表示
   await interaction.editReply({
     embeds: [embeds],
+    components: [components],
   });
 }
 
@@ -708,6 +764,10 @@ export async function onInteractionCreate(
               .map((userId) => `<@${userId}>`)
               .join('')} を❌欠席としてマークしました`,
           });
+        } else if (type === 'game' && interaction.isStringSelectMenu()) {
+          // 試合結果を表示
+          const gameId = parseInt(interaction.values[0]);
+          await showGameResults(interaction, gameId);
         }
       }
     } else if (interaction.isModalSubmit()) {
