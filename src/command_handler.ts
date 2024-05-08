@@ -267,7 +267,7 @@ async function showEvent(
     .setTitle(`🏁「${event.name}」イベントに参加してくれた人！`)
     .setURL(`https://discord.com/events/${config.guild_id}/${event.eventId}`)
     .setDescription(event.description ?? '説明なし')
-    .setThumbnail(event.coverImage)
+    .setImage(event.coverImage)
     .setColor('#ff8c00')
     .setFooter({
       text: `「/status user <名前>」でユーザーの過去イベントの参加状況を確認できます${
