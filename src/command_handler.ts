@@ -216,6 +216,7 @@ async function showEvent(
         const count = await prisma.userStat.count({
           where: {
             userId: stat.userId,
+            show: true,
           },
         });
         return [stat.userId, count] as const;
@@ -444,7 +445,13 @@ async function showUserStatus(
   });
 
   // 全イベント数を取得
-  const eventCount = await prisma.event.count();
+  const eventCount = await prisma.event.count({
+    where: {
+      endTime: {
+        not: null,
+      },
+    },
+  });
 
   // ユーザーを取得
   const user = await interaction.guild?.members.fetch(userId);
