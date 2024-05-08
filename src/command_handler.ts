@@ -253,6 +253,16 @@ async function showEvent(
     .filter(([, xp]) => xp > 0)
     .sort(([, a], [, b]) => b - a);
 
+  // 試合結果
+  const gameResults = await prisma.gameResult.findMany({
+    where: {
+      eventId: event.id,
+    },
+    include: {
+      users: true,
+    },
+  });
+
   const embeds = new EmbedBuilder()
     .setTitle(`🏁「${event.name}」イベントに参加してくれた人！`)
     .setURL(`https://discord.com/events/${config.guild_id}/${event.eventId}`)
@@ -260,7 +270,11 @@ async function showEvent(
     .setThumbnail(event.coverImage)
     .setColor('#ff8c00')
     .setFooter({
-      text: `「/status user <名前>」でユーザーの過去イベントの参加状況を確認できます\n下記プルダウンから各試合結果を確認できます\nイベントID: ${event.id}`,
+      text: `「/status user <名前>」でユーザーの過去イベントの参加状況を確認できます${
+        gameResults.length === 0
+          ? ''
+          : '\n下記プルダウンから各試合結果を確認できます'
+      }\nイベントID: ${event.id}`,
     })
     .addFields({
       name: '開催日時',
@@ -291,16 +305,6 @@ async function showEvent(
           .join('\n') || 'なし',
     });
 
-  // 試合結果
-  const gameResults = await prisma.gameResult.findMany({
-    where: {
-      eventId: event.id,
-    },
-    include: {
-      users: true,
-    },
-  });
-
   // 試合結果のプルダウンを追加
   const components =
     new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
@@ -320,7 +324,7 @@ async function showEvent(
   // イベントの出欠状況を表示
   await interaction.editReply({
     embeds: [embeds],
-    components: [components],
+    components: gameResults.length === 0 ? [] : [components],
   });
 }
 
