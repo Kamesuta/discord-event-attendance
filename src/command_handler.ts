@@ -5,13 +5,16 @@ import {
   EmbedBuilder,
   Interaction,
   ModalBuilder,
+  NonThreadGuildBasedChannel,
   PermissionFlagsBits,
   RepliableInteraction,
   SlashCommandBuilder,
   StringSelectMenuBuilder,
   TextInputBuilder,
   TextInputStyle,
+  ThreadChannel,
   UserSelectMenuBuilder,
+  Webhook,
 } from 'discord.js';
 import { client, prisma } from './index.js';
 import { config } from './utils/config.js';
@@ -51,6 +54,12 @@ const eventCommand = new SlashCommandBuilder()
         option
           .setName('event_id')
           .setDescription('イベントID (省略時は最新のイベントを表示)')
+          .setRequired(false),
+      )
+      .addStringOption((option) =>
+        option
+          .setName('message')
+          .setDescription('送信するメッセージ')
           .setRequired(false),
       ),
   )
@@ -194,9 +203,17 @@ export async function registerCommands(): Promise<void> {
 async function showEvent(
   interaction: RepliableInteraction,
   event: Event,
+  isWebhook = false,
+  message?: string,
 ): Promise<void> {
   // 集計
   await updateAttendanceTimeIfEventActive(event);
+
+  // Webhookを取得
+  const webhook = !isWebhook ? undefined : await getWebhook(interaction);
+  if (isWebhook && !webhook) {
+    return;
+  }
 
   // イベントの出欠状況を表示
   const stats = await prisma.userStat.findMany({
@@ -263,6 +280,7 @@ async function showEvent(
     },
   });
 
+  // Embedを作成
   const embeds = new EmbedBuilder()
     .setTitle(`🏁「${event.name}」イベントに参加してくれた人！`)
     .setURL(`https://discord.com/events/${config.guild_id}/${event.eventId}`)
@@ -321,11 +339,110 @@ async function showEvent(
         ),
     );
 
-  // イベントの出欠状況を表示
-  await interaction.editReply({
+  // 送信内容
+  const contents = {
     embeds: [embeds],
     components: gameResults.length === 0 ? [] : [components],
+  };
+
+  if (webhook) {
+    // Webhookで送信 (コマンド送信者の名前とアイコンを表示)
+    const memberDisplayName =
+      interaction.guild?.members.resolve(interaction.user.id)?.displayName ??
+      interaction.user.username;
+    const memberAvatar =
+      interaction.guild?.members
+        .resolve(interaction.user.id)
+        ?.displayAvatarURL() ?? interaction.user.displayAvatarURL();
+    await webhook.webhook.send({
+      threadId: webhook.thread?.id,
+      content: message,
+      username: memberDisplayName,
+      avatarURL: memberAvatar,
+      ...contents,
+    });
+
+    // 送信結果
+    await interaction.editReply({
+      content: 'イベント情報を公開しました',
+    });
+  } else {
+    // 通常送信
+    await interaction.editReply(contents);
+  }
+}
+
+/**
+ * Webhookを取得/作成します
+ * @param interaction インタラクション
+ * @returns Webhookのチャンネルとスレッド
+ */
+async function getWebhook(interaction: RepliableInteraction): Promise<
+  | {
+      webhook: Webhook;
+      channel: NonThreadGuildBasedChannel;
+      thread: ThreadChannel | undefined;
+    }
+  | undefined
+> {
+  // Webhook送信系の処理
+  const interactionChannel = interaction.channel;
+  if (!interactionChannel || interactionChannel.isDMBased()) {
+    await interaction.editReply({
+      content: 'このコマンドはサーバー内でのみ使用できます',
+    });
+    return;
+  }
+
+  let channel: NonThreadGuildBasedChannel;
+  let thread: ThreadChannel | undefined;
+  if (interactionChannel.isThread()) {
+    if (!interactionChannel.parent) {
+      await interaction.editReply({
+        content: '親チャンネルが見つかりませんでした',
+      });
+      return;
+    }
+    channel = interactionChannel.parent;
+    thread = interactionChannel;
+  } else {
+    channel = interactionChannel;
+  }
+
+  // Webhookを取得
+  const webhooks = await channel.fetchWebhooks().catch((error) => {
+    console.error('Webhookの取得に失敗しました:', error);
+    return;
   });
+  if (!webhooks) {
+    await interaction.editReply({
+      content: 'Webhookの取得に失敗しました。権限を確認してください',
+    });
+    return;
+  }
+  // 自身のWebhookを取得
+  let webhook = webhooks.find(
+    (webhook) => webhook.owner?.id === client.user?.id,
+  );
+  // Webhookがない場合は作成
+  if (!webhook) {
+    webhook = await channel
+      .createWebhook({
+        name: 'イベント通知用',
+        avatar: client.user?.displayAvatarURL(),
+      })
+      .catch((error) => {
+        console.error('Webhookの作成に失敗しました:', error);
+        return undefined;
+      });
+    if (!webhook) {
+      await interaction.editReply({
+        content: 'Webhookの作成に失敗しました',
+      });
+      return;
+    }
+  }
+  return { webhook, channel, thread };
 }
 
 async function reviewEvent(
@@ -512,7 +629,7 @@ export async function onInteractionCreate(
           // サブコマンドによって処理を分岐
           switch (interaction.options.getSubcommand()) {
             case 'show': {
-              await interaction.deferReply({ ephemeral: false });
+              await interaction.deferReply({ ephemeral: true });
               const eventId = interaction.options.getInteger('event_id');
               const event = await getEventFromId(eventId ?? undefined);
               if (!event) {
@@ -521,7 +638,8 @@ export async function onInteractionCreate(
                 });
                 return;
               }
-              await showEvent(interaction, event);
+              const message = interaction.options.getString('message');
+              await showEvent(interaction, event, true, message ?? undefined);
               break;
             }
             case 'review': {
