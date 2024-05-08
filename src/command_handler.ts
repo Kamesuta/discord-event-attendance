@@ -298,7 +298,7 @@ async function showEvent(
           .join('\n') || 'なし',
     })
     .addFields({
-      name: '戦績',
+      name: `戦績 (計${gameResults.length}試合)`,
       value:
         userXp
           .map(([userId, xp], i) => `${i + 1}位: <@${userId}> (${xp}XP)`)
