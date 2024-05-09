@@ -80,4 +80,6 @@ model UserGameResult {
 
   event Event      @relation(fields: [eventId], references: [id])
   game  GameResult @relation(fields: [gameId], references: [id])
+
+  @@unique([gameId, userId])
 }
