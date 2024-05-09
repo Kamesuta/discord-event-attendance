@@ -25,7 +25,7 @@ export async function createEvent(
   }
 
   try {
-    await prisma.event.create({
+    const event = await prisma.event.create({
       data: {
         eventId: scheduledEvent.id,
 
@@ -33,9 +33,12 @@ export async function createEvent(
         channelId: scheduledEvent.channel.id,
         description: scheduledEvent.description,
         coverImage: scheduledEvent.coverImageURL({ size: coverImageSize }),
+        scheduleTime: scheduledEvent.scheduledStartAt,
       },
     });
-    console.log(`イベントを作成しました: Name=${scheduledEvent.name}`);
+    console.log(
+      `イベントを作成しました: ID=${event.id}, Name=${scheduledEvent.name}`,
+    );
   } catch (error) {
     console.error('イベントの作成に失敗しました:', error);
   }
@@ -57,7 +60,7 @@ export async function startEvent(
   }
 
   try {
-    const attendance = await prisma.event.upsert({
+    const event = await prisma.event.upsert({
       where: {
         eventId: scheduledEvent.id,
       },
@@ -69,6 +72,7 @@ export async function startEvent(
         channelId: scheduledEvent.channel.id,
         description: scheduledEvent.description,
         coverImage: scheduledEvent.coverImageURL({ size: coverImageSize }),
+        scheduleTime: scheduledEvent.scheduledStartAt,
       },
       create: {
         eventId: scheduledEvent.id,
@@ -80,10 +84,11 @@ export async function startEvent(
         channelId: scheduledEvent.channel.id,
         description: scheduledEvent.description,
         coverImage: scheduledEvent.coverImageURL({ size: coverImageSize }),
+        scheduleTime: scheduledEvent.scheduledStartAt,
       },
     });
     console.log(
-      `イベントを開始しました: ID=${attendance.id}, Name=${scheduledEvent.name}`,
+      `イベントを開始しました: ID=${event.id}, Name=${scheduledEvent.name}`,
     );
 
     // VCに既に参加しているユーザーに対してもログを記録する
@@ -91,7 +96,7 @@ export async function startEvent(
     // ユーザー情報を初期化
     await prisma.userStat.createMany({
       data: members.map((member) => ({
-        eventId: attendance.id,
+        eventId: event.id,
         userId: member.id,
         duration: 0,
       })),
@@ -99,13 +104,13 @@ export async function startEvent(
     // VC参加ログを記録する
     await prisma.voiceLog.createMany({
       data: members.map((member) => ({
-        eventId: attendance.id,
+        eventId: event.id,
         userId: member.id,
         join: true,
       })),
     });
 
-    return attendance;
+    return event;
   } catch (error) {
     console.error('イベントの開始に失敗しました:', error);
   }
@@ -135,6 +140,7 @@ export async function updateEvent(
         channelId: scheduledEvent.channel.id,
         description: scheduledEvent.description,
         coverImage: scheduledEvent.coverImageURL({ size: coverImageSize }),
+        scheduleTime: scheduledEvent.scheduledStartAt,
       },
     });
     console.log(`イベント情報を更新しました: Name=${scheduledEvent.name}`);

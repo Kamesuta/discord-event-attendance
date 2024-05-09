@@ -20,9 +20,10 @@ model Event {
   description String? @db.VarChar(4096)
   coverImage  String? @db.VarChar(512)
 
-  active    Boolean   @default(false)
-  startTime DateTime?
-  endTime   DateTime?
+  active       Boolean   @default(false)
+  scheduleTime DateTime?
+  startTime    DateTime?
+  endTime      DateTime?
 
   voiceLogs      VoiceLog[]
   stats          UserStat[]

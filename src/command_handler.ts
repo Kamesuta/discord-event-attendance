@@ -200,6 +200,13 @@ export async function registerCommands(): Promise<void> {
   ]);
 }
 
+/**
+ * イベント情報を表示します
+ * @param interaction インタラクション
+ * @param event イベント
+ * @param isWebhook Webhookで送信するかどうか
+ * @param message Webhookで送信するメッセージ
+ */
 async function showEvent(
   interaction: RepliableInteraction,
   event: Event,
@@ -280,11 +287,25 @@ async function showEvent(
     },
   });
 
+  const dateToMention = (date: Date | null): string | null =>
+    date ? `<t:${Math.floor(date.getTime() / 1000)}:F>` : null;
+
+  // スケジュール
+  const schedule = event.startTime
+    ? `${dateToMention(event.startTime)} 〜 ${
+        dateToMention(event.endTime) ?? '未定'
+      } ${duration}`
+    : dateToMention(event.scheduleTime) ?? '未定';
+
   // Embedを作成
   const embeds = new EmbedBuilder()
-    .setTitle(`🏁「${event.name}」イベントに参加してくれた人！`)
+    .setTitle(
+      event.endTime
+        ? `🏁「${event.name}」イベントに参加してくれた人！`
+        : `🏁「${event.name}」イベントの予定！`,
+    )
     .setURL(`https://discord.com/events/${config.guild_id}/${event.eventId}`)
-    .setDescription(event.description ?? '説明なし')
+    .setDescription(event.description ? event.description : '説明なし')
     .setImage(event.coverImage)
     .setColor('#ff8c00')
     .setFooter({
@@ -296,32 +317,45 @@ async function showEvent(
     })
     .addFields({
       name: '開催日時',
-      value: `${event.startTime?.toLocaleString() ?? '未定'} 〜 ${
-        event.endTime?.toLocaleString() ?? '未定'
-      } ${duration}`,
-    })
-    .addFields({
-      name: '参加者 (観戦していただけの人は欠席扱いです)',
-      value:
-        // 公開モードの場合は参加者のみ表示
-        stats
-          .filter((stat) => stat.show)
-          .map((stat) => {
-            const count = userCount[stat.userId];
-            const memo = stat.memo ? ` ${stat.memo}` : '';
-            const countText =
-              count === 1 ? '(🆕 初参加！)' : ` (${count}回目)${memo}`;
-            return `<@${stat.userId}> ${countText}`;
-          })
-          .join('\n') || 'なし',
-    })
-    .addFields({
-      name: `戦績 (計${gameResults.length}試合)`,
-      value:
-        userXp
-          .map(([userId, xp], i) => `${i + 1}位: <@${userId}> (${xp}XP)`)
-          .join('\n') || 'なし',
+      value: schedule,
     });
+
+  if (event.endTime) {
+    embeds
+      .addFields({
+        name: '参加者 (観戦していただけの人は欠席扱いです)',
+        value:
+          // 公開モードの場合は参加者のみ表示
+          stats
+            .filter((stat) => stat.show)
+            .map((stat) => {
+              const count = userCount[stat.userId];
+              const memo = stat.memo ? ` ${stat.memo}` : '';
+              const countText =
+                count === 1 ? '(🆕 初参加！)' : ` (${count}回目)${memo}`;
+              return `<@${stat.userId}> ${countText}`;
+            })
+            .join('\n') || 'なし',
+      })
+      .addFields({
+        name: `戦績 (計${gameResults.length}試合)`,
+        value:
+          userXp
+            .map(([userId, xp], i) => `${i + 1}位: <@${userId}> (${xp}XP)`)
+            .join('\n') || 'なし',
+      });
+  } else {
+    // イベントが終了していない場合は、イベント終了後に参加者が表示される旨を記載
+    embeds.addFields({
+      name: '参加者/戦績',
+      value: `イベント終了後、ここに参加者が表示されます\n参加したい人は[「興味あり」](https://discord.com/events/${config.guild_id}/${event.eventId})を押すと特殊な通知を受け取れます！`,
+    });
+
+    // メッセージにもリンクを乗せる
+    if (message) {
+      message += `\n\n[↓「興味あり」 をクリックしていただけるとモチベ上がります！](https://discord.com/events/${config.guild_id}/${event.eventId})`;
+    }
+  }
 
   // 試合結果のプルダウンを追加
   const components =
@@ -341,6 +375,7 @@ async function showEvent(
 
   // 送信内容
   const contents = {
+    content: message,
     embeds: [embeds],
     components: gameResults.length === 0 ? [] : [components],
   };
@@ -356,7 +391,6 @@ async function showEvent(
         ?.displayAvatarURL() ?? interaction.user.displayAvatarURL();
     await webhook.webhook.send({
       threadId: webhook.thread?.id,
-      content: message,
       username: memberDisplayName,
       avatarURL: memberAvatar,
       ...contents,
@@ -639,7 +673,12 @@ export async function onInteractionCreate(
                 return;
               }
               const message = interaction.options.getString('message');
-              await showEvent(interaction, event, true, message ?? undefined);
+              await showEvent(
+                interaction,
+                event,
+                !!message,
+                message ?? undefined,
+              );
               break;
             }
             case 'review': {
