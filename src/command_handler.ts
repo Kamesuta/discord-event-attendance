@@ -4,6 +4,7 @@ import {
   ContextMenuCommandBuilder,
   EmbedBuilder,
   Interaction,
+  Message,
   ModalBuilder,
   NonThreadGuildBasedChannel,
   PermissionFlagsBits,
@@ -60,6 +61,12 @@ const eventCommand = new SlashCommandBuilder()
         option
           .setName('message')
           .setDescription('送信するメッセージ')
+          .setRequired(false),
+      )
+      .addStringOption((option) =>
+        option
+          .setName('invite_link_message')
+          .setDescription('イベントリンクに表示するメッセージ')
           .setRequired(false),
       ),
   )
@@ -183,6 +190,11 @@ const contextSetMemoCommand = new ContextMenuCommandBuilder()
   .setName('メモを設定')
   .setDefaultMemberPermissions(PermissionFlagsBits.ManageEvents);
 
+const contextUpdateEventCommand = new ContextMenuCommandBuilder()
+  .setType(ApplicationCommandType.Message)
+  .setName('イベント情報を更新')
+  .setDefaultMemberPermissions(PermissionFlagsBits.ManageEvents);
+
 /**
  * コマンドを登録します
  */
@@ -197,6 +209,7 @@ export async function registerCommands(): Promise<void> {
     contextMarkHideCommand,
     contextMarkClearCommand,
     contextSetMemoCommand,
+    contextUpdateEventCommand,
   ]);
 }
 
@@ -206,12 +219,16 @@ export async function registerCommands(): Promise<void> {
  * @param event イベント
  * @param isWebhook Webhookで送信するかどうか
  * @param message Webhookで送信するメッセージ
+ * @param eventLinkMessage イベントリンクに表示するメッセージ
+ * @param editMessage 編集するメッセージ
  */
 async function showEvent(
   interaction: RepliableInteraction,
   event: Event,
   isWebhook = false,
   message?: string,
+  eventLinkMessage?: string,
+  editMessage?: Message,
 ): Promise<void> {
   // 集計
   await updateAttendanceTimeIfEventActive(event);
@@ -352,8 +369,8 @@ async function showEvent(
     });
 
     // メッセージにもリンクを乗せる
-    if (message) {
-      message += `\n\n[↓「興味あり」 をクリックしていただけるとモチベ上がります！](https://discord.com/events/${config.guild_id}/${event.eventId})`;
+    if (message && eventLinkMessage) {
+      message += `\n\n[${eventLinkMessage}](https://discord.com/events/${config.guild_id}/${event.eventId})`;
     }
   }
 
@@ -389,12 +406,20 @@ async function showEvent(
       interaction.guild?.members
         .resolve(interaction.user.id)
         ?.displayAvatarURL() ?? interaction.user.displayAvatarURL();
-    await webhook.webhook.send({
-      threadId: webhook.thread?.id,
-      username: memberDisplayName,
-      avatarURL: memberAvatar,
-      ...contents,
-    });
+    if (editMessage) {
+      // 既存メッセージを編集
+      await webhook.webhook.editMessage(editMessage, {
+        embeds: [embeds],
+        components: gameResults.length === 0 ? [] : [components],
+      });
+    } else {
+      await webhook.webhook.send({
+        threadId: webhook.thread?.id,
+        username: memberDisplayName,
+        avatarURL: memberAvatar,
+        ...contents,
+      });
+    }
 
     // 送信結果
     await interaction.editReply({
@@ -570,6 +595,18 @@ async function setShowStats(
   });
 }
 
+async function getEvent(eventId: string | undefined): Promise<Event | null> {
+  return await prisma.event.findFirst({
+    where: {
+      eventId,
+    },
+    orderBy: {
+      startTime: 'desc',
+    },
+    take: 1,
+  });
+}
+
 async function getEventFromId(
   eventId: number | undefined,
 ): Promise<Event | null> {
@@ -673,11 +710,15 @@ export async function onInteractionCreate(
                 return;
               }
               const message = interaction.options.getString('message');
+              const eventLinkMessage = interaction.options.getString(
+                'invite_link_message',
+              );
               await showEvent(
                 interaction,
                 event,
                 !!message,
                 message ?? undefined,
+                eventLinkMessage ?? undefined,
               );
               break;
             }
@@ -944,6 +985,54 @@ export async function onInteractionCreate(
                   textInput,
                 ),
               ),
+          );
+          break;
+        }
+      }
+    } else if (interaction.isMessageContextMenuCommand()) {
+      // コマンドによって処理を分岐
+      switch (interaction.commandName) {
+        // イベント情報を更新
+        case contextUpdateEventCommand.name: {
+          await interaction.deferReply({ ephemeral: true });
+          // EmbedのURLを解析
+          const url = interaction.targetMessage.embeds[0]?.url;
+          if (!url) {
+            await interaction.editReply({
+              content: 'イベントお知らせメッセージに対してのみ使用できます',
+            });
+            return;
+          }
+          const match = url.match(/\/(\d+)$/);
+          if (!match) {
+            await interaction.editReply({
+              content: 'イベントお知らせメッセージのURLが不正です',
+            });
+            return;
+          }
+          const scheduledEventId = match[1];
+          // ScheduledEventが取得できれば更新
+          const scheduledEvent =
+            await interaction.guild?.scheduledEvents.fetch(scheduledEventId);
+          if (scheduledEvent) {
+            await updateEvent(scheduledEvent);
+          }
+          // イベント情報を取得
+          const event = await getEvent(scheduledEventId);
+          if (!event) {
+            await interaction.editReply({
+              content: 'イベントが見つかりませんでした',
+            });
+            return;
+          }
+          // イベント情報を編集
+          await showEvent(
+            interaction,
+            event,
+            true,
+            interaction.targetMessage.content,
+            undefined,
+            interaction.targetMessage,
           );
           break;
         }
