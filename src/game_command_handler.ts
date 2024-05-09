@@ -67,6 +67,30 @@ export function createGameCommand(
         .setDescription('8位のユーザー')
         .setRequired(false),
     )
+    .addUserOption((option) =>
+      option
+        .setName('rank9')
+        .setDescription('9位のユーザー')
+        .setRequired(false),
+    )
+    .addUserOption((option) =>
+      option
+        .setName('rank10')
+        .setDescription('10位のユーザー')
+        .setRequired(false),
+    )
+    .addUserOption((option) =>
+      option
+        .setName('rank11')
+        .setDescription('11位のユーザー')
+        .setRequired(false),
+    )
+    .addUserOption((option) =>
+      option
+        .setName('rank12')
+        .setDescription('12位のユーザー')
+        .setRequired(false),
+    )
     .addIntegerOption((option) =>
       option
         .setName('event_id')
@@ -90,6 +114,20 @@ export function createGameCommand(
         .setName('edit_id')
         .setDescription('編集する試合ID')
         .setRequired(false),
+    )
+    .addStringOption((option) =>
+      option
+        .setName('type')
+        .setDescription('成績のタイプ')
+        .setRequired(false)
+        .addChoices({
+          name: '個人戦',
+          value: 'individual',
+        })
+        .addChoices({
+          name: '参加賞',
+          value: 'participation',
+        }),
     );
 }
 
@@ -105,16 +143,28 @@ export async function addGameResult(
   // ゲームの名前を取得
   const gameName = interaction.options.getString('game_name') ?? 'ゲーム';
 
-  // ランク→XPテーブル
-  const rankXpTable = [100, 75, 50, 40, 30, 20, 10, 5];
-
   // XP倍率を取得
   const xpMultiplier = interaction.options.getNumber('xp_multiplier') ?? 1;
 
   // ランクを取得
-  const ranks = [...Array(8).keys()]
+  const ranks = [...Array(12).keys()]
     .map((i) => interaction.options.getUser(`rank${i + 1}`))
     .filter((item): item is NonNullable<typeof item> => item !== null);
+
+  // タイプを取得
+  const type = (interaction.options.getString('type') ?? 'individual') as
+    | 'individual'
+    | 'participation';
+
+  // 順位&XP配分マップ
+  const xpMap = {
+    individual: [100, 75, 50, 40, 30, 20, 10, 5, 4, 3, 2, 1],
+    participation: [10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10],
+  };
+  const rankMap = {
+    individual: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    participation: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  };
 
   // URLを取得
   const url = interaction.options.getString('url');
@@ -154,8 +204,8 @@ export async function addGameResult(
       eventId: event.id,
       userId: rank.id,
       gameId: game.id,
-      rank: i + 1,
-      xp: rankXpTable[i] * xpMultiplier,
+      rank: rankMap[type][i],
+      xp: xpMap[type][i] * xpMultiplier,
     })),
   });
 
@@ -169,8 +219,8 @@ export async function addGameResult(
         ranks
           .map(
             (rank, i) =>
-              `${i + 1}位: <@${rank.id}> (${Math.floor(
-                rankXpTable[i] * xpMultiplier,
+              `${rankMap[type][i]}位: <@${rank.id}> (${Math.floor(
+                xpMap[type][i] * xpMultiplier,
               )}XP)`,
           )
           .join('\n') || 'なし',
