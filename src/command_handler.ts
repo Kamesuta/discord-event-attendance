@@ -526,12 +526,7 @@ async function reviewEvent(
     .setTitle(`🏁「${event.name}」イベントに参加してくれた人を選択してください`)
     .setURL(`https://discord.com/events/${config.guild_id}/${event.eventId}`)
     .setDescription(
-      '出席、欠席のステータスです。\n下のプルダウンからステータスを変更できます。',
-    )
-    .setColor('#ff8c00')
-    .addFields({
-      name: '参加者',
-      value:
+      '出席、欠席のステータスです。\n下のプルダウンからステータスを変更できます。\n\n' +
         // 非公開モードの場合は全員表示 (現在のステータスも表示)
         stats
           .map((stat) => {
@@ -541,7 +536,8 @@ async function reviewEvent(
             return `${mark} <@${stat.userId}>: ${duration}分${memo}`;
           })
           .join('\n') || 'なし',
-    });
+    )
+    .setColor('#ff8c00');
 
   const components = [
     new ActionRowBuilder<UserSelectMenuBuilder>().addComponents(
