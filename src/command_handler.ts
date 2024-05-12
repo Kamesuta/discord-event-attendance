@@ -338,29 +338,33 @@ async function showEvent(
     });
 
   if (event.endTime) {
-    embeds
-      .addFields({
-        name: '参加者 (観戦していただけの人は欠席扱いです)',
-        value:
-          // 公開モードの場合は参加者のみ表示
-          stats
-            .filter((stat) => stat.show)
-            .map((stat) => {
-              const count = userCount[stat.userId];
-              const memo = stat.memo ? ` ${stat.memo}` : '';
-              const countText =
-                count === 1 ? '(🆕 初参加！)' : ` (${count}回目)${memo}`;
-              return `<@${stat.userId}> ${countText}`;
-            })
-            .join('\n') || 'なし',
-      })
-      .addFields({
-        name: `戦績 (計${gameResults.length}試合)`,
-        value:
-          userXp
-            .map(([userId, xp], i) => `${i + 1}位: <@${userId}> (${xp}XP)`)
-            .join('\n') || 'なし',
+    splitStrings(
+      stats
+        .filter((stat) => stat.show)
+        .map((stat) => {
+          const count = userCount[stat.userId];
+          const memo = stat.memo ? ` ${stat.memo}` : '';
+          const countText =
+            count === 1 ? '(🆕 初参加！)' : ` (${count}回目)${memo}`;
+          return `<@${stat.userId}> ${countText}`;
+        }),
+      1024,
+    )
+      .filter((line) => line.length > 0)
+      .forEach((line, i) => {
+        embeds.addFields({
+          name: i === 0 ? '参加者' : '\u200b',
+          value: line,
+        });
       });
+
+    embeds.addFields({
+      name: `戦績 (計${gameResults.length}試合)`,
+      value:
+        userXp
+          .map(([userId, xp], i) => `${i + 1}位: <@${userId}> (${xp}XP)`)
+          .join('\n') || 'なし',
+    });
   } else {
     // イベントが終了していない場合は、イベント終了後に参加者が表示される旨を記載
     embeds.addFields({
@@ -429,6 +433,31 @@ async function showEvent(
     // 通常送信
     await interaction.editReply(contents);
   }
+}
+
+/**
+ * イベントを開始します
+ * @param lines メッセージを分割する行
+ * @param maxLength 1メッセージの最大文字数
+ * @param delimiter メッセージの区切り文字
+ * @returns 分割されたメッセージ
+ */
+function splitStrings(
+  lines: string[],
+  maxLength: number,
+  delimiter = '\n',
+): string[] {
+  return lines.reduce(
+    (acc, name) => {
+      if (acc[acc.length - 1].length + name.length < maxLength) {
+        acc[acc.length - 1] += `${name}${delimiter}`;
+      } else {
+        acc.push(`${name}${delimiter}`);
+      }
+      return acc;
+    },
+    [''],
+  );
 }
 
 /**
