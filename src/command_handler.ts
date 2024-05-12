@@ -548,7 +548,10 @@ async function reviewEvent(
         .setMaxValues(25)
         // まだステータスが未設定のユーザーをデフォルトで選択
         .setDefaultUsers(
-          stats.filter((stat) => stat.show === null).map((stat) => stat.userId),
+          stats
+            .filter((stat) => stat.show === null)
+            .map((stat) => stat.userId)
+            .slice(0, 25),
         ),
     ),
     // 除外プルダウン
@@ -560,7 +563,10 @@ async function reviewEvent(
         .setMaxValues(25)
         // まだステータスが未設定のユーザーをデフォルトで選択
         .setDefaultUsers(
-          stats.filter((stat) => stat.show === null).map((stat) => stat.userId),
+          stats
+            .filter((stat) => stat.show === null)
+            .map((stat) => stat.userId)
+            .slice(0, 25),
         ),
     ),
   ];
