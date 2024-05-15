@@ -184,6 +184,17 @@ export async function addGameResult(
             name: gameName,
             url,
             image: image?.proxyURL,
+            users: {
+              deleteMany: {},
+              createMany: {
+                data: ranks.map((rank, i) => ({
+                  eventId: event.id,
+                  userId: rank.id,
+                  rank: rankMap[type][i],
+                  xp: xpMap[type][i] * xpMultiplier,
+                })),
+              },
+            },
           },
         })
       : await prisma.gameResult.create({
@@ -192,22 +203,21 @@ export async function addGameResult(
             name: gameName,
             url,
             image: image?.proxyURL,
+            users: {
+              createMany: {
+                data: ranks.map((rank, i) => ({
+                  eventId: event.id,
+                  userId: rank.id,
+                  rank: rankMap[type][i],
+                  xp: xpMap[type][i] * xpMultiplier,
+                })),
+              },
+            },
           },
         });
 
   // 回目を取得
   const resultCount = await getGameResultNumbering(event.id, game.id);
-
-  // ランクを保存
-  await prisma.userGameResult.createMany({
-    data: ranks.map((rank, i) => ({
-      eventId: event.id,
-      userId: rank.id,
-      gameId: game.id,
-      rank: rankMap[type][i],
-      xp: xpMap[type][i] * xpMultiplier,
-    })),
-  });
 
   // 結果を表示
   const embeds = new EmbedBuilder()
