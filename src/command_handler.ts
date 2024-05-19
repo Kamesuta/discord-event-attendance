@@ -243,10 +243,7 @@ async function showEvent(
   const stats = await prisma.userStat.findMany({
     where: {
       eventId: event.id,
-      duration: {
-        // 必要接続分数を満たしているユーザーのみを抽出する (config.required_time分以上参加している)
-        gt: config.required_time * 60 * 1000,
-      },
+      show: true,
     },
   });
 
@@ -544,10 +541,18 @@ async function reviewEvent(
   const stats = await prisma.userStat.findMany({
     where: {
       eventId: event.id,
-      duration: {
-        // 必要接続分数を満たしているユーザーのみを抽出する (config.required_time分以上参加している)
-        gt: config.required_time * 60 * 1000,
-      },
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      OR: [
+        {
+          show: true,
+        },
+        {
+          duration: {
+            // 必要接続分数を満たしているユーザーのみを抽出する (config.required_time分以上参加している)
+            gt: config.required_time * 60 * 1000,
+          },
+        },
+      ],
     },
   });
 
@@ -609,21 +614,30 @@ async function reviewEvent(
 
 async function setShowStats(
   event: Event,
-  userIds: string[] | undefined,
+  userIds: string[],
   isShow: boolean | null,
 ): Promise<void> {
   // ユーザーの出欠状況を更新
-  await prisma.userStat.updateMany({
-    where: {
-      eventId: event.id,
-      userId: {
-        in: userIds,
+  const query = userIds.map((userId) =>
+    prisma.userStat.upsert({
+      where: {
+        id: {
+          eventId: event.id,
+          userId,
+        },
       },
-    },
-    data: {
-      show: isShow,
-    },
-  });
+      update: {
+        show: isShow,
+      },
+      create: {
+        eventId: event.id,
+        userId,
+        show: isShow,
+        duration: 0,
+      },
+    }),
+  );
+  await prisma.$transaction(query);
 }
 
 async function getEvent(eventId: string | undefined): Promise<Event | null> {
