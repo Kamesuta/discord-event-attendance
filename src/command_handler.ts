@@ -709,9 +709,11 @@ async function showUserStatus(
     });
   });
 
-  embeds.addFields({
-    name: 'ゲーム戦績',
-    value: await getUserGameResults(userId),
+  splitStrings(await getUserGameResults(userId), 1024).forEach((line, i) => {
+    embeds.addFields({
+      name: i === 0 ? 'ゲーム戦績' : '\u200b',
+      value: line,
+    });
   });
 
   await interaction.editReply({

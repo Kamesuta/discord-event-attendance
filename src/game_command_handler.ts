@@ -320,7 +320,7 @@ export async function showGameResults(
  * @param userId ユーザーID
  * @returns 戦績
  */
-export async function getUserGameResults(userId: string): Promise<string> {
+export async function getUserGameResults(userId: string): Promise<string[]> {
   // 戦績
   const gameResults = await prisma.userGameResult.findMany({
     where: {
@@ -335,16 +335,12 @@ export async function getUserGameResults(userId: string): Promise<string> {
     },
   });
 
-  return (
-    gameResults
-      .flatMap((result) => {
-        if (!result.event || !result.game) return [];
-        return [
-          `- [${result.event.name}](https://discord.com/events/${config.guild_id}/${result.event.eventId}) ${result.game.name}(ID:${result.game.id}) ${result.rank}位`,
-        ];
-      })
-      .join('\n') || 'なし'
-  );
+  return gameResults.flatMap((result) => {
+    if (!result.event || !result.game) return [];
+    return [
+      `- [${result.event.name}](https://discord.com/events/${config.guild_id}/${result.event.eventId}) ${result.game.name}(ID:${result.game.id}) ${result.rank}位`,
+    ];
+  });
 }
 
 /**
