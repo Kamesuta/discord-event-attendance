@@ -694,21 +694,25 @@ async function showUserStatus(
     .addFields({
       name: '参加イベント数',
       value: `${stats.length} / ${eventCount} 回`,
-    })
-    .addFields({
-      name: '参加イベントリスト',
-      value:
-        stats
-          .map((stat) => {
-            if (!stat.event) return '- 不明';
-            return `- [${stat.event.name}](https://discord.com/events/${config.guild_id}/${stat.event.eventId})`;
-          })
-          .join('\n') || 'なし',
-    })
-    .addFields({
-      name: 'ゲーム戦績',
-      value: await getUserGameResults(userId),
     });
+
+  splitStrings(
+    stats.map((stat) => {
+      if (!stat.event) return '- 不明';
+      return `- [${stat.event.name}](https://discord.com/events/${config.guild_id}/${stat.event.eventId})`;
+    }),
+    1024,
+  ).forEach((line, i) => {
+    embeds.addFields({
+      name: i === 0 ? '参加イベントリスト' : '\u200b',
+      value: line,
+    });
+  });
+
+  embeds.addFields({
+    name: 'ゲーム戦績',
+    value: await getUserGameResults(userId),
+  });
 
   await interaction.editReply({
     embeds: [embeds],
