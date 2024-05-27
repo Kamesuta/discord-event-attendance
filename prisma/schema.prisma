@@ -76,7 +76,8 @@ model UserGameResult {
   userId  String
   gameId  Int
   rank    Int
-  xp      Int
+  xp      Float
+  group   String?
 
   event Event      @relation(fields: [eventId], references: [id])
   game  GameResult @relation(fields: [gameId], references: [id])
