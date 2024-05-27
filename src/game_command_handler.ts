@@ -16,119 +16,133 @@ import { config } from './utils/config.js';
 export function createGameCommand(
   subcommand: SlashCommandSubcommandBuilder,
 ): SlashCommandSubcommandBuilder {
-  return subcommand
-    .setName('game')
-    .setDescription('ゲームの勝敗を記録します')
-    .addStringOption((option) =>
-      option.setName('game_name').setDescription('ゲーム名').setRequired(true),
-    )
-    .addUserOption((option) =>
-      option.setName('rank1').setDescription('1位のユーザー').setRequired(true),
-    )
-    .addUserOption((option) =>
-      option
-        .setName('rank2')
-        .setDescription('2位のユーザー')
-        .setRequired(false),
-    )
-    .addUserOption((option) =>
-      option
-        .setName('rank3')
-        .setDescription('3位のユーザー')
-        .setRequired(false),
-    )
-    .addUserOption((option) =>
-      option
-        .setName('rank4')
-        .setDescription('4位のユーザー')
-        .setRequired(false),
-    )
-    .addUserOption((option) =>
-      option
-        .setName('rank5')
-        .setDescription('5位のユーザー')
-        .setRequired(false),
-    )
-    .addUserOption((option) =>
-      option
-        .setName('rank6')
-        .setDescription('6位のユーザー')
-        .setRequired(false),
-    )
-    .addUserOption((option) =>
-      option
-        .setName('rank7')
-        .setDescription('7位のユーザー')
-        .setRequired(false),
-    )
-    .addUserOption((option) =>
-      option
-        .setName('rank8')
-        .setDescription('8位のユーザー')
-        .setRequired(false),
-    )
-    .addUserOption((option) =>
-      option
-        .setName('rank9')
-        .setDescription('9位のユーザー')
-        .setRequired(false),
-    )
-    .addUserOption((option) =>
-      option
-        .setName('rank10')
-        .setDescription('10位のユーザー')
-        .setRequired(false),
-    )
-    .addUserOption((option) =>
-      option
-        .setName('rank11')
-        .setDescription('11位のユーザー')
-        .setRequired(false),
-    )
-    .addUserOption((option) =>
-      option
-        .setName('rank12')
-        .setDescription('12位のユーザー')
-        .setRequired(false),
-    )
-    .addIntegerOption((option) =>
-      option
-        .setName('event_id')
-        .setDescription('イベントID (省略時は最新のイベントを操作)')
-        .setRequired(false),
-    )
-    .addStringOption((option) =>
-      option.setName('url').setDescription('試合のURL').setRequired(false),
-    )
-    .addAttachmentOption((option) =>
-      option.setName('image').setDescription('試合の画像').setRequired(false),
-    )
-    .addNumberOption((option) =>
-      option
-        .setName('xp_multiplier')
-        .setDescription('XP倍率')
-        .setRequired(false),
-    )
-    .addIntegerOption((option) =>
-      option
-        .setName('edit_id')
-        .setDescription('編集する試合ID')
-        .setRequired(false),
-    )
-    .addStringOption((option) =>
-      option
-        .setName('type')
-        .setDescription('成績のタイプ')
-        .setRequired(false)
-        .addChoices({
-          name: '個人戦',
-          value: 'individual',
-        })
-        .addChoices({
-          name: '参加賞',
-          value: 'participation',
-        }),
-    );
+  return (
+    subcommand
+      .setName('game')
+      .setDescription('ゲームの勝敗を記録します')
+      .addStringOption((option) =>
+        option
+          .setName('game_name')
+          .setDescription('ゲーム名')
+          .setRequired(false),
+      )
+      .addUserOption((option) =>
+        option
+          .setName('rank1')
+          .setDescription('1位のユーザー')
+          .setRequired(false),
+      )
+      .addUserOption((option) =>
+        option
+          .setName('rank2')
+          .setDescription('2位のユーザー')
+          .setRequired(false),
+      )
+      .addUserOption((option) =>
+        option
+          .setName('rank3')
+          .setDescription('3位のユーザー')
+          .setRequired(false),
+      )
+      .addUserOption((option) =>
+        option
+          .setName('rank4')
+          .setDescription('4位のユーザー')
+          .setRequired(false),
+      )
+      .addUserOption((option) =>
+        option
+          .setName('rank5')
+          .setDescription('5位のユーザー')
+          .setRequired(false),
+      )
+      .addUserOption((option) =>
+        option
+          .setName('rank6')
+          .setDescription('6位のユーザー')
+          .setRequired(false),
+      )
+      .addUserOption((option) =>
+        option
+          .setName('rank7')
+          .setDescription('7位のユーザー')
+          .setRequired(false),
+      )
+      .addUserOption((option) =>
+        option
+          .setName('rank8')
+          .setDescription('8位のユーザー')
+          .setRequired(false),
+      )
+      .addUserOption((option) =>
+        option
+          .setName('rank9')
+          .setDescription('9位のユーザー')
+          .setRequired(false),
+      )
+      .addUserOption((option) =>
+        option
+          .setName('rank10')
+          .setDescription('10位のユーザー')
+          .setRequired(false),
+      )
+      .addUserOption((option) =>
+        option
+          .setName('rank11')
+          .setDescription('11位のユーザー')
+          .setRequired(false),
+      )
+      .addUserOption((option) =>
+        option
+          .setName('rank12')
+          .setDescription('12位のユーザー')
+          .setRequired(false),
+      )
+      // .addIntegerOption((option) =>
+      //   option
+      //     .setName('event_id')
+      //     .setDescription('イベントID (省略時は最新のイベントを操作)')
+      //     .setRequired(false),
+      // )
+      .addStringOption((option) =>
+        option.setName('url').setDescription('試合のURL').setRequired(false),
+      )
+      .addAttachmentOption((option) =>
+        option.setName('image').setDescription('試合の画像').setRequired(false),
+      )
+      .addBooleanOption((option) =>
+        option
+          .setName('delete_image')
+          .setDescription('試合の画像を削除するか')
+          .setRequired(false),
+      )
+      .addNumberOption((option) =>
+        option
+          .setName('xp_multiplier')
+          .setDescription('XP倍率')
+          .setRequired(false),
+      )
+      .addIntegerOption((option) =>
+        option
+          .setName('game_id')
+          .setDescription('編集する試合ID')
+          .setRequired(false),
+      )
+      .addStringOption((option) =>
+        option
+          .setName('type')
+          .setDescription('成績のタイプ')
+          .setRequired(false)
+          .addChoices({
+            name: '個人戦',
+            value: 'individual',
+          })
+          .addChoices({
+            name: '参加賞',
+            value: 'participation',
+          }),
+      )
+  );
 }
 
 /**
@@ -140,16 +154,22 @@ export async function addGameResult(
   interaction: ChatInputCommandInteraction,
   event: Event,
 ): Promise<void> {
+  // 編集する試合IDを取得
+  const editGameId = interaction.options.getInteger('game_id');
+  const editGame = editGameId
+    ? await prisma.gameResult.findUnique({
+        where: {
+          id: editGameId,
+        },
+      })
+    : undefined;
+  const eventId = editGame?.eventId ?? event.id;
+
   // ゲームの名前を取得
-  const gameName = interaction.options.getString('game_name') ?? 'ゲーム';
+  const gameName = interaction.options.getString('game_name') ?? undefined;
 
   // XP倍率を取得
   const xpMultiplier = interaction.options.getNumber('xp_multiplier') ?? 1;
-
-  // ランクを取得
-  const ranks = [...Array(12).keys()]
-    .map((i) => interaction.options.getUser(`rank${i + 1}`))
-    .filter((item): item is NonNullable<typeof item> => item !== null);
 
   // タイプを取得
   const type = (interaction.options.getString('type') ?? 'individual') as
@@ -166,12 +186,30 @@ export async function addGameResult(
     participation: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
   };
 
-  // URLを取得
-  const url = interaction.options.getString('url');
-  const image = interaction.options.getAttachment('image');
+  // ランクを取得
+  const ranks = [...Array(12).keys()]
+    .map((i) => interaction.options.getUser(`rank${i + 1}`))
+    .filter((item): item is NonNullable<typeof item> => item !== null);
+  const users =
+    ranks.length === 0
+      ? undefined
+      : {
+          deleteMany: {},
+          createMany: {
+            data: ranks.map((rank, i) => ({
+              eventId,
+              userId: rank.id,
+              rank: rankMap[type][i],
+              xp: xpMap[type][i] * xpMultiplier,
+            })),
+          },
+        };
 
-  // 編集する試合IDを取得
-  const editGameId = interaction.options.getInteger('edit_id');
+  // URLを取得
+  const url = interaction.options.getString('url') ?? undefined;
+  const image =
+    interaction.options.getAttachment('image')?.proxyURL ?? undefined;
+  const deleteImage = interaction.options.getBoolean('delete_image') ?? false;
 
   // 試合の結果を記録
   const game =
@@ -182,56 +220,49 @@ export async function addGameResult(
           },
           data: {
             name: gameName,
-            url,
-            image: image?.proxyURL,
+            url: url === 'null' ? null : url,
+            image: deleteImage ? null : image,
+            users,
+          },
+          include: {
             users: {
-              deleteMany: {},
-              createMany: {
-                data: ranks.map((rank, i) => ({
-                  eventId: event.id,
-                  userId: rank.id,
-                  rank: rankMap[type][i],
-                  xp: xpMap[type][i] * xpMultiplier,
-                })),
+              orderBy: {
+                rank: 'asc',
               },
             },
           },
         })
       : await prisma.gameResult.create({
           data: {
-            eventId: event.id,
-            name: gameName,
+            eventId,
+            name: gameName ?? '試合',
             url,
-            image: image?.proxyURL,
+            image,
+            users,
+          },
+          include: {
             users: {
-              createMany: {
-                data: ranks.map((rank, i) => ({
-                  eventId: event.id,
-                  userId: rank.id,
-                  rank: rankMap[type][i],
-                  xp: xpMap[type][i] * xpMultiplier,
-                })),
+              orderBy: {
+                rank: 'asc',
               },
             },
           },
         });
 
   // 回目を取得
-  const resultCount = await getGameResultNumbering(event.id, game.id);
+  const resultCount = await getGameResultNumbering(eventId, game.id);
 
   // 結果を表示
   const embeds = new EmbedBuilder()
-    .setTitle(`🎮「${gameName}」の結果が記録されました`)
+    .setTitle(`🎮「${game.name}」の結果が記録されました`)
     .setDescription(`第 ${resultCount} 回目の試合結果です`)
     .addFields({
       name: '順位',
       value:
-        ranks
+        game.users
           .map(
-            (rank, i) =>
-              `${rankMap[type][i]}位: <@${rank.id}> (${Math.floor(
-                xpMap[type][i] * xpMultiplier,
-              )}XP)`,
+            (user) =>
+              `${user.rank}位: <@${user.userId}> (${Math.floor(user.xp)}XP)`,
           )
           .join('\n') || 'なし',
     })
@@ -240,11 +271,11 @@ export async function addGameResult(
     })
     .setColor('#ff8c00');
 
-  if (url) {
-    embeds.setURL(url);
+  if (game.url) {
+    embeds.setURL(game.url);
   }
-  if (image) {
-    embeds.setImage(image.proxyURL);
+  if (game.image) {
+    embeds.setImage(game.image);
   }
 
   await interaction.editReply({
@@ -268,7 +299,11 @@ export async function showGameResults(
     },
     include: {
       event: true,
-      users: true,
+      users: {
+        orderBy: {
+          rank: 'asc',
+        },
+      },
     },
   });
 
