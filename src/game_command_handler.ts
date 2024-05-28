@@ -270,7 +270,7 @@ export async function addGameResult(
     ranks.length === 0
       ? undefined
       : {
-          deleteMany: {},
+          deleteMany: editGameId !== null ? {} : undefined,
           createMany: {
             data: ranks.map((user, i) => ({
               eventId,
