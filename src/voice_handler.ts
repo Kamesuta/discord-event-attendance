@@ -2,6 +2,7 @@ import { VoiceBasedChannel, VoiceState } from 'discord.js';
 import { prisma } from './index.js';
 import { config } from './utils/config.js';
 import { tallyAttendanceTime } from './attendance_time.js';
+import { logger } from './utils/log.js';
 
 // 入退室ログを記録します
 async function createVoiceLog(
@@ -51,7 +52,7 @@ async function createVoiceLog(
         join,
       },
     });
-    console.log(
+    logger.log(
       `ユーザー(${userId})がイベント(ID:${event.id},Name:${event.name})に${
         join ? '参加' : '退出'
       }しました。`,
@@ -61,7 +62,7 @@ async function createVoiceLog(
       await tallyAttendanceTime(event.id, userId);
     }
   } catch (error) {
-    console.error('ログの記録に失敗しました。', error);
+    logger.error('ログの記録に失敗しました。', error);
   }
 }
 
@@ -91,6 +92,6 @@ export async function onVoiceStateUpdate(
       }
     }
   } catch (error) {
-    console.error('onVoiceStateUpdate中にエラーが発生しました。', error);
+    logger.error('onVoiceStateUpdate中にエラーが発生しました。', error);
   }
 }

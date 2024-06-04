@@ -28,6 +28,7 @@ import {
   showGameResults,
 } from './game_command_handler.js';
 import { endEvent, startEvent, updateEvent } from './event_handler.js';
+import { logger } from './utils/log.js';
 
 /**
  * 出欠確認コマンド (イベント管理者用)
@@ -496,7 +497,7 @@ async function getWebhook(interaction: RepliableInteraction): Promise<
 
   // Webhookを取得
   const webhooks = await channel.fetchWebhooks().catch((error) => {
-    console.error('Webhookの取得に失敗しました:', error);
+    logger.error('Webhookの取得に失敗しました:', error);
     return;
   });
   if (!webhooks) {
@@ -517,7 +518,7 @@ async function getWebhook(interaction: RepliableInteraction): Promise<
         avatar: client.user?.displayAvatarURL(),
       })
       .catch((error) => {
-        console.error('Webhookの作成に失敗しました:', error);
+        logger.error('Webhookの作成に失敗しました:', error);
         return undefined;
       });
     if (!webhook) {
@@ -1181,6 +1182,6 @@ export async function onInteractionCreate(
       }
     }
   } catch (error) {
-    console.error('onInteractionCreate中にエラーが発生しました。', error);
+    logger.error('onInteractionCreate中にエラーが発生しました。', error);
   }
 }
