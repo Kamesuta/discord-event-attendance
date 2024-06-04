@@ -10,6 +10,7 @@ import {
   onGuildScheduledEventUpdate,
 } from './event_handler.js';
 import { onInteractionCreate, registerCommands } from './command_handler.js';
+import { nowait } from './utils/utils.js';
 
 // .envファイルを読み込む
 dotenv.config();
@@ -35,16 +36,25 @@ export const client: Client = new Client({
 // -----------------------------------------------------------------------------------------------------------
 // イベントハンドラーを登録する
 // -----------------------------------------------------------------------------------------------------------
-client.on(Events.ClientReady, async () => {
-  logger.info(`${client.user?.username ?? 'Unknown'} として起動しました!`);
+client.on(
+  Events.ClientReady,
+  nowait(async () => {
+    logger.info(`${client.user?.username ?? 'Unknown'} として起動しました!`);
 
-  // イベント管理者用のコマンドを登録
-  await registerCommands();
-});
-client.on(Events.VoiceStateUpdate, onVoiceStateUpdate);
-client.on(Events.GuildScheduledEventCreate, onGuildScheduledEventCreate);
-client.on(Events.GuildScheduledEventUpdate, onGuildScheduledEventUpdate);
-client.on(Events.InteractionCreate, onInteractionCreate);
+    // イベント管理者用のコマンドを登録
+    await registerCommands();
+  }),
+);
+client.on(Events.VoiceStateUpdate, nowait(onVoiceStateUpdate));
+client.on(
+  Events.GuildScheduledEventCreate,
+  nowait(onGuildScheduledEventCreate),
+);
+client.on(
+  Events.GuildScheduledEventUpdate,
+  nowait(onGuildScheduledEventUpdate),
+);
+client.on(Events.InteractionCreate, nowait(onInteractionCreate));
 
 // Discordにログインする
 await client.login(process.env.DISCORD_TOKEN);
