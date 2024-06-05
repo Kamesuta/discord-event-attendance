@@ -16,7 +16,7 @@ export abstract class UserContextMenuInteraction extends InteractionBase {
 
   /** @inheritdoc */
   registerCommands(commandList: ApplicationCommandDataResolvable[]): void {
-    commandList.push(this.command);
+    commandList.push(this.command.setType(ApplicationCommandType.User));
   }
 
   /** @inheritdoc */
@@ -24,7 +24,8 @@ export abstract class UserContextMenuInteraction extends InteractionBase {
     // ユーザーを右クリックしたときのコンテキストメニュー
     if (
       interaction.isUserContextMenuCommand() &&
-      this.command.type === ApplicationCommandType.User
+      this.command.type === ApplicationCommandType.User &&
+      interaction.commandName === this.command.name
     ) {
       await this.onCommand(interaction);
     }
@@ -47,7 +48,7 @@ export abstract class MessageContextMenuInteraction extends InteractionBase {
 
   /** @inheritdoc */
   registerCommands(commandList: ApplicationCommandDataResolvable[]): void {
-    commandList.push(this.command);
+    commandList.push(this.command.setType(ApplicationCommandType.Message));
   }
 
   /** @inheritdoc */
@@ -55,7 +56,8 @@ export abstract class MessageContextMenuInteraction extends InteractionBase {
     // メッセージを右クリックしたときのコンテキストメニュー
     if (
       interaction.isMessageContextMenuCommand() &&
-      this.command.type === ApplicationCommandType.Message
+      this.command.type === ApplicationCommandType.Message &&
+      interaction.commandName === this.command.name
     ) {
       await this.onCommand(interaction);
     }
