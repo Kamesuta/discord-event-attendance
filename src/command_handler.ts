@@ -3,22 +3,18 @@ import {
   ApplicationCommandDataResolvable,
   ApplicationCommandType,
   ContextMenuCommandBuilder,
-  EmbedBuilder,
   Interaction,
   ModalBuilder,
   PermissionFlagsBits,
-  RepliableInteraction,
-  SlashCommandBuilder,
   TextInputBuilder,
   TextInputStyle,
 } from 'discord.js';
 import { client, prisma } from './index.js';
 import { config } from './utils/config.js';
 import { Event } from '@prisma/client';
-import { getUserGameResults, showGameResults } from './game_command_handler.js';
+import { showGameResults } from './game_command_handler.js';
 import { updateEvent } from './event_handler.js';
 import { logger } from './utils/log.js';
-import splitStrings from './event/splitStrings.js';
 import showEvent from './event/showEvent.js';
 import { getEventFromDiscordId, getEventFromId } from './event/event.js';
 import { InteractionBase } from './commands/base/interaction_base.js';
@@ -29,6 +25,11 @@ import eventGameCommand from './commands/event_command/EventGameCommand.js';
 import eventStartCommand from './commands/event_command/EventStartCommand.js';
 import eventUpdateCommand from './commands/event_command/EventUpdateCommand.js';
 import eventStopCommand from './commands/event_command/EventStopCommand.js';
+import showUserStatus from './event/showUserStatus.js';
+import statusCommand from './commands/status_command/StatusCommand.js';
+import statusEventCommand from './commands/status_command/StatusEventCommand.js';
+import statusUserCommand from './commands/status_command/StatusUserCommand.js';
+import statusGameCommand from './commands/status_command/StatusGameCommand.js';
 
 /**
  * 全コマンドリスト
@@ -41,68 +42,11 @@ const commands: InteractionBase[] = [
   eventUpdateCommand,
   eventStartCommand,
   eventStopCommand,
+  statusCommand,
+  statusUserCommand,
+  statusEventCommand,
+  statusGameCommand,
 ];
-
-/**
- * イベント参加状況を確認するコマンド
- */
-const statusCommand = new SlashCommandBuilder()
-  .setName('status')
-  .setDescription('イベント参加状況を確認')
-  .addSubcommand((subcommand) =>
-    subcommand
-      .setName('user')
-      .setDescription('ユーザーの過去のイベント参加状況を確認')
-      .addUserOption((option) =>
-        option
-          .setName('user')
-          .setDescription('イベント参加状況を確認するユーザー')
-          .setRequired(false),
-      )
-      .addBooleanOption((option) =>
-        option
-          .setName('show')
-          .setDescription(
-            'コマンドの結果をチャットに表示しますか？ (デフォルトは非公開)',
-          )
-          .setRequired(false),
-      ),
-  )
-  .addSubcommand((subcommand) =>
-    subcommand
-      .setName('event')
-      .setDescription('イベントの出欠状況を確認')
-      .addIntegerOption((option) =>
-        option
-          .setName('event_id')
-          .setDescription('イベントID (省略時は最新のイベントを表示)')
-          .setRequired(false),
-      )
-      .addBooleanOption((option) =>
-        option
-          .setName('show')
-          .setDescription(
-            'コマンドの結果をチャットに表示しますか？ (デフォルトは非公開)',
-          )
-          .setRequired(false),
-      ),
-  )
-  .addSubcommand((subcommand) =>
-    subcommand
-      .setName('game')
-      .setDescription('ゲームの勝敗を表示')
-      .addIntegerOption((option) =>
-        option.setName('game_id').setDescription('試合ID').setRequired(false),
-      )
-      .addBooleanOption((option) =>
-        option
-          .setName('show')
-          .setDescription(
-            'コマンドの結果をチャットに表示しますか？ (デフォルトは非公開)',
-          )
-          .setRequired(false),
-      ),
-  );
 
 const contextStatusCommand = new ContextMenuCommandBuilder()
   .setType(ApplicationCommandType.User)
@@ -142,7 +86,6 @@ export async function registerCommands(): Promise<void> {
 
   // 登録するコマンドリスト
   const applicationCommands: ApplicationCommandDataResolvable[] = [
-    statusCommand,
     contextStatusCommand,
     contextMarkShowCommand,
     contextMarkHideCommand,
@@ -189,75 +132,6 @@ async function setShowStats(
   await prisma.$transaction(query);
 }
 
-async function showUserStatus(
-  interaction: RepliableInteraction,
-  userId: string,
-): Promise<void> {
-  // ユーザーの過去のイベント参加状況を表示
-  const stats = await prisma.userStat.findMany({
-    where: {
-      userId,
-      show: true,
-    },
-    include: {
-      event: true,
-    },
-  });
-
-  // 全イベント数を取得
-  const eventCount = await prisma.event.count({
-    where: {
-      endTime: {
-        not: null,
-      },
-    },
-  });
-
-  // ユーザーを取得
-  const user = await interaction.guild?.members.fetch(userId);
-
-  const embeds = new EmbedBuilder()
-    .setTitle('イベント参加状況')
-    .setDescription(`<@${userId}> さんの過去のイベント参加状況です`)
-    .setAuthor(
-      !user
-        ? null
-        : {
-            name: user.displayName,
-            iconURL: user.displayAvatarURL() ?? undefined,
-          },
-    )
-    .setColor('#ff8c00')
-    .addFields({
-      name: '参加イベント数',
-      value: `${stats.length} / ${eventCount} 回`,
-    });
-
-  splitStrings(
-    stats.map((stat) => {
-      if (!stat.event) return '- 不明';
-      return `- [${stat.event.name}](https://discord.com/events/${config.guild_id}/${stat.event.eventId})`;
-    }),
-    1024,
-  ).forEach((line, i) => {
-    embeds.addFields({
-      name: i === 0 ? '参加イベントリスト' : '\u200b',
-      value: line,
-    });
-  });
-
-  splitStrings(await getUserGameResults(userId), 1024).forEach((line, i) => {
-    embeds.addFields({
-      name: i === 0 ? 'ゲーム戦績' : '\u200b',
-      value: line,
-    });
-  });
-
-  await interaction.editReply({
-    embeds: [embeds],
-  });
-}
-
 /**
  * イベントコマンドを処理します
  * @param interaction インタラクション
@@ -271,60 +145,7 @@ export async function onInteractionCreate(
       commands.map((command) => command.onInteractionCreate(interaction)),
     );
 
-    if (interaction.isChatInputCommand()) {
-      // コマンドによって処理を分岐
-      switch (interaction.commandName) {
-        // 確認用コマンド
-        case statusCommand.name: {
-          switch (interaction.options.getSubcommand()) {
-            case 'user': {
-              // ユーザーの過去のイベント参加状況を表示
-              const show = interaction.options.getBoolean('show') ?? false;
-              await interaction.deferReply({ ephemeral: !show });
-              const user =
-                interaction.options.getUser('user') ?? interaction.user;
-              await showUserStatus(interaction, user.id);
-              break;
-            }
-            case 'event': {
-              // イベントの出欠状況を表示
-              const show = interaction.options.getBoolean('show') ?? false;
-              await interaction.deferReply({ ephemeral: !show });
-              const eventId = interaction.options.getInteger('event_id');
-              const event = await getEventFromId(eventId ?? undefined);
-              if (!event) {
-                await interaction.editReply({
-                  content: 'イベントが見つかりませんでした',
-                });
-                return;
-              }
-              await showEvent(interaction, event);
-              break;
-            }
-            case 'game': {
-              // ゲームの勝敗を表示
-              const show = interaction.options.getBoolean('show') ?? false;
-              await interaction.deferReply({ ephemeral: !show });
-              const gameId = interaction.options.getInteger('game_id');
-              const game = await prisma.gameResult.findFirst({
-                where: {
-                  id: gameId ?? undefined,
-                },
-              });
-              if (!game) {
-                await interaction.editReply({
-                  content: '試合が見つかりませんでした',
-                });
-                return;
-              }
-              await showGameResults(interaction, game.id);
-              break;
-            }
-          }
-          break;
-        }
-      }
-    } else if (interaction.isUserContextMenuCommand()) {
+    if (interaction.isUserContextMenuCommand()) {
       // コマンドによって処理を分岐
       switch (interaction.commandName) {
         // 確認用コマンド

@@ -43,6 +43,8 @@ client.on(
 
     // イベント管理者用のコマンドを登録
     await registerCommands();
+
+    logger.info(`インタラクションの登録が完了しました`);
   }),
 );
 client.on(Events.VoiceStateUpdate, nowait(onVoiceStateUpdate));
