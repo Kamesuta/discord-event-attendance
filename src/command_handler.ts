@@ -1,5 +1,6 @@
 import {
   ActionRowBuilder,
+  ApplicationCommandDataResolvable,
   ApplicationCommandType,
   ContextMenuCommandBuilder,
   EmbedBuilder,
@@ -29,6 +30,12 @@ import {
 } from './game_command_handler.js';
 import { endEvent, startEvent, updateEvent } from './event_handler.js';
 import { logger } from './utils/log.js';
+import { InteractionBase } from './commands/base/interaction_base.js';
+
+/**
+ * 全コマンドリスト
+ */
+const commands: InteractionBase[] = [];
 
 /**
  * 出欠確認コマンド (イベント管理者用)
@@ -202,7 +209,9 @@ const contextUpdateEventCommand = new ContextMenuCommandBuilder()
 export async function registerCommands(): Promise<void> {
   // イベント管理者用のコマンドを登録
   const guild = await client.guilds.fetch(config.guild_id);
-  await guild.commands.set([
+
+  // 登録するコマンドリスト
+  const applicationCommands: ApplicationCommandDataResolvable[] = [
     eventCommand,
     statusCommand,
     contextStatusCommand,
@@ -211,7 +220,16 @@ export async function registerCommands(): Promise<void> {
     contextMarkClearCommand,
     contextSetMemoCommand,
     contextUpdateEventCommand,
-  ]);
+  ];
+
+  // サブコマンドを構築
+  commands.forEach((command) => command.registerSubCommands());
+
+  // コマンドを構築
+  commands.forEach((command) => command.registerCommands(applicationCommands));
+
+  // コマンドを登録
+  await guild.commands.set(applicationCommands);
 }
 
 /**
@@ -744,6 +762,11 @@ export async function onInteractionCreate(
   interaction: Interaction,
 ): Promise<void> {
   try {
+    // すべてのコマンドを処理
+    await Promise.all(
+      commands.map((command) => command.onInteractionCreate(interaction)),
+    );
+
     if (interaction.isChatInputCommand()) {
       // コマンドによって処理を分岐
       switch (interaction.commandName) {

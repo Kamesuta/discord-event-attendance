@@ -26,13 +26,12 @@ export default [
             },
             parser: tseslint.parser,
             parserOptions: {
+                project: true,
                 sourceType: 'module',
-                project: ['tsconfig.json'],
             },
         },
         plugins: {
-            '@typescript-eslint/eslint-plugin': tseslint.plugin,
-            'eslint-plugin-jsdoc': jsdoc,
+            jsdoc,
         },
         rules: {
             'unicode-bom': ['error', 'never'],
