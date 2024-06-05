@@ -4,7 +4,6 @@
 /* eslint-disable jsdoc/require-jsdoc */
 /* eslint-disable @typescript-eslint/naming-convention */
 
-import globals from 'globals';
 import tseslint from 'typescript-eslint';
 import jsdoc from 'eslint-plugin-jsdoc';
 import eslint from '@eslint/js';
@@ -20,10 +19,6 @@ export default [
     // /Plugins
     {
         languageOptions: {
-            globals: {
-                ...globals.es2021,
-                ...globals.node,
-            },
             parser: tseslint.parser,
             parserOptions: {
                 project: true,

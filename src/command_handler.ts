@@ -5,113 +5,43 @@ import {
   ContextMenuCommandBuilder,
   EmbedBuilder,
   Interaction,
-  Message,
   ModalBuilder,
-  NonThreadGuildBasedChannel,
   PermissionFlagsBits,
   RepliableInteraction,
   SlashCommandBuilder,
-  StringSelectMenuBuilder,
   TextInputBuilder,
   TextInputStyle,
-  ThreadChannel,
-  UserSelectMenuBuilder,
-  Webhook,
 } from 'discord.js';
 import { client, prisma } from './index.js';
 import { config } from './utils/config.js';
 import { Event } from '@prisma/client';
-import { updateAttendanceTimeIfEventActive } from './attendance_time.js';
-import {
-  addGameResult,
-  createGameCommand,
-  getUserGameResults,
-  showGameResults,
-} from './game_command_handler.js';
-import { endEvent, startEvent, updateEvent } from './event_handler.js';
+import { getUserGameResults, showGameResults } from './game_command_handler.js';
+import { updateEvent } from './event_handler.js';
 import { logger } from './utils/log.js';
+import splitStrings from './event/splitStrings.js';
+import showEvent from './event/showEvent.js';
+import { getEventFromDiscordId, getEventFromId } from './event/event.js';
 import { InteractionBase } from './commands/base/interaction_base.js';
+import eventCommand from './commands/event_command/EventCommand.js';
+import eventReviewCommand from './commands/event_command/EventReviewCommand.js';
+import eventShowCommand from './commands/event_command/EventShowCommand.js';
+import eventGameCommand from './commands/event_command/EventGameCommand.js';
+import eventStartCommand from './commands/event_command/EventStartCommand.js';
+import eventUpdateCommand from './commands/event_command/EventUpdateCommand.js';
+import eventStopCommand from './commands/event_command/EventStopCommand.js';
 
 /**
  * 全コマンドリスト
  */
-const commands: InteractionBase[] = [];
-
-/**
- * 出欠確認コマンド (イベント管理者用)
- */
-const eventCommand = new SlashCommandBuilder()
-  .setDescription('出欠確認コマンド (イベント管理者用)')
-  .setName('event')
-  .setDefaultMemberPermissions(PermissionFlagsBits.ManageEvents)
-  .addSubcommand((subcommand) =>
-    subcommand
-      .setName('review')
-      .setDescription('イベントの出欠状況を表示します (自分のみに表示)')
-      .addIntegerOption((option) =>
-        option
-          .setName('event_id')
-          .setDescription('イベントID (省略時は最新のイベントを表示)')
-          .setRequired(false),
-      ),
-  )
-  .addSubcommand((subcommand) =>
-    subcommand
-      .setName('show')
-      .setDescription('イベントの出欠状況を表示します')
-      .addIntegerOption((option) =>
-        option
-          .setName('event_id')
-          .setDescription('イベントID (省略時は最新のイベントを表示)')
-          .setRequired(false),
-      )
-      .addStringOption((option) =>
-        option
-          .setName('message')
-          .setDescription('送信するメッセージ')
-          .setRequired(false),
-      )
-      .addStringOption((option) =>
-        option
-          .setName('invite_link_message')
-          .setDescription('イベントリンクに表示するメッセージ')
-          .setRequired(false),
-      ),
-  )
-  .addSubcommand((subcommand) =>
-    subcommand
-      .setName('start')
-      .setDescription('手動でイベントを開始します')
-      .addIntegerOption((option) =>
-        option
-          .setName('event_id')
-          .setDescription('DiscordのイベントID')
-          .setRequired(true),
-      ),
-  )
-  .addSubcommand((subcommand) =>
-    subcommand
-      .setName('update')
-      .setDescription('手動でイベント情報を更新します')
-      .addIntegerOption((option) =>
-        option
-          .setName('event_id')
-          .setDescription('イベントID (省略時は最新のイベントを表示)')
-          .setRequired(false),
-      ),
-  )
-  .addSubcommand((subcommand) =>
-    subcommand
-      .setName('stop')
-      .setDescription('手動でイベントを終了します')
-      .addIntegerOption((option) =>
-        option
-          .setName('event_id')
-          .setDescription('イベントID (省略時は最新のイベントを表示)')
-          .setRequired(false),
-      ),
-  )
-  .addSubcommand(createGameCommand);
+const commands: InteractionBase[] = [
+  eventCommand,
+  eventReviewCommand,
+  eventShowCommand,
+  eventGameCommand,
+  eventUpdateCommand,
+  eventStartCommand,
+  eventStopCommand,
+];
 
 /**
  * イベント参加状況を確認するコマンド
@@ -212,7 +142,6 @@ export async function registerCommands(): Promise<void> {
 
   // 登録するコマンドリスト
   const applicationCommands: ApplicationCommandDataResolvable[] = [
-    eventCommand,
     statusCommand,
     contextStatusCommand,
     contextMarkShowCommand,
@@ -230,405 +159,6 @@ export async function registerCommands(): Promise<void> {
 
   // コマンドを登録
   await guild.commands.set(applicationCommands);
-}
-
-/**
- * イベント情報を表示します
- * @param interaction インタラクション
- * @param event イベント
- * @param isWebhook Webhookで送信するかどうか
- * @param message Webhookで送信するメッセージ
- * @param eventLinkMessage イベントリンクに表示するメッセージ
- * @param editMessage 編集するメッセージ
- */
-async function showEvent(
-  interaction: RepliableInteraction,
-  event: Event,
-  isWebhook = false,
-  message?: string,
-  eventLinkMessage?: string,
-  editMessage?: Message,
-): Promise<void> {
-  // 集計
-  await updateAttendanceTimeIfEventActive(event);
-
-  // Webhookを取得
-  const webhook = !isWebhook ? undefined : await getWebhook(interaction);
-  if (isWebhook && !webhook) {
-    return;
-  }
-
-  // イベントの出欠状況を表示
-  const stats = await prisma.userStat.findMany({
-    where: {
-      eventId: event.id,
-      show: true,
-    },
-  });
-
-  // ユーザーごとに参加回数をカウント
-  const userCount = Object.fromEntries(
-    await Promise.all(
-      stats.map(async (stat) => {
-        const count = await prisma.userStat.count({
-          where: {
-            userId: stat.userId,
-            show: true,
-          },
-        });
-        return [stat.userId, count] as const;
-      }),
-    ),
-  );
-
-  // イベントの時間を計算
-  const duration =
-    event.startTime && event.endTime
-      ? ` (${Math.floor(
-          (event.endTime.getTime() - event.startTime.getTime()) / 1000 / 60,
-        )}分)`
-      : '';
-
-  // ユーザーごとのXP合計を取得
-  const userXp = (
-    await Promise.all(
-      stats.map(async (stat) => {
-        const xp = await prisma.userGameResult.aggregate({
-          where: {
-            eventId: event.id,
-            userId: stat.userId,
-          },
-          // eslint-disable-next-line @typescript-eslint/naming-convention
-          _sum: {
-            xp: true,
-          },
-        });
-        return [stat.userId, xp._sum.xp ?? 0] as const;
-      }),
-    )
-  )
-    .filter(([, xp]) => xp > 0)
-    .sort(([, a], [, b]) => b - a);
-
-  // 試合結果
-  const gameResults = await prisma.gameResult.findMany({
-    where: {
-      eventId: event.id,
-    },
-    include: {
-      users: true,
-    },
-  });
-
-  const dateToMention = (date: Date | null): string | null =>
-    date ? `<t:${Math.floor(date.getTime() / 1000)}:F>` : null;
-
-  // スケジュール
-  const schedule = event.startTime
-    ? `${dateToMention(event.startTime)} 〜 ${
-        dateToMention(event.endTime) ?? '未定'
-      } ${duration}`
-    : dateToMention(event.scheduleTime) ?? '未定';
-
-  // Embedを作成
-  const embeds = new EmbedBuilder()
-    .setTitle(
-      event.endTime
-        ? `🏁「${event.name}」イベントに参加してくれた人！`
-        : `🏁「${event.name}」イベントの予定！`,
-    )
-    .setURL(`https://discord.com/events/${config.guild_id}/${event.eventId}`)
-    .setDescription(event.description ? event.description : '説明なし')
-    .setImage(event.coverImage)
-    .setColor('#ff8c00')
-    .setFooter({
-      text: `「/status user <名前>」でユーザーの過去イベントの参加状況を確認できます${
-        gameResults.length === 0
-          ? ''
-          : '\n下記プルダウンから各試合結果を確認できます'
-      }\nイベントID: ${event.id}`,
-    })
-    .addFields({
-      name: '開催日時',
-      value: schedule,
-    });
-
-  if (event.endTime) {
-    splitStrings(
-      stats
-        .filter((stat) => stat.show)
-        .map((stat) => {
-          const count = userCount[stat.userId];
-          const memo = stat.memo ? ` ${stat.memo}` : '';
-          const countText =
-            count === 1 ? '(🆕 初参加！)' : ` (${count}回目)${memo}`;
-          return `<@${stat.userId}> ${countText}`;
-        }),
-      1024,
-    )
-      .filter((line) => line.length > 0)
-      .forEach((line, i) => {
-        embeds.addFields({
-          name: i === 0 ? '参加者' : '\u200b',
-          value: line,
-        });
-      });
-
-    embeds.addFields({
-      name: `戦績 (計${gameResults.length}試合)`,
-      value:
-        userXp
-          .map(([userId, xp], i) => `${i + 1}位: <@${userId}> (${xp}XP)`)
-          .join('\n') || 'なし',
-    });
-  } else {
-    // イベントが終了していない場合は、イベント終了後に参加者が表示される旨を記載
-    embeds.addFields({
-      name: '参加者/戦績',
-      value: `イベント終了後、ここに参加者が表示されます\n参加したい人は[「興味あり」](https://discord.com/events/${config.guild_id}/${event.eventId})を押すと特殊な通知を受け取れます！`,
-    });
-
-    // メッセージにもリンクを乗せる
-    if (message && eventLinkMessage) {
-      message += `\n\n[${eventLinkMessage}](https://discord.com/events/${config.guild_id}/${event.eventId})`;
-    }
-  }
-
-  // 試合結果のプルダウンを追加
-  const components =
-    new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
-      new StringSelectMenuBuilder()
-        .setCustomId(`event_component_game_${event.id}`)
-        .setPlaceholder('確認したい試合結果を選択')
-        .setMinValues(1)
-        .setMaxValues(1)
-        .addOptions(
-          gameResults.map((game) => ({
-            label: `${game.name} (試合ID: ${game.id})`,
-            value: game.id.toString(),
-          })),
-        ),
-    );
-
-  // 送信内容
-  const contents = {
-    content: message,
-    embeds: [embeds],
-    components: gameResults.length === 0 ? [] : [components],
-  };
-
-  if (webhook) {
-    // Webhookで送信 (コマンド送信者の名前とアイコンを表示)
-    const memberDisplayName =
-      interaction.guild?.members.resolve(interaction.user.id)?.displayName ??
-      interaction.user.username;
-    const memberAvatar =
-      interaction.guild?.members
-        .resolve(interaction.user.id)
-        ?.displayAvatarURL() ?? interaction.user.displayAvatarURL();
-    if (editMessage) {
-      // 既存メッセージを編集
-      await webhook.webhook.editMessage(editMessage, {
-        embeds: [embeds],
-        components: gameResults.length === 0 ? [] : [components],
-      });
-    } else {
-      await webhook.webhook.send({
-        threadId: webhook.thread?.id,
-        username: memberDisplayName,
-        avatarURL: memberAvatar,
-        ...contents,
-      });
-    }
-
-    // 送信結果
-    await interaction.editReply({
-      content: 'イベント情報を公開しました',
-    });
-  } else {
-    // 通常送信
-    await interaction.editReply(contents);
-  }
-}
-
-/**
- * イベントを開始します
- * @param lines メッセージを分割する行
- * @param maxLength 1メッセージの最大文字数
- * @param delimiter メッセージの区切り文字
- * @returns 分割されたメッセージ
- */
-function splitStrings(
-  lines: string[],
-  maxLength: number,
-  delimiter = '\n',
-): string[] {
-  return lines.reduce(
-    (acc, name) => {
-      if (acc[acc.length - 1].length + name.length < maxLength) {
-        acc[acc.length - 1] += `${name}${delimiter}`;
-      } else {
-        acc.push(`${name}${delimiter}`);
-      }
-      return acc;
-    },
-    [''],
-  );
-}
-
-/**
- * Webhookを取得/作成します
- * @param interaction インタラクション
- * @returns Webhookのチャンネルとスレッド
- */
-async function getWebhook(interaction: RepliableInteraction): Promise<
-  | {
-      webhook: Webhook;
-      channel: NonThreadGuildBasedChannel;
-      thread: ThreadChannel | undefined;
-    }
-  | undefined
-> {
-  // Webhook送信系の処理
-  const interactionChannel = interaction.channel;
-  if (!interactionChannel || interactionChannel.isDMBased()) {
-    await interaction.editReply({
-      content: 'このコマンドはサーバー内でのみ使用できます',
-    });
-    return;
-  }
-
-  let channel: NonThreadGuildBasedChannel;
-  let thread: ThreadChannel | undefined;
-  if (interactionChannel.isThread()) {
-    if (!interactionChannel.parent) {
-      await interaction.editReply({
-        content: '親チャンネルが見つかりませんでした',
-      });
-      return;
-    }
-    channel = interactionChannel.parent;
-    thread = interactionChannel;
-  } else {
-    channel = interactionChannel;
-  }
-
-  // Webhookを取得
-  const webhooks = await channel.fetchWebhooks().catch((error) => {
-    logger.error('Webhookの取得に失敗しました:', error);
-    return;
-  });
-  if (!webhooks) {
-    await interaction.editReply({
-      content: 'Webhookの取得に失敗しました。権限を確認してください',
-    });
-    return;
-  }
-  // 自身のWebhookを取得
-  let webhook = webhooks.find(
-    (webhook) => webhook.owner?.id === client.user?.id,
-  );
-  // Webhookがない場合は作成
-  if (!webhook) {
-    webhook = await channel
-      .createWebhook({
-        name: 'イベント通知用',
-        avatar: client.user?.displayAvatarURL(),
-      })
-      .catch((error) => {
-        logger.error('Webhookの作成に失敗しました:', error);
-        return undefined;
-      });
-    if (!webhook) {
-      await interaction.editReply({
-        content: 'Webhookの作成に失敗しました',
-      });
-      return;
-    }
-  }
-  return { webhook, channel, thread };
-}
-
-async function reviewEvent(
-  interaction: RepliableInteraction,
-  event: Event,
-): Promise<void> {
-  // 集計
-  await updateAttendanceTimeIfEventActive(event);
-
-  // イベントの出欠状況を表示
-  const stats = await prisma.userStat.findMany({
-    where: {
-      eventId: event.id,
-      // eslint-disable-next-line @typescript-eslint/naming-convention
-      OR: [
-        {
-          show: true,
-        },
-        {
-          duration: {
-            // 必要接続分数を満たしているユーザーのみを抽出する (config.required_time分以上参加している)
-            gt: config.required_time * 60 * 1000,
-          },
-        },
-      ],
-    },
-  });
-
-  const embeds = new EmbedBuilder()
-    .setTitle(`🏁「${event.name}」イベントに参加してくれた人を選択してください`)
-    .setURL(`https://discord.com/events/${config.guild_id}/${event.eventId}`)
-    .setDescription(
-      '出席、欠席のステータスです。\n下のプルダウンからステータスを変更できます。\n\n' +
-        // 非公開モードの場合は全員表示 (現在のステータスも表示)
-        stats
-          .map((stat) => {
-            const memo = stat.memo ? ` (**メモ**: ${stat.memo})` : '';
-            const mark = stat.show === null ? '⬛' : stat.show ? '☑️' : '❌';
-            const duration = Math.floor(stat.duration / 1000 / 60);
-            return `${mark} <@${stat.userId}>: ${duration}分${memo}`;
-          })
-          .join('\n') || 'なし',
-    )
-    .setColor('#ff8c00');
-
-  const components = [
-    new ActionRowBuilder<UserSelectMenuBuilder>().addComponents(
-      new UserSelectMenuBuilder()
-        .setCustomId(`event_component_show_${event.id}`)
-        .setPlaceholder('参加した人を選択')
-        .setMinValues(0)
-        .setMaxValues(25)
-        // まだステータスが未設定のユーザーをデフォルトで選択
-        .setDefaultUsers(
-          stats
-            .filter((stat) => stat.show === null)
-            .map((stat) => stat.userId)
-            .slice(0, 25),
-        ),
-    ),
-    // 除外プルダウン
-    new ActionRowBuilder<UserSelectMenuBuilder>().addComponents(
-      new UserSelectMenuBuilder()
-        .setCustomId(`event_component_hide_${event.id}`)
-        .setPlaceholder('参加していない人を選択')
-        .setMinValues(0)
-        .setMaxValues(25)
-        // まだステータスが未設定のユーザーをデフォルトで選択
-        .setDefaultUsers(
-          stats
-            .filter((stat) => stat.show === null)
-            .map((stat) => stat.userId)
-            .slice(0, 25),
-        ),
-    ),
-  ];
-
-  // イベントの出欠状況を表示
-  await interaction.editReply({
-    embeds: [embeds],
-    components,
-  });
 }
 
 async function setShowStats(
@@ -657,32 +187,6 @@ async function setShowStats(
     }),
   );
   await prisma.$transaction(query);
-}
-
-async function getEvent(eventId: string | undefined): Promise<Event | null> {
-  return await prisma.event.findFirst({
-    where: {
-      eventId,
-    },
-    orderBy: {
-      startTime: 'desc',
-    },
-    take: 1,
-  });
-}
-
-async function getEventFromId(
-  eventId: number | undefined,
-): Promise<Event | null> {
-  return await prisma.event.findFirst({
-    where: {
-      id: eventId,
-    },
-    orderBy: {
-      startTime: 'desc',
-    },
-    take: 1,
-  });
 }
 
 async function showUserStatus(
@@ -770,149 +274,6 @@ export async function onInteractionCreate(
     if (interaction.isChatInputCommand()) {
       // コマンドによって処理を分岐
       switch (interaction.commandName) {
-        // 管理者用コマンド
-        case eventCommand.name: {
-          // サブコマンドによって処理を分岐
-          switch (interaction.options.getSubcommand()) {
-            case 'show': {
-              await interaction.deferReply({ ephemeral: true });
-              const eventId = interaction.options.getInteger('event_id');
-              const event = await getEventFromId(eventId ?? undefined);
-              if (!event) {
-                await interaction.editReply({
-                  content: 'イベントが見つかりませんでした',
-                });
-                return;
-              }
-              const message = interaction.options.getString('message');
-              const eventLinkMessage = interaction.options.getString(
-                'invite_link_message',
-              );
-              await showEvent(
-                interaction,
-                event,
-                !!message,
-                message ?? undefined,
-                eventLinkMessage ?? undefined,
-              );
-              break;
-            }
-            case 'review': {
-              // 公開前のメンバー確認
-              await interaction.deferReply({ ephemeral: true });
-              const eventId = interaction.options.getInteger('event_id');
-              const event = await getEventFromId(eventId ?? undefined);
-              if (!event) {
-                await interaction.editReply({
-                  content: 'イベントが見つかりませんでした',
-                });
-                return;
-              }
-              await reviewEvent(interaction, event);
-              break;
-            }
-            case 'status': {
-              // ステータス確認
-              await interaction.deferReply({ ephemeral: true });
-              const user =
-                interaction.options.getUser('user') ?? interaction.user;
-              await showUserStatus(interaction, user.id);
-              break;
-            }
-            case 'start': {
-              // イベントを開始
-              await interaction.deferReply({ ephemeral: true });
-              const eventId = interaction.options.getString('discord_event_id');
-              const scheduledEvent = !eventId
-                ? undefined
-                : await interaction.guild?.scheduledEvents.fetch(eventId);
-              if (!scheduledEvent) {
-                await interaction.editReply({
-                  content: 'Discordイベントが見つかりませんでした',
-                });
-                return;
-              }
-              const event = await startEvent(scheduledEvent);
-              if (!event) {
-                await interaction.editReply({
-                  content: 'イベントの開始に失敗しました',
-                });
-                return;
-              }
-              await interaction.editReply({
-                content: `イベント「${scheduledEvent.name}」(ID: ${event.id})を開始しました`,
-              });
-              break;
-            }
-            case 'stop': {
-              // イベントを終了
-              await interaction.deferReply({ ephemeral: true });
-              const eventId = interaction.options.getInteger('event_id');
-              const event = await getEventFromId(eventId ?? undefined);
-              if (!event) {
-                await interaction.editReply({
-                  content: 'イベントが見つかりませんでした',
-                });
-                return;
-              }
-              const scheduledEvent = !event
-                ? undefined
-                : await interaction.guild?.scheduledEvents.fetch(event.eventId);
-              if (!scheduledEvent) {
-                await interaction.editReply({
-                  content: 'Discordイベントが見つかりませんでした',
-                });
-                return;
-              }
-              await endEvent(scheduledEvent);
-              await interaction.editReply({
-                content: `イベント「${scheduledEvent.name}」(ID: ${event.id})を終了しました`,
-              });
-              break;
-            }
-            case 'update': {
-              // イベント情報を更新
-              await interaction.deferReply({ ephemeral: true });
-              const eventId = interaction.options.getInteger('event_id');
-              const event = await getEventFromId(eventId ?? undefined);
-              if (!event) {
-                await interaction.editReply({
-                  content: 'イベントが見つかりませんでした',
-                });
-                return;
-              }
-              const scheduledEvent = !event
-                ? undefined
-                : await interaction.guild?.scheduledEvents.fetch(event.eventId);
-              if (!scheduledEvent) {
-                await interaction.editReply({
-                  content: 'Discordイベントが見つかりませんでした',
-                });
-                return;
-              }
-              await updateEvent(scheduledEvent);
-              await interaction.editReply({
-                content: `イベント「${scheduledEvent.name}」(ID: ${event.id})の情報を更新しました`,
-              });
-              break;
-            }
-            case 'game': {
-              // ゲームの勝敗を記録
-              await interaction.deferReply({ ephemeral: false });
-              const eventId = interaction.options.getInteger('event_id');
-              const event = await getEventFromId(eventId ?? undefined);
-              if (!event) {
-                await interaction.editReply({
-                  content: 'イベントが見つかりませんでした',
-                });
-                return;
-              }
-              await addGameResult(interaction, event);
-              break;
-            }
-          }
-          break;
-        }
         // 確認用コマンド
         case statusCommand.name: {
           switch (interaction.options.getSubcommand()) {
@@ -1093,7 +454,7 @@ export async function onInteractionCreate(
             await updateEvent(scheduledEvent);
           }
           // イベント情報を取得
-          const event = await getEvent(scheduledEventId);
+          const event = await getEventFromDiscordId(scheduledEventId);
           if (!event) {
             await interaction.editReply({
               content: 'イベントが見つかりませんでした',
