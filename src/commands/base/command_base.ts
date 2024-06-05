@@ -100,6 +100,7 @@ export abstract class CommandInteraction
 
   /**
    * コマンドが実行されたときに呼ばれる関数
+   * @param interaction インタラクション
    */
   abstract onCommand(interaction: ChatInputCommandInteraction): Promise<void>;
 }
@@ -145,6 +146,7 @@ export abstract class SubcommandInteraction
 
   /**
    * コマンドが実行されたときに呼ばれる関数
+   * @param interaction インタラクション
    */
   abstract onCommand(interaction: ChatInputCommandInteraction): Promise<void>;
 }
