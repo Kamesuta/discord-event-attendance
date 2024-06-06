@@ -86,8 +86,6 @@ abstract class ActionInteraction<
 export abstract class MessageComponentActionInteraction<
   MenuComponentType extends keyof MappedInteractionTypes,
 > extends ActionInteraction<MappedInteractionTypes[MenuComponentType]> {
-  abstract command: MappedComponentBuilderTypes[MenuComponentType];
-
   /**
    * コンストラクタ
    * @param id アクションを識別するためのID
@@ -99,6 +97,14 @@ export abstract class MessageComponentActionInteraction<
   ) {
     super(id);
   }
+
+  /**
+   * ビルダーの作成を行う
+   * @returns 作成したビルダー
+   */
+  abstract create(
+    ...args: unknown[]
+  ): MappedComponentBuilderTypes[MenuComponentType];
 
   /** @inheritdoc */
   protected override createCustomId(data?: Record<string, string>): string {
@@ -129,8 +135,6 @@ export abstract class MessageComponentActionInteraction<
  * モーダルダイアログのアクション
  */
 export abstract class ModalActionInteraction extends ActionInteraction<ModalSubmitInteraction> {
-  abstract command: ModalBuilder;
-
   /**
    * コンストラクタ
    * @param id アクションを識別するためのID
@@ -138,6 +142,12 @@ export abstract class ModalActionInteraction extends ActionInteraction<ModalSubm
   constructor(id: string) {
     super(id);
   }
+
+  /**
+   * ビルダーの作成を行う
+   * @returns 作成したビルダー
+   */
+  abstract create(...args: unknown[]): ModalBuilder;
 
   /** @inheritdoc */
   protected override createCustomId(data?: Record<string, string>): string {

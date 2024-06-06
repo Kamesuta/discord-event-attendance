@@ -12,39 +12,40 @@ import { Event } from '@prisma/client';
 import { prisma } from '../../index.js';
 
 class SetMemoModalAction extends ModalActionInteraction {
-  // メモ入力欄を作成
-  private _textInput = new TextInputBuilder()
-    .setCustomId('memo')
-    .setLabel('メモを入力してください (「!」を入力で削除)')
-    .setMinLength(0)
-    .setMaxLength(512)
-    .setStyle(TextInputStyle.Short);
-
-  command = new ModalBuilder()
-    .setTitle('メモ入力')
-    .addComponents(
-      new ActionRowBuilder<TextInputBuilder>().addComponents(this._textInput),
-    );
-
   /**
    * メモ入力モーダルを作成
    * @param targetUser メモを設定するユーザー
    * @param event メモを設定するイベント
    * @param defaultMemo デフォルトのメモ
-   * @returns 作成したモーダル
+   * @returns 作成したビルダー
    */
-  create(targetUser: User, event: Event, defaultMemo: string): ModalBuilder {
-    // 初期値を設定
-    this._textInput.setValue(defaultMemo);
-
+  override create(
+    targetUser: User,
+    event: Event,
+    defaultMemo: string,
+  ): ModalBuilder {
     // カスタムIDを生成
     const customId = this.createCustomId({
       user: targetUser.id,
       event: `${event.id}`,
     });
 
+    // 初期値を設定
+    const textInput = new TextInputBuilder()
+      .setCustomId('memo')
+      .setLabel('メモを入力してください (「!」を入力で削除)')
+      .setMinLength(0)
+      .setMaxLength(512)
+      .setStyle(TextInputStyle.Short)
+      .setValue(defaultMemo);
+
     // ダイアログを作成
-    return this.command.setTitle('メモ入力').setCustomId(customId);
+    return new ModalBuilder()
+      .setTitle('メモ入力')
+      .addComponents(
+        new ActionRowBuilder<TextInputBuilder>().addComponents(textInput),
+      )
+      .setCustomId(customId);
   }
 
   /** @inheritdoc */

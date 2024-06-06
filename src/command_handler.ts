@@ -1,9 +1,7 @@
 import { ApplicationCommandDataResolvable, Interaction } from 'discord.js';
 import { client } from './index.js';
 import { config } from './utils/config.js';
-import { showGameResults } from './game_command_handler.js';
 import { logger } from './utils/log.js';
-import { getEventFromId } from './event/event.js';
 import { InteractionBase } from './commands/base/interaction_base.js';
 import eventCommand from './commands/event_command/EventCommand.js';
 import eventReviewCommand from './commands/event_command/EventReviewCommand.js';
@@ -22,8 +20,8 @@ import markHideUserMenu from './commands/contextmenu/MarkHideUserMenu.js';
 import markClearUserMenu from './commands/contextmenu/MarkClearUserMenu.js';
 import setMemoUserMenu from './commands/contextmenu/SetMemoUserMenu.js';
 import updateEventMessageMenu from './commands/contextmenu/UpdateEventMessageMenu.js';
-import setShowStats from './event/setShowStats.js';
 import setMemoAction from './commands/action/SetMemoAction.js';
+import reviewMarkUserSelectAction from './commands/action/ReviewMarkUserSelectAction.js';
 
 /**
  * 全コマンドリスト
@@ -47,6 +45,7 @@ const commands: InteractionBase[] = [
   setMemoUserMenu,
   updateEventMessageMenu,
   setMemoAction,
+  reviewMarkUserSelectAction,
 ];
 
 /**
@@ -81,47 +80,6 @@ export async function onInteractionCreate(
     await Promise.all(
       commands.map((command) => command.onInteractionCreate(interaction)),
     );
-
-    if (interaction.isMessageComponent()) {
-      // コンポーネントによって処理を分岐
-      const match = interaction.customId.match(/event_component_(.+?)_(\d+)/);
-      if (match) {
-        const [_, type, eventId] = match;
-
-        await interaction.deferReply({ ephemeral: true });
-        const event = await getEventFromId(
-          eventId ? parseInt(eventId) : undefined,
-        );
-        if (!event) {
-          await interaction.editReply({
-            content: 'イベントが見つかりませんでした',
-          });
-          return;
-        }
-
-        if (type === 'show' && interaction.isUserSelectMenu()) {
-          // 出席としてマーク
-          await setShowStats(event, interaction.values, true);
-          await interaction.editReply({
-            content: `${interaction.values
-              .map((userId) => `<@${userId}>`)
-              .join('')} を☑️出席としてマークしました`,
-          });
-        } else if (type === 'hide' && interaction.isUserSelectMenu()) {
-          // 欠席としてマーク
-          await setShowStats(event, interaction.values, false);
-          await interaction.editReply({
-            content: `${interaction.values
-              .map((userId) => `<@${userId}>`)
-              .join('')} を❌欠席としてマークしました`,
-          });
-        } else if (type === 'game' && interaction.isStringSelectMenu()) {
-          // 試合結果を表示
-          const gameId = parseInt(interaction.values[0]);
-          await showGameResults(interaction, gameId);
-        }
-      }
-    }
   } catch (error) {
     logger.error('onInteractionCreate中にエラーが発生しました。', error);
   }

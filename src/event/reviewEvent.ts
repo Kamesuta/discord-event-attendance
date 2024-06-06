@@ -8,6 +8,7 @@ import { updateAttendanceTimeIfEventActive } from '../attendance_time.js';
 import { prisma } from '../index.js';
 import { config } from '../utils/config.js';
 import { Event } from '@prisma/client';
+import reviewMarkUserSelectAction from '../commands/action/ReviewMarkUserSelectAction.js';
 
 /**
  * イベントの出欠状況チェックパネルを表示します
@@ -57,35 +58,18 @@ export default async function reviewEvent(
     )
     .setColor('#ff8c00');
 
+  // マークされていないされていないユーザーIDを取得 → プルダウンのデフォルト値に設定
+  const selectedUserIds = stats
+    .filter((stat) => stat.show === null)
+    .map((stat) => stat.userId);
+
   const components = [
     new ActionRowBuilder<UserSelectMenuBuilder>().addComponents(
-      new UserSelectMenuBuilder()
-        .setCustomId(`event_component_show_${event.id}`)
-        .setPlaceholder('参加した人を選択')
-        .setMinValues(0)
-        .setMaxValues(25)
-        // まだステータスが未設定のユーザーをデフォルトで選択
-        .setDefaultUsers(
-          stats
-            .filter((stat) => stat.show === null)
-            .map((stat) => stat.userId)
-            .slice(0, 25),
-        ),
+      reviewMarkUserSelectAction.create(event, selectedUserIds, 'show'),
     ),
     // 除外プルダウン
     new ActionRowBuilder<UserSelectMenuBuilder>().addComponents(
-      new UserSelectMenuBuilder()
-        .setCustomId(`event_component_hide_${event.id}`)
-        .setPlaceholder('参加していない人を選択')
-        .setMinValues(0)
-        .setMaxValues(25)
-        // まだステータスが未設定のユーザーをデフォルトで選択
-        .setDefaultUsers(
-          stats
-            .filter((stat) => stat.show === null)
-            .map((stat) => stat.userId)
-            .slice(0, 25),
-        ),
+      reviewMarkUserSelectAction.create(event, selectedUserIds, 'hide'),
     ),
   ];
 
