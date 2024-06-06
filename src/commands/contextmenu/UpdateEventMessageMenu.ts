@@ -4,7 +4,7 @@ import {
   PermissionFlagsBits,
 } from 'discord.js';
 import { MessageContextMenuInteraction } from '../base/contextmenu_base.js';
-import { getEventFromDiscordId, getEventFromId } from '../../event/event.js';
+import { getEventFromDiscordId } from '../../event/event.js';
 import showEvent from '../../event/showEvent.js';
 import { updateEvent } from '../../event_handler.js';
 

@@ -17,7 +17,11 @@
     /* Enable all strict type-checking options. */
     "strict": true,
     /* Skip type checking all .d.ts files. */
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    /* Require override modifiers on all overridable methods. */
+    "noImplicitOverride": true,
+    /* Require explicit return types on functions and class methods. */
+    "noImplicitAny": true,
   },
   /* ts-node */
   "ts-node": {

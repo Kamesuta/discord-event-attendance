@@ -12,9 +12,8 @@ import eslintConfigPrettier from 'eslint-config-prettier';
 export default [
     // Plugins
     eslint.configs.recommended,
-    tseslint.configs.eslintRecommended,
     ...tseslint.configs.recommendedTypeChecked,
-    jsdoc.configs['flat/recommended'],
+    jsdoc.configs['flat/recommended-typescript'],
     eslintConfigPrettier,
     // /Plugins
     {
@@ -25,12 +24,10 @@ export default [
                 sourceType: 'module',
             },
         },
-        plugins: {
-            jsdoc,
-        },
         rules: {
             'unicode-bom': ['error', 'never'],
             '@typescript-eslint/explicit-function-return-type': 'warn',
+            '@typescript-eslint/explicit-module-boundary-types': 'error',
             'no-var': 'off',
             'no-restricted-syntax': [
                 'error',

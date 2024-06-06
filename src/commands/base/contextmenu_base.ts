@@ -15,20 +15,18 @@ export abstract class UserContextMenuInteraction extends InteractionBase {
   abstract command: ContextMenuCommandBuilder;
 
   /** @inheritdoc */
-  registerCommands(commandList: ApplicationCommandDataResolvable[]): void {
+  override registerCommands(
+    commandList: ApplicationCommandDataResolvable[],
+  ): void {
     commandList.push(this.command.setType(ApplicationCommandType.User));
   }
 
   /** @inheritdoc */
   override async onInteractionCreate(interaction: Interaction): Promise<void> {
     // ユーザーを右クリックしたときのコンテキストメニュー
-    if (
-      interaction.isUserContextMenuCommand() &&
-      this.command.type === ApplicationCommandType.User &&
-      interaction.commandName === this.command.name
-    ) {
-      await this.onCommand(interaction);
-    }
+    if (!interaction.isUserContextMenuCommand()) return;
+    if (interaction.commandName !== this.command.name) return;
+    await this.onCommand(interaction);
   }
 
   /**
@@ -47,20 +45,18 @@ export abstract class MessageContextMenuInteraction extends InteractionBase {
   abstract command: ContextMenuCommandBuilder;
 
   /** @inheritdoc */
-  registerCommands(commandList: ApplicationCommandDataResolvable[]): void {
+  override registerCommands(
+    commandList: ApplicationCommandDataResolvable[],
+  ): void {
     commandList.push(this.command.setType(ApplicationCommandType.Message));
   }
 
   /** @inheritdoc */
   override async onInteractionCreate(interaction: Interaction): Promise<void> {
     // メッセージを右クリックしたときのコンテキストメニュー
-    if (
-      interaction.isMessageContextMenuCommand() &&
-      this.command.type === ApplicationCommandType.Message &&
-      interaction.commandName === this.command.name
-    ) {
-      await this.onCommand(interaction);
-    }
+    if (!interaction.isMessageContextMenuCommand()) return;
+    if (interaction.commandName !== this.command.name) return;
+    await this.onCommand(interaction);
   }
 
   /**

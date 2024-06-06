@@ -31,7 +31,9 @@ export abstract class CommandGroupInteraction
   abstract command: SlashCommandSubcommandsOnlyBuilder;
 
   /** @inheritdoc */
-  registerCommands(commandList: ApplicationCommandDataResolvable[]): void {
+  override registerCommands(
+    commandList: ApplicationCommandDataResolvable[],
+  ): void {
     commandList.push(this.command);
   }
 
@@ -59,7 +61,7 @@ export abstract class SubcommandGroupInteraction
   }
 
   /** @inheritdoc */
-  registerSubCommands(): void {
+  override registerSubCommands(): void {
     this._registry.command.addSubcommandGroup(this.command);
   }
 
@@ -82,7 +84,9 @@ export abstract class CommandInteraction
   abstract command: SlashCommandBuilder;
 
   /** @inheritdoc */
-  registerCommands(commandList: ApplicationCommandDataResolvable[]): void {
+  override registerCommands(
+    commandList: ApplicationCommandDataResolvable[],
+  ): void {
     commandList.push(this.command);
   }
 
@@ -125,7 +129,7 @@ export abstract class SubcommandInteraction
   }
 
   /** @inheritdoc */
-  registerSubCommands(): void {
+  override registerSubCommands(): void {
     this._registry.command.addSubcommand(this.command);
   }
 

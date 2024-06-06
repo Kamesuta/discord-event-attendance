@@ -1,4 +1,4 @@
-import { PermissionFlagsBits, SlashCommandBuilder } from 'discord.js';
+import { SlashCommandBuilder } from 'discord.js';
 import { CommandGroupInteraction } from '../base/command_base.js';
 
 class StatusCommand extends CommandGroupInteraction {
