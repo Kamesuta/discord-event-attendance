@@ -1,5 +1,5 @@
 import { ApplicationCommandDataResolvable, Interaction } from 'discord.js';
-import { client, prisma } from './index.js';
+import { client } from './index.js';
 import { config } from './utils/config.js';
 import { showGameResults } from './game_command_handler.js';
 import { logger } from './utils/log.js';
@@ -23,6 +23,7 @@ import markClearUserMenu from './commands/contextmenu/MarkClearUserMenu.js';
 import setMemoUserMenu from './commands/contextmenu/SetMemoUserMenu.js';
 import updateEventMessageMenu from './commands/contextmenu/UpdateEventMessageMenu.js';
 import setShowStats from './event/setShowStats.js';
+import setMemoAction from './commands/action/SetMemoAction.js';
 
 /**
  * 全コマンドリスト
@@ -45,6 +46,7 @@ const commands: InteractionBase[] = [
   markClearUserMenu,
   setMemoUserMenu,
   updateEventMessageMenu,
+  setMemoAction,
 ];
 
 /**
@@ -117,58 +119,6 @@ export async function onInteractionCreate(
           // 試合結果を表示
           const gameId = parseInt(interaction.values[0]);
           await showGameResults(interaction, gameId);
-        }
-      }
-    } else if (interaction.isModalSubmit()) {
-      // コンポーネントによって処理を分岐
-      const match = interaction.customId.match(/event_modal_(.+?)_(\d+)_(\d+)/);
-      if (match) {
-        const [_, type, userId, eventId] = match;
-
-        await interaction.deferReply({ ephemeral: true });
-        const event = await getEventFromId(
-          eventId ? parseInt(eventId) : undefined,
-        );
-        if (!event) {
-          await interaction.editReply({
-            content: 'イベントが見つかりませんでした',
-          });
-          return;
-        }
-
-        if (type === 'memo') {
-          const memo = interaction.components[0]?.components[0]?.value;
-          if (memo === undefined || memo === '' || memo === '!') {
-            await prisma.userStat.update({
-              where: {
-                id: {
-                  eventId: event.id,
-                  userId,
-                },
-              },
-              data: {
-                memo: null,
-              },
-            });
-            await interaction.editReply({
-              content: 'メモを削除しました',
-            });
-          } else {
-            await prisma.userStat.update({
-              where: {
-                id: {
-                  eventId: event.id,
-                  userId,
-                },
-              },
-              data: {
-                memo,
-              },
-            });
-            await interaction.editReply({
-              content: 'メモを更新しました',
-            });
-          }
         }
       }
     }
