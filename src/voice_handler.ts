@@ -1,7 +1,7 @@
 import { VoiceBasedChannel, VoiceState } from 'discord.js';
 import { prisma } from './index.js';
 import { config } from './utils/config.js';
-import { tallyAttendanceTime } from './attendance_time.js';
+import { tallyAttendanceTime } from './event/attendance_time.js';
 import { logger } from './utils/log.js';
 
 // 入退室ログを記録します

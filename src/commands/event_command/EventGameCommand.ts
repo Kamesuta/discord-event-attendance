@@ -4,7 +4,7 @@ import {
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
 import eventCommand from './EventCommand.js';
-import { addGameResult } from '../../game_command_handler.js';
+import { addGameResult } from '../../event/game.js';
 import { getEventFromId } from '../../event/event.js';
 
 class EventGameCommand extends SubcommandInteraction {

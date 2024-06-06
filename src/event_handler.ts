@@ -1,7 +1,7 @@
 import { Event, PrismaClient } from '@prisma/client';
 import { GuildScheduledEvent, PartialGuildScheduledEvent } from 'discord.js';
 import { config } from './utils/config.js';
-import { tallyAttendanceTime } from './attendance_time.js';
+import { tallyAttendanceTime } from './event/attendance_time.js';
 import { logger } from './utils/log.js';
 
 const prisma = new PrismaClient();

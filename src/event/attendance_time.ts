@@ -1,5 +1,5 @@
 import { Event } from '@prisma/client';
-import { prisma } from './index.js';
+import { prisma } from '../index.js';
 
 /**
  * ユーザーの参加時間を計算する

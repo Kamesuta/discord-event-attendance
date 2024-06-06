@@ -8,7 +8,7 @@ import {
 import { prisma } from '../index.js';
 import { config } from '../utils/config.js';
 import { Event } from '@prisma/client';
-import { updateAttendanceTimeIfEventActive } from '../attendance_time.js';
+import { updateAttendanceTimeIfEventActive } from './attendance_time.js';
 import getWebhook from './getWebhook.js';
 import splitStrings from './splitStrings.js';
 

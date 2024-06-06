@@ -3,9 +3,9 @@ import {
   EmbedBuilder,
   RepliableInteraction,
 } from 'discord.js';
-import { prisma } from './index.js';
+import { prisma } from '../index.js';
 import { Event, Prisma, UserGameResult } from '@prisma/client';
-import { config } from './utils/config.js';
+import { config } from '../utils/config.js';
 
 /**
  * ゲームの勝敗を記録する

@@ -74,6 +74,10 @@ export default [
                     format: ['PascalCase'],
                 },
                 {
+                    selector: 'import',
+                    format: ['camelCase', 'PascalCase'],
+                },
+                {
                     selector: [
                         'classProperty',
                         'objectLiteralProperty',
