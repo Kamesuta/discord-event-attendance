@@ -4,7 +4,7 @@ import {
   PermissionFlagsBits,
 } from 'discord.js';
 import { MessageContextMenuInteraction } from '../base/contextmenu_base.js';
-import { getEventFromDiscordId } from '../../event/event.js';
+import eventManager from '../../event/EventManager.js';
 import showEvent from '../../event/showEvent.js';
 import { updateEvent } from '../../event_handler.js';
 
@@ -40,7 +40,7 @@ class UpdateEventMessageMenu extends MessageContextMenuInteraction {
       await updateEvent(scheduledEvent);
     }
     // イベント情報を取得
-    const event = await getEventFromDiscordId(scheduledEventId);
+    const event = await eventManager.getEventFromDiscordId(scheduledEventId);
     if (!event) {
       await interaction.editReply({
         content: 'イベントが見つかりませんでした',

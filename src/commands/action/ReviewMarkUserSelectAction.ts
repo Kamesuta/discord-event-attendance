@@ -3,7 +3,7 @@ import {
   UserSelectMenuBuilder,
   UserSelectMenuInteraction,
 } from 'discord.js';
-import { getEventFromId } from '../../event/event.js';
+import eventManager from '../../event/EventManager.js';
 import { MessageComponentActionInteraction } from '../base/action_base.js';
 import { Event } from '@prisma/client';
 import setShowStats from '../../event/setShowStats.js';
@@ -52,7 +52,9 @@ class ReviewMarkUserSelectAction extends MessageComponentActionInteraction<Compo
     if (!eventId || !action) return; // 必要なパラメータがない場合は旧形式の可能性があるため無視
 
     await interaction.deferReply({ ephemeral: true });
-    const event = await getEventFromId(eventId ? parseInt(eventId) : undefined);
+    const event = await eventManager.getEventFromId(
+      eventId ? parseInt(eventId) : undefined,
+    );
     if (!event) {
       await interaction.editReply({
         content: 'イベントが見つかりませんでした',

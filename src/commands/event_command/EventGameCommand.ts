@@ -5,7 +5,7 @@ import {
 import { SubcommandInteraction } from '../base/command_base.js';
 import eventCommand from './EventCommand.js';
 import { addGameResult } from '../../event/game.js';
-import { getEventFromId } from '../../event/event.js';
+import eventManager from '../../event/EventManager.js';
 
 class EventGameCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
@@ -86,12 +86,6 @@ class EventGameCommand extends SubcommandInteraction {
         .setDescription('12位のユーザー')
         .setRequired(false),
     )
-    // .addIntegerOption((option) =>
-    //   option
-    //     .setName('event_id')
-    //     .setDescription('イベントID (省略時は最新のイベントを操作)')
-    //     .setRequired(false),
-    // )
     .addStringOption((option) =>
       option.setName('url').setDescription('試合のURL').setRequired(false),
     )
@@ -128,8 +122,7 @@ class EventGameCommand extends SubcommandInteraction {
   async onCommand(interaction: ChatInputCommandInteraction): Promise<void> {
     // ゲームの勝敗を記録
     await interaction.deferReply({ ephemeral: false });
-    const eventId = interaction.options.getInteger('event_id');
-    const event = await getEventFromId(eventId ?? undefined);
+    const event = await eventManager.getEvent(interaction);
     if (!event) {
       await interaction.editReply({
         content: 'イベントが見つかりませんでした',

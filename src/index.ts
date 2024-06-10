@@ -11,7 +11,7 @@ import {
 } from './event_handler.js';
 import CommandHandler from './commands/CommandHandler.js';
 import { nowait } from './utils/utils.js';
-import { commands } from './commands/commands.js';
+import commands from './commands/commands.js';
 
 // .envファイルを読み込む
 dotenv.config();

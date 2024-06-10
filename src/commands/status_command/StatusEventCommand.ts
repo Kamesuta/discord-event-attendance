@@ -4,7 +4,7 @@ import {
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
 import statusCommand from './StatusCommand.js';
-import { getEventFromId } from '../../event/event.js';
+import eventManager from '../../event/EventManager.js';
 import showEvent from '../../event/showEvent.js';
 
 class StatusEventCommand extends SubcommandInteraction {
@@ -31,7 +31,7 @@ class StatusEventCommand extends SubcommandInteraction {
     const show = interaction.options.getBoolean('show') ?? false;
     await interaction.deferReply({ ephemeral: !show });
     const eventId = interaction.options.getInteger('event_id');
-    const event = await getEventFromId(eventId ?? undefined);
+    const event = await eventManager.getEventFromId(eventId ?? undefined);
     if (!event) {
       await interaction.editReply({
         content: 'イベントが見つかりませんでした',

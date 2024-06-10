@@ -4,7 +4,7 @@ import {
   UserContextMenuCommandInteraction,
 } from 'discord.js';
 import { UserContextMenuInteraction } from '../base/contextmenu_base.js';
-import { getEventFromId } from '../../event/event.js';
+import eventManager from '../../event/EventManager.js';
 import setShowStats from '../../event/setShowStats.js';
 
 class MarkClearUserMenu extends UserContextMenuInteraction {
@@ -16,7 +16,7 @@ class MarkClearUserMenu extends UserContextMenuInteraction {
     interaction: UserContextMenuCommandInteraction,
   ): Promise<void> {
     await interaction.deferReply({ ephemeral: true });
-    const event = await getEventFromId(undefined);
+    const event = await eventManager.getEvent(interaction);
     if (!event) {
       await interaction.editReply({
         content: 'イベントが見つかりませんでした',
