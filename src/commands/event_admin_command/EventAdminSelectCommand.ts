@@ -6,6 +6,7 @@ import { SubcommandInteraction } from '../base/command_base.js';
 import eventManager from '../../event/EventManager.js';
 import eventAdminCommand from './EventAdminCommand.js';
 import EventManager from '../../event/EventManager.js';
+import showEvent from '../../event/showEvent.js';
 
 class EventAdminSelectCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
@@ -24,21 +25,31 @@ class EventAdminSelectCommand extends SubcommandInteraction {
     // イベントを終了
     await interaction.deferReply({ ephemeral: true });
     const eventId = interaction.options.getInteger('event_id') ?? undefined;
-    let eventName = 'デフォルト';
-    if (eventId) {
-      const event = await eventManager.getEventFromId(eventId);
-      eventName = event?.name ? `「${event.name}」` : `ID:${eventId}`;
-      if (!event) {
-        await interaction.editReply({
-          content: 'イベントが見つかりませんでした',
-        });
-        return;
-      }
+    if (!eventId) {
+      await interaction.editReply({
+        content: `選択中のイベントをデフォルトに設定しました`,
+      });
+      return;
     }
+
+    const event = await eventManager.getEventFromId(eventId);
+    const eventName = event?.name ? `「${event.name}」` : `ID:${eventId}`;
+    if (!event) {
+      await interaction.editReply({
+        content: 'イベントが見つかりませんでした',
+      });
+      return;
+    }
+
+    // イベントを選択
     EventManager.selectEvent(interaction.user.id, eventId);
-    await interaction.editReply({
-      content: `イベントを ${eventName} に切り替えました`,
-    });
+    // イベント情報を表示
+    await showEvent(
+      interaction,
+      event,
+      false,
+      `選択中のイベントを ${eventName} (ID: ${eventId}) に設定しました`,
+    );
   }
 }
 
