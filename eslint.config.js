@@ -47,6 +47,14 @@ export default [
                 },
             ],
             'spaced-comment': ['warn', 'always'],
+            'no-irregular-whitespace': [
+                'error',
+                {
+                    skipStrings: true,
+                    skipRegExps: true,
+                    skipTemplates: true,
+                }
+            ],
             '@typescript-eslint/naming-convention': [
                 'error',
                 {
