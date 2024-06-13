@@ -23,6 +23,9 @@ import splitStrings from '../../event/splitStrings.js';
 import { Event, GameResult, Prisma } from '@prisma/client';
 import omit from 'lodash/omit';
 import gameEditButtonAction from '../action/event_game_command/GameEditButtonAction.js';
+import gameClearButtonAction from '../action/event_game_command/GameClearButtonAction.js';
+import gameDeleteButtonAction from '../action/event_game_command/GameDeleteButtonAction.js';
+import gameConfirmButtonAction from '../action/event_game_command/GameConfirmButtonAction.js';
 
 /**
  * 編集データ
@@ -184,7 +187,7 @@ class EventGameCommand extends SubcommandInteraction {
   async updateEmbed(
     event: Event,
     editData: EditData,
-    interaction: RepliableInteraction,
+    interaction?: RepliableInteraction,
   ): Promise<void> {
     const embeds = this.makeEditEmbed(event, editData);
 
@@ -194,11 +197,17 @@ class EventGameCommand extends SubcommandInteraction {
       components: [
         new ActionRowBuilder<ButtonBuilder>().addComponents(
           gameEditButtonAction.create(editData),
+          gameClearButtonAction.create(editData),
+          gameDeleteButtonAction.create(editData),
+          gameConfirmButtonAction.create(editData),
         ),
       ],
     };
 
-    if (interaction === editData.interaction) {
+    if (!interaction) {
+      // インタラクションが指定されていない場合、元のメッセージを編集
+      await editData.interaction.editReply(message);
+    } else if (interaction === editData.interaction) {
       // 新規の場合、そのまま返信
       await interaction.editReply(message);
     } else {
@@ -272,6 +281,7 @@ class EventGameCommand extends SubcommandInteraction {
    * @param interaction 返信用のインタラクション
    * @param eventId イベントID
    * @param editGameId 編集する試合ID
+   * @param clear 編集データをクリアするか
    * @returns 編集データ
    * @throws エラーメッセージ
    */
@@ -280,6 +290,7 @@ class EventGameCommand extends SubcommandInteraction {
     interaction: RepliableInteraction,
     eventId: number,
     editGameId?: number,
+    clear = false,
   ): Promise<EditData> {
     // 編集データを取得
     let editData: EditData | undefined = this._editData[key];
@@ -292,7 +303,7 @@ class EventGameCommand extends SubcommandInteraction {
       this._editData[key].interaction = interaction;
     }
     // 編集データがない場合は新規作成
-    if (!editData) {
+    if (!editData || clear) {
       // 編集データを作成
       this._editData[key] = editData = {
         key,
@@ -312,7 +323,10 @@ class EventGameCommand extends SubcommandInteraction {
     }
 
     // 編集中の試合ID/イベントIDが異なる場合は初期化
-    if (editData.game.eventId !== eventId || editData.game.id !== editGameId) {
+    if (
+      editData.game.eventId !== eventId ||
+      (editGameId !== undefined && editData.game.id !== editGameId)
+    ) {
       // インタラクションをリセット
       editData.interaction = interaction;
 
@@ -351,7 +365,7 @@ class EventGameCommand extends SubcommandInteraction {
           throw '試合が見つかりませんでした';
         }
         if (editGame.eventId !== editData.game.eventId) {
-          throw '現在編集中のイベントの試合のみ編集できます';
+          throw `現在編集中のイベントの試合のみ編集できます\n(選択しようとしたイベントID: ${editGame.eventId}、現在編集中のイベントID: ${editData.game.eventId})`;
         }
 
         // 不要なデータを消したうえで、編集データに追加
@@ -483,7 +497,7 @@ class EventGameCommand extends SubcommandInteraction {
    * @param editData 編集データ
    * @returns 記録した試合の結果
    */
-  private async _addGameResult(editData: EditData): Promise<GameResultData> {
+  async addGameResult(editData: EditData): Promise<GameResultData> {
     // DB編集クエリ
     const users = !editData.updateUsers // 参加者の変更があった場合
       ? undefined
@@ -528,6 +542,18 @@ class EventGameCommand extends SubcommandInteraction {
         });
 
     return game;
+  }
+
+  /**
+   * ゲームの勝敗を削除する
+   * @param id 試合ID
+   */
+  async deleteGameResult(id: number): Promise<void> {
+    await prisma.gameResult.delete({
+      where: {
+        id,
+      },
+    });
   }
 
   /**

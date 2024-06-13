@@ -9,11 +9,10 @@ import { MessageComponentActionInteraction } from '../../base/action_base.js';
 import eventGameCommand, {
   EditData,
 } from '../../event_command/EventGameCommand.js';
-import gameEditModalAction from './GameEditModalAction.js';
 
-class GameEditButtonAction extends MessageComponentActionInteraction<ComponentType.Button> {
+class GameClearButtonAction extends MessageComponentActionInteraction<ComponentType.Button> {
   /**
-   * ゲーム編集ボタンを作成
+   * ボタンを作成
    * @param editData 編集データ
    * @returns 作成したビルダー
    */
@@ -27,8 +26,8 @@ class GameEditButtonAction extends MessageComponentActionInteraction<ComponentTy
     // ダイアログを作成
     return new ButtonBuilder()
       .setCustomId(customId)
-      .setEmoji('📝')
-      .setLabel('編集')
+      .setEmoji('✨')
+      .setLabel('新規試合')
       .setStyle(ButtonStyle.Primary);
   }
 
@@ -41,29 +40,28 @@ class GameEditButtonAction extends MessageComponentActionInteraction<ComponentTy
     const key = params.get('key');
     if (!eventId || !key) return; // 必要なパラメータがない場合は旧形式の可能性があるため無視
 
-    // モーダルのため、deferできない
-    // await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ ephemeral: true });
     const event = await eventManager.getEventFromId(
       eventId ? parseInt(eventId) : undefined,
     );
     if (!event) {
-      await interaction.reply({
+      await interaction.editReply({
         content: 'イベントが見つかりませんでした',
       });
       return;
     }
 
-    // 編集データを取得
+    // クリアして編集データを取得
     const editData = await eventGameCommand
-      .getEditData(key, interaction, event.id)
+      .getEditData(key, interaction, event.id, undefined, true)
       .catch(async (content: string) => {
-        await interaction.reply({ content });
+        await interaction.editReply({ content });
       });
     if (!editData) return;
 
-    // モーダルを表示
-    await interaction.showModal(gameEditModalAction.create(editData));
+    // Embedを更新
+    await eventGameCommand.updateEmbed(event, editData, interaction);
   }
 }
 
-export default new GameEditButtonAction('gedit', ComponentType.Button);
+export default new GameClearButtonAction('gclr', ComponentType.Button);

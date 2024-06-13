@@ -9,11 +9,10 @@ import { MessageComponentActionInteraction } from '../../base/action_base.js';
 import eventGameCommand, {
   EditData,
 } from '../../event_command/EventGameCommand.js';
-import gameEditModalAction from './GameEditModalAction.js';
 
-class GameEditButtonAction extends MessageComponentActionInteraction<ComponentType.Button> {
+class GameDeleteButtonAction extends MessageComponentActionInteraction<ComponentType.Button> {
   /**
-   * ゲーム編集ボタンを作成
+   * ボタンを作成
    * @param editData 編集データ
    * @returns 作成したビルダー
    */
@@ -27,9 +26,9 @@ class GameEditButtonAction extends MessageComponentActionInteraction<ComponentTy
     // ダイアログを作成
     return new ButtonBuilder()
       .setCustomId(customId)
-      .setEmoji('📝')
-      .setLabel('編集')
-      .setStyle(ButtonStyle.Primary);
+      .setEmoji('🗑️')
+      .setLabel('削除')
+      .setStyle(ButtonStyle.Danger);
   }
 
   /** @inheritdoc */
@@ -41,13 +40,12 @@ class GameEditButtonAction extends MessageComponentActionInteraction<ComponentTy
     const key = params.get('key');
     if (!eventId || !key) return; // 必要なパラメータがない場合は旧形式の可能性があるため無視
 
-    // モーダルのため、deferできない
-    // await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ ephemeral: true });
     const event = await eventManager.getEventFromId(
       eventId ? parseInt(eventId) : undefined,
     );
     if (!event) {
-      await interaction.reply({
+      await interaction.editReply({
         content: 'イベントが見つかりませんでした',
       });
       return;
@@ -57,13 +55,33 @@ class GameEditButtonAction extends MessageComponentActionInteraction<ComponentTy
     const editData = await eventGameCommand
       .getEditData(key, interaction, event.id)
       .catch(async (content: string) => {
-        await interaction.reply({ content });
+        await interaction.editReply({ content });
       });
     if (!editData) return;
 
-    // モーダルを表示
-    await interaction.showModal(gameEditModalAction.create(editData));
+    if (!editData.game.id) {
+      await interaction.editReply({
+        content: 'ドラフト状態の(登録されていない)試合は削除できません',
+      });
+      return;
+    }
+
+    // 削除
+    await eventGameCommand.deleteGameResult(editData.game.id);
+
+    // クリアして編集データを取得
+    const clearedEditData = await eventGameCommand
+      .getEditData(key, interaction, event.id, undefined, true)
+      .catch(async (content: string) => {
+        await interaction.editReply({ content });
+      });
+    if (!clearedEditData) return;
+
+    // 削除メッセージを返信
+    await interaction.editReply({
+      content: `ゲーム「${editData.game.name}」(試合ID: ${editData.game.id})を削除しました`,
+    });
   }
 }
 
-export default new GameEditButtonAction('gedit', ComponentType.Button);
+export default new GameDeleteButtonAction('gdel', ComponentType.Button);
