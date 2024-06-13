@@ -181,21 +181,6 @@ class EventGameCommand extends SubcommandInteraction {
       .setTitle('ゲームの勝敗を記録')
       .setDescription('参加者を選択してください');
 
-    // 候補のユーザーを列挙する
-    splitStrings(
-      editData.candidates.map((userId, index) => {
-        // [${A-Za-z0-9の連番}] <@${ユーザーID}>
-        const countText = index < ALPHABET.length ? `${ALPHABET[index]}` : '?';
-        return `[${countText}] <@${userId}>`;
-      }),
-      1024,
-    ).forEach((line, i) => {
-      embeds.addFields({
-        name: i === 0 ? '参加者リスト' : '\u200b',
-        value: line,
-      });
-    });
-
     // ゲームの名前を取得
     const gameName = interaction.options.getString('game_name');
     if (gameName) editData.game.name = gameName;
@@ -210,12 +195,43 @@ class EventGameCommand extends SubcommandInteraction {
       const image = interaction.options.getAttachment('image')?.proxyURL;
       if (image) editData.game.image = image;
     }
+    // チーム指定子 書式「ABC=優勝,DEF=準優勝,,=参加(0.1)」
+    const teamString = interaction.options.getString('rank');
     // ユーザーの報酬
-    const userAwards = this._calcAwards(interaction, editData);
+    const userAwards = this._calcAwards(editData, teamString);
     if (userAwards) {
       editData.users = userAwards;
       editData.updateUsers = true;
     }
+
+    // イベント名を表示
+    embeds.addFields({
+      name: 'イベント名',
+      value: event.name,
+    });
+
+    // チーム指定子を表示
+    if (teamString) {
+      embeds.addFields({
+        name: 'チーム指定子',
+        value: `\`${teamString}\``, // コードブロックで表示
+      });
+    }
+
+    // 候補のユーザーを列挙する
+    splitStrings(
+      editData.candidates.map((userId, index) => {
+        // [${A-Za-z0-9の連番}] <@${ユーザーID}>
+        const countText = index < ALPHABET.length ? `${ALPHABET[index]}` : '?';
+        return `[${countText}] <@${userId}>`;
+      }),
+      1024,
+    ).forEach((line, i) => {
+      embeds.addFields({
+        name: i === 0 ? '参加者リスト' : '\u200b',
+        value: line,
+      });
+    });
 
     // 表示用のプレビューを作成
     const game = this._previewGetGameResult(editData);
@@ -238,16 +254,14 @@ class EventGameCommand extends SubcommandInteraction {
 
   /**
    * ユーザーの報酬を計算
-   * @param interaction インタラクション
    * @param editData 編集データ
+   * @param teamString チーム指定子
    * @returns ユーザーごとの報酬
    */
   private _calcAwards(
-    interaction: ChatInputCommandInteraction,
     editData: EditData,
+    teamString: string | null,
   ): Prisma.UserGameResultCreateManyGameInput[] | undefined {
-    // チーム指定子 書式「ABC=優勝,DEF=準優勝,,=参加(0.1)」
-    const teamString = interaction.options.getString('rank');
     if (!teamString) {
       return;
     }
