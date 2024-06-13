@@ -91,7 +91,7 @@ export async function showGameResults(
 
   // 戦績が見つからない場合
   if (!game) {
-    await interaction.reply('試合が見つかりませんでした');
+    await interaction.editReply('試合が見つかりませんでした');
     return;
   }
 
@@ -129,7 +129,7 @@ export function makeEmbed(
   // 結果を表示
   embeds
     .setFooter({
-      text: `試合ID: ${game.id}`,
+      text: `試合ID: ${game.id}, イベントID: ${game.eventId}`,
     })
     .setColor('#ff8c00');
 

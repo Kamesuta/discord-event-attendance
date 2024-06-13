@@ -41,76 +41,12 @@ class EventGameCommand extends SubcommandInteraction {
     .addStringOption((option) =>
       option.setName('game_name').setDescription('ゲーム名').setRequired(false),
     )
-    .addUserOption((option) =>
+    .addStringOption((option) =>
       option
-        .setName('rank1')
-        .setDescription('1位のユーザー')
-        .setRequired(false),
-    )
-    .addUserOption((option) =>
-      option
-        .setName('rank2')
-        .setDescription('2位のユーザー')
-        .setRequired(false),
-    )
-    .addUserOption((option) =>
-      option
-        .setName('rank3')
-        .setDescription('3位のユーザー')
-        .setRequired(false),
-    )
-    .addUserOption((option) =>
-      option
-        .setName('rank4')
-        .setDescription('4位のユーザー')
-        .setRequired(false),
-    )
-    .addUserOption((option) =>
-      option
-        .setName('rank5')
-        .setDescription('5位のユーザー')
-        .setRequired(false),
-    )
-    .addUserOption((option) =>
-      option
-        .setName('rank6')
-        .setDescription('6位のユーザー')
-        .setRequired(false),
-    )
-    .addUserOption((option) =>
-      option
-        .setName('rank7')
-        .setDescription('7位のユーザー')
-        .setRequired(false),
-    )
-    .addUserOption((option) =>
-      option
-        .setName('rank8')
-        .setDescription('8位のユーザー')
-        .setRequired(false),
-    )
-    .addUserOption((option) =>
-      option
-        .setName('rank9')
-        .setDescription('9位のユーザー')
-        .setRequired(false),
-    )
-    .addUserOption((option) =>
-      option
-        .setName('rank10')
-        .setDescription('10位のユーザー')
-        .setRequired(false),
-    )
-    .addUserOption((option) =>
-      option
-        .setName('rank11')
-        .setDescription('11位のユーザー')
-        .setRequired(false),
-    )
-    .addUserOption((option) =>
-      option
-        .setName('rank12')
-        .setDescription('12位のユーザー')
+        .setName('rank')
+        .setDescription(
+          'チーム指定子 (2人チームの例:「AB,CD」) (参加賞の例:「,,ABC」) (3人に順位つけて、残りは参加賞の例:「ABC,,DEF」)',
+        )
         .setRequired(false),
     )
     .addStringOption((option) =>
@@ -130,14 +66,6 @@ class EventGameCommand extends SubcommandInteraction {
         .setName('game_id')
         .setDescription('編集する試合ID')
         .setRequired(false),
-    )
-    .addStringOption((option) =>
-      option
-        .setName('team')
-        .setDescription(
-          'チーム指定子 (2人チームの例:「2,4」) (参加賞の例:「=」) (3人に順位つけて、残りは参加賞の例:「3」)',
-        )
-        .setRequired(false),
     );
 
   /** 編集データ */
@@ -145,7 +73,16 @@ class EventGameCommand extends SubcommandInteraction {
 
   async onCommand(interaction: ChatInputCommandInteraction): Promise<void> {
     // ゲームの勝敗を記録
-    await interaction.deferReply({ ephemeral: false });
+    await interaction.deferReply({ ephemeral: true });
+
+    // イベントを取得
+    const event = await eventManager.getEvent(interaction);
+    if (!event) {
+      await interaction.editReply({
+        content: 'イベントが見つかりませんでした',
+      });
+      return;
+    }
 
     // 編集データを初期化
     const key = new URLSearchParams({
@@ -155,41 +92,21 @@ class EventGameCommand extends SubcommandInteraction {
     // 編集データを取得
     let editData: EditData | undefined = this._editData[key];
 
-    // 15分(-30秒のバッファ)経ったデータは無視
+    // 15分(-30秒のバッファ)経ったデータのインタラクションは更新
     if (
       editData?.interaction.createdTimestamp <
       Date.now() - 14.5 * 60 * 1000
     ) {
-      delete this._editData[key];
-      editData = undefined;
+      this._editData[key].interaction = interaction;
     }
     // 編集データがない場合は新規作成
     if (!editData) {
-      // イベントを取得
-      const event = await eventManager.getEvent(interaction);
-      if (!event) {
-        await interaction.editReply({
-          content: 'イベントが見つかりませんでした',
-        });
-        return;
-      }
-
-      // 参加者を列挙する
-      const candidates = (
-        await prisma.userStat.findMany({
-          where: {
-            eventId: event.id,
-            show: true,
-          },
-        })
-      ).map((stat) => stat.userId);
-
       // 編集データを作成
       this._editData[key] = editData = {
         interaction,
-        candidates,
+        candidates: [],
         game: {
-          eventId: event.id,
+          eventId: 0,
           name: '試合',
           url: null,
           image: null,
@@ -201,8 +118,31 @@ class EventGameCommand extends SubcommandInteraction {
 
     // 編集する試合IDを取得
     const editGameId = interaction.options.getInteger('game_id');
-    const editGame = editGameId
-      ? await prisma.gameResult.findUnique({
+    // 編集中の試合ID/イベントIDが異なる場合は初期化
+    if (editData.game.eventId !== event.id || editData.game.id !== editGameId) {
+      // インタラクションをリセット
+      editData.interaction = interaction;
+
+      // イベントIDが異なる場合は初期化
+      if (editData.game.eventId !== event.id) {
+        // イベントIDを更新
+        editData.game.eventId = event.id;
+
+        // 参加者を列挙する
+        editData.candidates = (
+          await prisma.userStat.findMany({
+            where: {
+              eventId: event.id,
+              show: true,
+            },
+          })
+        ).map((stat) => stat.userId);
+      }
+
+      // 編集中かつ、イベントIDと異なったらエラー
+      if (editGameId) {
+        // IDがある = 編集モードの場合は読み込み
+        const editGame = await prisma.gameResult.findUnique({
           where: {
             id: editGameId,
           },
@@ -213,12 +153,27 @@ class EventGameCommand extends SubcommandInteraction {
               },
             },
           },
-        })
-      : undefined;
-    if (editGame) {
-      // 不要なデータを消したうえで、編集データに追加
-      editData.game = omit(editGame, 'users');
-      editData.users = editGame.users.map((user) => omit(user, 'id'));
+        });
+        if (!editGame) {
+          await interaction.editReply({
+            content: '試合が見つかりませんでした',
+          });
+          return;
+        }
+        if (editGame.eventId !== editData.game.eventId) {
+          await interaction.editReply({
+            content: '現在編集中のイベントの試合のみ編集できます',
+          });
+          return;
+        }
+
+        // 不要なデータを消したうえで、編集データに追加
+        editData.game = omit(editGame, 'users');
+        editData.users = editGame.users.map((user) => omit(user, 'id'));
+      } else {
+        // ID指定がない場合はリンク解除
+        editData.game.id = undefined;
+      }
     }
 
     // Embedを作成
@@ -256,8 +211,8 @@ class EventGameCommand extends SubcommandInteraction {
       if (image) editData.game.image = image;
     }
     // ユーザーの報酬
-    const userAwards = this._calcAwards(interaction, editData.game.eventId);
-    if (userAwards.length) {
+    const userAwards = this._calcAwards(interaction, editData);
+    if (userAwards) {
       editData.users = userAwards;
       editData.updateUsers = true;
     }
@@ -284,37 +239,47 @@ class EventGameCommand extends SubcommandInteraction {
   /**
    * ユーザーの報酬を計算
    * @param interaction インタラクション
-   * @param eventId イベントID
+   * @param editData 編集データ
    * @returns ユーザーごとの報酬
    */
   private _calcAwards(
     interaction: ChatInputCommandInteraction,
-    eventId: number,
-  ): Prisma.UserGameResultCreateManyGameInput[] {
-    // ランクを取得
-    const ranks = [...Array(12).keys()]
-      .map((i) => interaction.options.getUser(`rank${i + 1}`))
-      .filter((item): item is NonNullable<typeof item> => item !== null);
+    editData: EditData,
+  ): Prisma.UserGameResultCreateManyGameInput[] | undefined {
+    // チーム指定子 書式「ABC=優勝,DEF=準優勝,,=参加(0.1)」
+    const teamString = interaction.options.getString('rank');
+    if (!teamString) {
+      return;
+    }
 
-    // チーム指定子 書式「2=優勝,4=準優勝,=参加(0.1)」
-    const teamString = interaction.options.getString('team');
     // 指定されたチーム指定子
-    const teamSpec: Omit<Award, 'userId'>[] | undefined = teamString
-      ? teamString.split(',').flatMap((team) => {
-          const [m, rank, group, xp] =
-            /(\d*)(?:=([^(]*)(?:\((\d+)\))?)?/.exec(team) ?? [];
-          if (!m) {
-            return [];
-          }
-          return [
-            {
-              rank: rank ? parseInt(rank) : 0,
-              xp: xp !== undefined ? parseInt(xp) : undefined,
-              group: group ? group.trim() : undefined,
-            },
-          ];
-        })
-      : undefined;
+    let defaultSpecMode = false;
+    const teamSpec: (Omit<Award, 'userId'> & { users: string[] })[] = [];
+    teamString.split(',').forEach((team, rank) => {
+      if (team.length === 0) {
+        defaultSpecMode = true;
+        return;
+      }
+
+      const [m, userSpec, group, xp] =
+        /([A-Za-z0-9]+)(?:=([^(]*)(?:\((\d+)\))?)?/.exec(team) ?? [];
+      if (!m) {
+        return;
+      }
+
+      // ユーザー取得
+      const indices = userSpec.split('').map((c) => ALPHABET.indexOf(c));
+      const users = indices
+        .map((index) => editData.candidates[index])
+        .filter((id) => id);
+
+      teamSpec.push({
+        users,
+        rank: defaultSpecMode ? 0 : rank + 1,
+        xp: xp !== undefined ? parseInt(xp) : undefined,
+        group: group ? group.trim() : undefined,
+      });
+    });
 
     // ユーザーごとの獲得
     // ・チーム指定子なし → 個人戦
@@ -322,72 +287,59 @@ class EventGameCommand extends SubcommandInteraction {
     // ・チーム指定子あり、チーム指定子が1つ → 個人戦 + 残りは参加賞
     // ・チーム指定子あり、チーム指定子が2つ以上 → チーム戦
     const userAwards: Award[] = [];
-    if (teamSpec) {
-      // デフォルトの賞
-      const defaultAward = teamSpec.find((spec) => spec.rank === 0);
-      // チーム指定子による賞の割り当て
-      const specAwards = teamSpec
-        .filter((spec) => spec.rank !== 0)
-        .sort((a, b) => a.rank - b.rank);
+    // デフォルトの賞
+    const defaultAward = teamSpec.find((spec) => spec.rank === 0);
+    // チーム指定子による賞の割り当て
+    const specAwards = teamSpec
+      .filter((spec) => spec.rank !== 0)
+      .sort((a, b) => a.rank - b.rank);
 
-      let currentIndex = 0;
-      if (specAwards.length === 0) {
-        // チーム指定子がない場合 → 全員参加賞
-      } else if (specAwards.length === 1) {
-        // チーム指定子が1つの場合 → 個人戦
-        // デフォルトの賞
-        ranks.slice(0, specAwards[0].rank).forEach((user, i) => {
-          userAwards.push({
-            userId: user.id,
-            rank: i + 1,
-            xp: xpMap[i],
-          });
-          currentIndex++;
-        });
-      } else {
-        // チーム指定子が2つ以上の場合 → チーム戦
-        // 1～n位までのユーザーに賞を割り当て
-        specAwards.forEach((spec, rank) => {
-          while (currentIndex < spec.rank && currentIndex < ranks.length) {
-            userAwards.push({
-              userId: ranks[currentIndex].id,
-              rank: rank + 1,
-              xp: spec.xp ?? xpMap[rank],
-              group:
-                spec.group ??
-                (specAwards.length === 2
-                  ? ['勝ち', '負け'][rank]
-                  : `${rank + 1}位`), // 2チームの場合は「勝ち」「負け」
-            });
-            currentIndex++;
-          }
-        });
-      }
-
-      // 残りのユーザーにデフォルトの賞を割り当て
-      while (currentIndex < ranks.length) {
+    if (specAwards.length === 0) {
+      // チーム指定子がない場合 → 全員参加賞
+    } else if (specAwards.length === 1) {
+      // チーム指定子が1つの場合 → 個人戦
+      const specAward = specAwards[0];
+      // 順番にランクを割り当て
+      specAward.users.forEach((userId, rank) => {
         userAwards.push({
-          userId: ranks[currentIndex].id,
-          rank: 0,
-          xp: defaultAward?.xp ?? 0.1,
-          group: defaultAward?.group ?? '参加',
+          ...omit(specAward, 'users'),
+          userId,
+          rank: rank + 1,
+          xp: xpMap[rank],
         });
-        currentIndex++;
-      }
+      });
     } else {
-      // デフォルトの賞
-      ranks.forEach((user, i) => {
-        userAwards.push({
-          userId: user.id,
-          rank: i + 1,
-          xp: xpMap[i],
+      // チーム指定子が2つ以上の場合 → チーム戦
+      // 1～n位までのユーザーに賞を割り当て
+      specAwards.forEach((spec) => {
+        spec.users.forEach((userId) => {
+          userAwards.push({
+            userId,
+            rank: spec.rank,
+            xp: spec.xp ?? xpMap[spec.rank],
+            group:
+              spec.group ??
+              (specAwards.length === 2
+                ? ['勝ち', '負け'][spec.rank - 1]
+                : `${spec.rank}位`), // 2チームの場合は「勝ち」「負け」
+          });
         });
       });
     }
 
+    // 残りのユーザーにデフォルトの賞を割り当て
+    defaultAward?.users.forEach((userId) => {
+      userAwards.push({
+        userId,
+        rank: 0,
+        xp: defaultAward?.xp ?? 0.1,
+        group: defaultAward?.group ?? '参加',
+      });
+    });
+
     return userAwards.map((award, _i) => ({
       ...award,
-      eventId,
+      eventId: editData.game.eventId,
       xp: award.xp ?? 0,
     }));
   }

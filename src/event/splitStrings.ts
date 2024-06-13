@@ -10,15 +10,15 @@ export default function splitStrings(
   maxLength: number,
   delimiter = '\n',
 ): string[] {
-  return lines.reduce(
-    (acc, name) => {
-      if (acc[acc.length - 1].length + name.length < maxLength) {
-        acc[acc.length - 1] += `${name}${delimiter}`;
-      } else {
-        acc.push(`${name}${delimiter}`);
-      }
-      return acc;
-    },
-    [''],
-  );
+  return lines.reduce((acc: string[], name: string) => {
+    if (
+      acc.length > 0 &&
+      acc[acc.length - 1].length + name.length < maxLength
+    ) {
+      acc[acc.length - 1] += `${name}${delimiter}`;
+    } else {
+      acc.push(`${name}${delimiter}`);
+    }
+    return acc;
+  }, []);
 }
