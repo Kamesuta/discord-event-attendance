@@ -31,7 +31,11 @@ class StatusEventListCommand extends SubcommandInteraction {
         id: 'asc',
       },
       include: {
-        stats: true,
+        stats: {
+          where: {
+            show: true,
+          },
+        },
         games: true,
       },
     });
