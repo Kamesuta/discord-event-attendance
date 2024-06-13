@@ -41,31 +41,6 @@ export type GameResultData = Prisma.GameResultGetPayload<{
 }>;
 
 /**
- * ゲームの勝敗を記録する
- * @param interaction インタラクション
- * @param game 試合
- */
-export async function addGameResult(
-  interaction: ChatInputCommandInteraction,
-  game: GameResultData,
-): Promise<void> {
-  // 回目を取得
-  const resultCount = await getGameResultNumbering(game.eventId, game.id);
-
-  // 結果を表示
-  const embeds = makeEmbed(
-    new EmbedBuilder()
-      .setTitle(`🎮「${game.name}」の結果が記録されました`)
-      .setDescription(`第 ${resultCount} 回目の試合結果です`),
-    game,
-  );
-
-  await interaction.editReply({
-    embeds: [embeds],
-  });
-}
-
-/**
  * ユーザーの戦績を表示する
  * @param interaction インタラクション
  * @param gameId 試合ID

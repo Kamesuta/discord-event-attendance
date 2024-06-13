@@ -3,12 +3,14 @@ import {
   ButtonInteraction,
   ButtonStyle,
   ComponentType,
+  EmbedBuilder,
 } from 'discord.js';
 import eventManager from '../../../event/EventManager.js';
 import { MessageComponentActionInteraction } from '../../base/action_base.js';
 import eventGameCommand, {
   EditData,
 } from '../../event_command/EventGameCommand.js';
+import { makeEmbed } from '../../../event/game.js';
 
 class GameConfirmButtonAction extends MessageComponentActionInteraction<ComponentType.Button> {
   /**
@@ -40,7 +42,7 @@ class GameConfirmButtonAction extends MessageComponentActionInteraction<Componen
     const key = params.get('key');
     if (!eventId || !key) return; // 必要なパラメータがない場合は旧形式の可能性があるため無視
 
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ ephemeral: false }); // Confirm時はみんなに公開する
     const event = await eventManager.getEventFromId(
       eventId ? parseInt(eventId) : undefined,
     );
@@ -60,7 +62,7 @@ class GameConfirmButtonAction extends MessageComponentActionInteraction<Componen
     if (!editData) return;
 
     // 登録
-    const game = await eventGameCommand.addGameResult(editData);
+    const game = await eventGameCommand.addGameResult(event, editData);
     // 編集データを更新
     editData.game = game;
 
@@ -70,9 +72,19 @@ class GameConfirmButtonAction extends MessageComponentActionInteraction<Componen
       await eventGameCommand.updateEmbed(event, editData);
     }
 
-    // メッセージを返信 (ゲーム「ゲーム名」(試合ID: n)の結果を登録しました)
+    // 登録結果を表示
+    const gameName = editData.game.name
+      .replace(/＄/g, event.name)
+      .replace(/＠/g, `${editData.gameNumber}`);
+    const embeds = makeEmbed(
+      new EmbedBuilder()
+        .setTitle(`🎮「${gameName}」の結果が記録されました`)
+        .setDescription(`第 ${editData.gameNumber} 回目の試合結果です`),
+      game,
+    );
+
     await interaction.editReply({
-      content: `ゲーム「${game.name}」(試合ID: ${game.id})の結果を登録しました`,
+      embeds: [embeds],
     });
   }
 }

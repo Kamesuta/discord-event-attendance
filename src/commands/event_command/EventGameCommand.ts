@@ -494,10 +494,14 @@ class EventGameCommand extends SubcommandInteraction {
 
   /**
    * ゲームの勝敗を記録する
+   * @param event イベント
    * @param editData 編集データ
    * @returns 記録した試合の結果
    */
-  async addGameResult(editData: EditData): Promise<GameResultData> {
+  async addGameResult(
+    event: Event,
+    editData: EditData,
+  ): Promise<GameResultData> {
     // DB編集クエリ
     const users = !editData.updateUsers // 参加者の変更があった場合
       ? undefined
@@ -509,6 +513,11 @@ class EventGameCommand extends SubcommandInteraction {
           },
         };
 
+    // 試合名を取得
+    const gameName = editData.game.name
+      .replace(/＄/g, event.name)
+      .replace(/＠/g, `${editData.gameNumber}`);
+
     // 試合の結果を記録
     const game = editData.game.id // IDがある = 編集モードの場合
       ? await prisma.gameResult.update({
@@ -517,6 +526,7 @@ class EventGameCommand extends SubcommandInteraction {
           },
           data: {
             ...omit(editData.game, 'id', 'eventId'),
+            name: gameName,
             users,
           },
           include: {
@@ -530,6 +540,7 @@ class EventGameCommand extends SubcommandInteraction {
       : await prisma.gameResult.create({
           data: {
             ...omit(editData.game, 'id'),
+            name: gameName,
             users,
           },
           include: {
