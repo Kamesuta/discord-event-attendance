@@ -229,11 +229,12 @@ export async function getUserGameResults(userId: string): Promise<string[]> {
  */
 export async function getGameResultNumbering(
   eventId: number,
-  gameId: number,
+  gameId?: number,
 ): Promise<number> {
-  const {
-    0: { num: resultCount },
-  } = await prisma.$queryRaw<[{ num: number }]>`
+  if (gameId !== undefined) {
+    const {
+      0: { num: resultCount },
+    } = await prisma.$queryRaw<[{ num: number }]>`
     SELECT num
     FROM (
       SELECT
@@ -244,5 +245,15 @@ export async function getGameResultNumbering(
     ) as t
     WHERE t.id = ${gameId};
   `;
-  return resultCount;
+    return resultCount;
+  } else {
+    // イベントの試合数+1 = 何回目の試合か
+    return (
+      (await prisma.gameResult.count({
+        where: {
+          eventId,
+        },
+      })) + 1
+    );
+  }
 }

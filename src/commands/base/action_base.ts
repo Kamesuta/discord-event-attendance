@@ -1,5 +1,4 @@
 import {
-  ComponentType,
   Interaction,
   MappedComponentBuilderTypes,
   MappedInteractionTypes,
@@ -30,8 +29,7 @@ abstract class ActionInteraction<
   protected createCustomId(data?: Record<string, string>): string {
     const params = new URLSearchParams({
       // eslint-disable-next-line @typescript-eslint/naming-convention
-      _: 'action',
-      id: this._id,
+      _: this._id,
       ...data,
     });
     return params.toString();
@@ -43,8 +41,7 @@ abstract class ActionInteraction<
    * @returns 自分のものかどうか
    */
   protected isMyCustomId(params: URLSearchParams): boolean {
-    if (params.get('_') !== 'action') return false;
-    if (params.get('id') !== this._id) return false;
+    if (params.get('_') !== this._id) return false;
     return true;
   }
 
@@ -108,15 +105,17 @@ export abstract class MessageComponentActionInteraction<
 
   /** @inheritdoc */
   protected override createCustomId(data?: Record<string, string>): string {
-    const type = ComponentType[this._type].toLowerCase();
-    return super.createCustomId({ type, ...data });
+    return super.createCustomId({
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      _t: `${this._type}`,
+      ...data,
+    });
   }
 
   /** @inheritdoc */
   protected override isMyCustomId(params: URLSearchParams): boolean {
     if (!super.isMyCustomId(params)) return false;
-    const type = ComponentType[this._type].toLowerCase();
-    if (params.get('type') !== type) return false;
+    if (params.get('_t') !== `${this._type}`) return false;
     return true;
   }
 
@@ -151,13 +150,17 @@ export abstract class ModalActionInteraction extends ActionInteraction<ModalSubm
 
   /** @inheritdoc */
   protected override createCustomId(data?: Record<string, string>): string {
-    return super.createCustomId({ type: 'modal', ...data });
+    return super.createCustomId({
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      _t: 'm',
+      ...data,
+    });
   }
 
   /** @inheritdoc */
   protected override isMyCustomId(params: URLSearchParams): boolean {
     if (!super.isMyCustomId(params)) return false;
-    if (params.get('type') !== 'modal') return false;
+    if (params.get('_t') !== 'm') return false;
     return true;
   }
 
