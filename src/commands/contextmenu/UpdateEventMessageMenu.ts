@@ -34,8 +34,9 @@ class UpdateEventMessageMenu extends MessageContextMenuInteraction {
     }
     const scheduledEventId = match[1];
     // ScheduledEventが取得できれば更新
-    const scheduledEvent =
-      await interaction.guild?.scheduledEvents.fetch(scheduledEventId);
+    const scheduledEvent = await interaction.guild?.scheduledEvents
+      .fetch(scheduledEventId)
+      .catch(() => undefined);
     if (scheduledEvent) {
       await updateEvent(scheduledEvent);
     }
