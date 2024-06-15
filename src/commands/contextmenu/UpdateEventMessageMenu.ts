@@ -47,13 +47,19 @@ class UpdateEventMessageMenu extends MessageContextMenuInteraction {
       });
       return;
     }
+
+    // メッセージを抽出 (\n\n[～](https://discord.com/events/～) は削除)
+    const messageMatch = interaction.targetMessage.content.match(
+      /^(.+)(?:\n\n\[(.+)\]\(https:\/\/discord.com\/events\/.+\))?$/,
+    );
+
     // イベント情報を編集
     await showEvent(
       interaction,
       event,
       true,
-      interaction.targetMessage.content,
-      undefined,
+      messageMatch?.[1],
+      messageMatch?.[2],
       interaction.targetMessage,
     );
   }

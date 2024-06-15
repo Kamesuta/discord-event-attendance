@@ -208,10 +208,7 @@ export default async function showEvent(
         ?.displayAvatarURL() ?? interaction.user.displayAvatarURL();
     if (editMessage) {
       // 既存メッセージを編集
-      await webhook.webhook.editMessage(editMessage, {
-        embeds: [embeds],
-        components: gameResults.length === 0 ? [] : [components],
-      });
+      await webhook.webhook.editMessage(editMessage, contents);
     } else {
       await webhook.webhook.send({
         threadId: webhook.thread?.id,
