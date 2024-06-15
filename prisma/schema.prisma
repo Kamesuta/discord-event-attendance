@@ -80,7 +80,7 @@ model UserGameResult {
   group   String?
 
   event Event      @relation(fields: [eventId], references: [id])
-  game  GameResult @relation(fields: [gameId], references: [id])
+  game  GameResult @relation(fields: [gameId], references: [id], onDelete: Cascade)
 
   @@unique([gameId, userId])
 }
