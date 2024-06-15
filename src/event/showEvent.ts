@@ -134,32 +134,31 @@ export default async function showEvent(
     });
 
   if (event.endTime) {
-    splitStrings(
-      stats
-        .filter((stat) => stat.show)
-        .map((stat) => {
-          const count = userCount[stat.userId];
-          const memo = stat.memo ? ` ${stat.memo}` : '';
-          const countText =
-            count === 1 ? '(🆕 初参加！)' : ` (${count}回目)${memo}`;
-          return `<@${stat.userId}> ${countText}`;
-        }),
-      1024,
-    )
-      .filter((line) => line.length > 0)
-      .forEach((line, i) => {
-        embeds.addFields({
-          name: i === 0 ? '参加者' : '\u200b',
-          value: line,
-        });
+    // ゲームに参加したユーザーを表示
+    const gameUsers = userXp.map(([userId, xp], i) => {
+      const count = userCount[userId];
+      const memo = stats.find((stat) => stat.userId === userId)?.memo ?? '';
+      const countText = count === 1 ? '(🆕 初参加！)' : ` (${count}回目)`;
+      return `${i + 1}位: <@${userId}> (${xp}XP)${countText}${memo}`;
+    });
+    // ゲームに参加していないユーザーを表示
+    const nonGameUsers = stats
+      .filter((stat) => !userXp.some(([userId]) => userId === stat.userId))
+      .map((stat) => {
+        const count = userCount[stat.userId];
+        const memo = stat.memo ? ` ${stat.memo}` : '';
+        const countText = count === 1 ? '(🆕 初参加！)' : ` (${count}回目)`;
+        return `<@${stat.userId}> ${countText}${memo}`;
       });
 
-    embeds.addFields({
-      name: `戦績 (計${gameResults.length}試合)`,
-      value:
-        userXp
-          .map(([userId, xp], i) => `${i + 1}位: <@${userId}> (${xp}XP)`)
-          .join('\n') || 'なし',
+    splitStrings([...gameUsers, ...nonGameUsers], 1024).forEach((line, i) => {
+      embeds.addFields({
+        name:
+          i === 0
+            ? `参加者 (${stats.length}人, 計${gameResults.length}試合)`
+            : '\u200b',
+        value: line,
+      });
     });
   } else {
     // イベントが終了していない場合は、イベント終了後に参加者が表示される旨を記載
