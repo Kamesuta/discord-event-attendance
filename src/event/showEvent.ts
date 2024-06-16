@@ -216,11 +216,6 @@ export default async function showEvent(
         ...contents,
       });
     }
-
-    // 送信結果
-    await interaction.editReply({
-      content: 'イベント情報を公開しました',
-    });
   } else {
     // 通常送信
     await interaction.editReply(contents);

@@ -44,12 +44,9 @@ class EventAdminSelectCommand extends SubcommandInteraction {
     // イベントを選択
     EventManager.selectEvent(interaction.user.id, eventId);
     // イベント情報を表示
-    await showEvent(
-      interaction,
-      event,
-      false,
-      `選択中のイベントを ${eventName} (ID: ${eventId}) に設定しました`,
-    );
+    await interaction.editReply({
+      content: `選択中のイベントを ${eventName} (ID: ${eventId}) に設定しました`,
+    });
   }
 }
 

@@ -37,13 +37,18 @@ class EventShowCommand extends SubcommandInteraction {
     const eventLinkMessage = interaction.options.getString(
       'invite_link_message',
     );
+    const isWebhook = !!message;
     await showEvent(
       interaction,
       event,
-      !!message,
+      isWebhook,
       message ?? undefined,
       eventLinkMessage ?? undefined,
     );
+
+    if (isWebhook) {
+      await interaction.deleteReply();
+    }
   }
 }
 

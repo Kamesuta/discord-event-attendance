@@ -63,6 +63,8 @@ class UpdateEventMessageMenu extends MessageContextMenuInteraction {
       messageMatch?.[2],
       interaction.targetMessage,
     );
+
+    await interaction.deleteReply();
   }
 }
 
