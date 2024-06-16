@@ -26,6 +26,9 @@ class EventAdminSelectCommand extends SubcommandInteraction {
     await interaction.deferReply({ ephemeral: true });
     const eventId = interaction.options.getInteger('event_id') ?? undefined;
     if (!eventId) {
+      // イベントを選択
+      EventManager.selectEvent(interaction.user.id, undefined);
+      // イベント情報を表示
       await interaction.editReply({
         content: `選択中のイベントをデフォルトに設定しました`,
       });
