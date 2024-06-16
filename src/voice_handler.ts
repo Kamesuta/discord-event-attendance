@@ -84,7 +84,9 @@ export async function onVoiceStateUpdate(
       if (userId) {
         await createVoiceLog(newState.channel, userId, true);
       }
-    } else if (oldState.channel) {
+    }
+
+    if (oldState.channel) {
       // ユーザーがボイスチャンネルから退出したとき
       const userId = oldState.member?.id;
       if (userId) {
