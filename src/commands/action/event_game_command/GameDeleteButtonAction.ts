@@ -76,6 +76,8 @@ class GameDeleteButtonAction extends MessageComponentActionInteraction<Component
         await interaction.editReply({ content });
       });
     if (!clearedEditData) return;
+    // 削除したデータは試合IDを0にする
+    clearedEditData.game.id = 0;
 
     // 削除メッセージを返信
     const gameName = editData.game.name

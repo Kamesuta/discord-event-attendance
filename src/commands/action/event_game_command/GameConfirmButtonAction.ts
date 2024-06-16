@@ -63,14 +63,6 @@ class GameConfirmButtonAction extends MessageComponentActionInteraction<Componen
 
     // 登録
     const game = await eventGameCommand.addGameResult(event, editData);
-    // 編集データを更新
-    editData.game = game;
-
-    // Embedを更新
-    if (interaction !== editData.interaction) {
-      // 元のメッセージがある場合のみ更新
-      await eventGameCommand.updateEmbed(event, editData);
-    }
 
     // 登録結果を表示
     const gameName = editData.game.name
@@ -82,6 +74,9 @@ class GameConfirmButtonAction extends MessageComponentActionInteraction<Componen
         .setDescription(`第 ${editData.gameNumber} 回目の試合結果です`),
       game,
     );
+
+    // 編集IDを削除
+    game.id = 0;
 
     await interaction.editReply({
       embeds: [embeds],
