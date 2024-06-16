@@ -44,6 +44,9 @@ export default async function reviewEvent(
   const embeds = new EmbedBuilder()
     .setTitle(`🏁「${event.name}」イベントに参加してくれた人を選択してください`)
     .setURL(`https://discord.com/events/${config.guild_id}/${event.eventId}`)
+    .setFooter({
+      text: `イベントID: ${event.id}`,
+    })
     .setDescription(
       '出席、欠席のステータスです。\n下のプルダウンからステータスを変更できます。\n\n' +
         // 非公開モードの場合は全員表示 (現在のステータスも表示)
