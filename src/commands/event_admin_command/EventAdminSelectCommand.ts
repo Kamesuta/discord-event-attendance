@@ -6,7 +6,6 @@ import { SubcommandInteraction } from '../base/command_base.js';
 import eventManager from '../../event/EventManager.js';
 import eventAdminCommand from './EventAdminCommand.js';
 import EventManager from '../../event/EventManager.js';
-import showEvent from '../../event/showEvent.js';
 
 class EventAdminSelectCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()

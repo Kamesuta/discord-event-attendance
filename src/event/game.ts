@@ -1,8 +1,4 @@
-import {
-  ChatInputCommandInteraction,
-  EmbedBuilder,
-  RepliableInteraction,
-} from 'discord.js';
+import { EmbedBuilder, RepliableInteraction } from 'discord.js';
 import { prisma } from '../index.js';
 import { Prisma, UserGameResult } from '@prisma/client';
 import { config } from '../utils/config.js';

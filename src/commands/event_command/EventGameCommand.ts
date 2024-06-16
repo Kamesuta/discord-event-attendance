@@ -26,6 +26,7 @@ import gameEditButtonAction from '../action/event_game_command/GameEditButtonAct
 import gameClearButtonAction from '../action/event_game_command/GameClearButtonAction.js';
 import gameDeleteButtonAction from '../action/event_game_command/GameDeleteButtonAction.js';
 import gameConfirmButtonAction from '../action/event_game_command/GameConfirmButtonAction.js';
+import { EditableInteraction } from '../../event/EditableInteraction.js';
 
 /**
  * 編集データ
@@ -34,7 +35,7 @@ export interface EditData {
   /** キー */
   key: string;
   /** インタラクション */
-  interaction: RepliableInteraction;
+  interaction: EditableInteraction;
   /** 参加者のリスト */
   candidates: string[];
   /** ランク指定子 */
@@ -204,17 +205,8 @@ class EventGameCommand extends SubcommandInteraction {
       ],
     };
 
-    if (!interaction) {
-      // インタラクションが指定されていない場合、元のメッセージを編集
-      await editData.interaction.editReply(message);
-    } else if (interaction === editData.interaction) {
-      // 新規の場合、そのまま返信
-      await interaction.editReply(message);
-    } else {
-      // 2回目以降の場合、元のメッセージを編集し、リプライを削除
-      await editData.interaction.editReply(message);
-      await interaction.deleteReply();
-    }
+    // 編集 or 送信
+    await editData.interaction.editReply(interaction, message);
   }
 
   /**
@@ -295,19 +287,12 @@ class EventGameCommand extends SubcommandInteraction {
     // 編集データを取得
     let editData: EditData | undefined = this._editData[key];
 
-    // 15分(-30秒のバッファ)経ったデータのインタラクションは更新
-    if (
-      editData?.interaction.createdTimestamp <
-      Date.now() - 14.5 * 60 * 1000
-    ) {
-      this._editData[key].interaction = interaction;
-    }
     // 編集データがない場合は新規作成
     if (!editData || clear) {
       // 編集データを作成
       this._editData[key] = editData = {
         key,
-        interaction,
+        interaction: new EditableInteraction(interaction),
         candidates: [],
         rank: '',
         game: {
@@ -328,7 +313,7 @@ class EventGameCommand extends SubcommandInteraction {
       (editGameId !== undefined && editData.game.id !== editGameId)
     ) {
       // インタラクションをリセット
-      editData.interaction = interaction;
+      editData.interaction.reset(interaction);
 
       // イベントIDが異なる場合は初期化
       if (editData.game.eventId !== eventId) {
