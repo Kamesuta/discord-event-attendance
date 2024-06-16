@@ -67,6 +67,7 @@ export default async function reviewEvent(
     .map((stat) => stat.userId);
 
   const components = [
+    // 出席プルダウン
     new ActionRowBuilder<UserSelectMenuBuilder>().addComponents(
       reviewMarkUserSelectAction.create(event, selectedUserIds, 'show'),
     ),
@@ -77,8 +78,10 @@ export default async function reviewEvent(
   ];
 
   // イベントの出欠状況を表示
-  await interaction.editReply({
+  const message = await interaction.editReply({
     embeds: [embeds],
     components,
   });
+  // メッセージにインタラクションを関連付け
+  reviewMarkUserSelectAction.registerInteraction(message, interaction);
 }
