@@ -7,6 +7,7 @@ import eventManager from '../../event/EventManager.js';
 import { updateEvent } from '../../event_handler.js';
 import eventAdminCommand from './EventAdminCommand.js';
 import showEvent from '../../event/showEvent.js';
+import getWebhook from '../../event/getWebhook.js';
 
 class EventAdminUpdateMessageCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
@@ -25,7 +26,9 @@ class EventAdminUpdateMessageCommand extends SubcommandInteraction {
     // メッセージを取得
     const messageId = interaction.options.getString('message');
     if (!messageId) return;
-    const message = await interaction.channel?.messages.fetch(messageId);
+    // Webhook経由でメッセージを取得
+    const webhook = await getWebhook(interaction);
+    const message = await webhook?.webhook.fetchMessage(messageId);
     if (!message) {
       await interaction.editReply({
         content: 'メッセージが見つかりませんでした',
