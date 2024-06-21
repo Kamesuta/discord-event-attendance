@@ -307,14 +307,14 @@ class EventGameCommand extends SubcommandInteraction {
       };
     }
 
+    // インタラクションをリセット
+    editData.interaction.reset(interaction);
+
     // 編集中の試合ID/イベントIDが異なる場合は初期化
     if (
       editData.game.eventId !== eventId ||
       (editGameId !== undefined && editData.game.id !== editGameId)
     ) {
-      // インタラクションをリセット
-      editData.interaction.reset(interaction);
-
       // イベントIDが異なる場合は初期化
       if (editData.game.eventId !== eventId) {
         // イベントIDを更新
