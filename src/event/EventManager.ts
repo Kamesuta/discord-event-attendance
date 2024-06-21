@@ -49,11 +49,20 @@ class EventManager {
    * @returns イベント
    */
   async getEventFromId(eventId: number | undefined): Promise<Event | null> {
-    return await prisma.event.findUnique({
-      where: {
-        id: eventId,
-      },
-    });
+    if (eventId !== undefined) {
+      return await prisma.event.findUnique({
+        where: {
+          id: eventId,
+        },
+      });
+    } else {
+      return await prisma.event.findFirst({
+        orderBy: {
+          startTime: 'desc',
+        },
+        take: 1,
+      });
+    }
   }
 
   /**
