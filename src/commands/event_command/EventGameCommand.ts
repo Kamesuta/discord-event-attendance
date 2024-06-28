@@ -29,17 +29,9 @@ import gameConfirmButtonAction from '../action/event_game_command/GameConfirmBut
 import { EditableInteraction } from '../../event/EditableInteraction.js';
 
 /**
- * 編集データ
+ * ゲーム登録データ
  */
-export interface EditData {
-  /** キー */
-  key: string;
-  /** インタラクション */
-  interaction: EditableInteraction;
-  /** 参加者のリスト */
-  candidates: string[];
-  /** ランク指定子 */
-  rank: string;
+export interface AddGameData {
   /** ゲーム */
   game: Partial<GameResult> & Omit<GameResult, 'id'>;
   /** ユーザー */
@@ -48,6 +40,20 @@ export interface EditData {
   updateUsers: boolean;
   /** 何番目の試合か */
   gameNumber: number;
+}
+
+/**
+ * 編集データ
+ */
+export interface EditData extends AddGameData {
+  /** キー */
+  key: string;
+  /** インタラクション */
+  interaction: EditableInteraction;
+  /** 参加者のリスト */
+  candidates: string[];
+  /** ランク指定子 */
+  rank: string;
 }
 
 class EventGameCommand extends SubcommandInteraction {
@@ -480,37 +486,39 @@ class EventGameCommand extends SubcommandInteraction {
   /**
    * ゲームの勝敗を記録する
    * @param event イベント
-   * @param editData 編集データ
+   * @param addGameData 編集データ
    * @returns 記録した試合の結果
    */
   async addGameResult(
     event: Event,
-    editData: EditData,
+    addGameData: AddGameData,
   ): Promise<GameResultData> {
     // DB編集クエリ
-    const users = !editData.updateUsers // 参加者の変更があった場合
+    const users = !addGameData.updateUsers // 参加者の変更があった場合
       ? undefined
       : {
           // IDがある = 編集モードの場合はユーザーは全削除
-          deleteMany: editData.game.id ? {} : undefined,
+          deleteMany: addGameData.game.id ? {} : undefined,
           createMany: {
-            data: editData.users,
+            data: addGameData.users,
           },
         };
 
     // 試合名を取得
-    const gameName = editData.game.name
+    const gameName = addGameData.game.name
+      .replace(/\$/g, event.name)
       .replace(/＄/g, event.name)
-      .replace(/＠/g, `${editData.gameNumber}`);
+      .replace(/@/g, `${addGameData.gameNumber}`)
+      .replace(/＠/g, `${addGameData.gameNumber}`);
 
     // 試合の結果を記録
-    const game = editData.game.id // IDがある = 編集モードの場合
+    const game = addGameData.game.id // IDがある = 編集モードの場合
       ? await prisma.gameResult.update({
           where: {
-            id: editData.game.id,
+            id: addGameData.game.id,
           },
           data: {
-            ...omit(editData.game, 'id', 'eventId'),
+            ...omit(addGameData.game, 'name', 'id', 'eventId'),
             name: gameName,
             users,
           },
@@ -524,7 +532,7 @@ class EventGameCommand extends SubcommandInteraction {
         })
       : await prisma.gameResult.create({
           data: {
-            ...omit(editData.game, 'id'),
+            ...omit(addGameData.game, 'name', 'id'),
             name: gameName,
             users,
           },

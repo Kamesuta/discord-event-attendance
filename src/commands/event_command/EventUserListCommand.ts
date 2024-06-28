@@ -64,7 +64,7 @@ class EventUserListCommand extends SubcommandInteraction {
           .addFields({
             name: 'スプレッドシートへの貼付け方法',
             value:
-              '1. ↑をコピー\n2. スプレッドシートに貼り付け\n3. 左下のペーストアイコン→「テキストを列に分割」を選択',
+              '1. ↑の右上のコピーマークを押してコピー\n2. スプレッドシートに貼り付け\n3. 左下のペーストアイコン→「テキストを列に分割」を選択\n4. /event game_csv file:参加者リスト.csv でアップロード',
           })
           .setColor('#ff8c00'),
       ],

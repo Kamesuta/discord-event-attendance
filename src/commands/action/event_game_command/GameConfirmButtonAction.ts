@@ -65,12 +65,9 @@ class GameConfirmButtonAction extends MessageComponentActionInteraction<Componen
     const game = await eventGameCommand.addGameResult(event, editData);
 
     // 登録結果を表示
-    const gameName = editData.game.name
-      .replace(/＄/g, event.name)
-      .replace(/＠/g, `${editData.gameNumber}`);
     const embeds = makeEmbed(
       new EmbedBuilder()
-        .setTitle(`🎮「${gameName}」の結果が記録されました`)
+        .setTitle(`🎮「${game.name}」の結果が記録されました`)
         .setDescription(`第 ${editData.gameNumber} 回目の試合結果です`),
       game,
     );
