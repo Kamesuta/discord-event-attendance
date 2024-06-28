@@ -11,6 +11,7 @@ import { Event } from '@prisma/client';
 import { updateAttendanceTimeIfEventActive } from './attendance_time.js';
 import getWebhook from './getWebhook.js';
 import splitStrings from './splitStrings.js';
+import statusGameMenuAction from '../commands/action/StatusGameMenuAction.js';
 
 /**
  * イベント情報を表示します
@@ -176,17 +177,7 @@ export default async function showEvent(
   // 試合結果のプルダウンを追加
   const components =
     new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
-      new StringSelectMenuBuilder()
-        .setCustomId(`event_component_game_${event.id}`)
-        .setPlaceholder('確認したい試合結果を選択')
-        .setMinValues(1)
-        .setMaxValues(1)
-        .addOptions(
-          gameResults.map((game) => ({
-            label: `${game.name} (試合ID: ${game.id})`,
-            value: game.id.toString(),
-          })),
-        ),
+      statusGameMenuAction.create(event, gameResults),
     );
 
   // 送信内容
