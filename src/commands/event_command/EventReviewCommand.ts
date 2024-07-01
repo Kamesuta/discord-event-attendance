@@ -104,16 +104,21 @@ class EventReviewCommand extends SubcommandInteraction {
     editData.interaction.reset(interaction);
 
     // イベントの出欠状況を表示するメッセージを作成
-    const messageOption = await this.createReviewEventMessage(event);
+    const messageOption = await this.createReviewEventMessage(
+      interaction,
+      event,
+    );
     await editData.interaction.editReply(interaction, messageOption);
   }
 
   /**
    * イベントの出欠状況チェックパネルを表示します
+   * @param interaction インタラクション
    * @param event イベント
    * @returns メッセージオプション
    */
   async createReviewEventMessage(
+    interaction: RepliableInteraction,
     event: Event,
   ): Promise<InteractionEditReplyOptions> {
     // 集計
@@ -138,7 +143,7 @@ class EventReviewCommand extends SubcommandInteraction {
       },
     });
 
-    const embeds = new EmbedBuilder()
+    const embed = new EmbedBuilder()
       .setTitle(
         `🏁「${event.name}」イベントに参加してくれた人を選択してください`,
       )
@@ -160,6 +165,12 @@ class EventReviewCommand extends SubcommandInteraction {
       )
       .setColor('#ff8c00');
 
+    const embedUsage = new EmbedBuilder()
+      .setDescription(
+        `### ↓ のユーザーリストから__出席した人__を❎️で消してください`,
+      )
+      .setColor('#ff8c00');
+
     // マークされていないされていないユーザーIDを取得 → プルダウンのデフォルト値に設定
     const selectedUserIds = stats
       .filter((stat) => stat.show === null)
@@ -168,17 +179,13 @@ class EventReviewCommand extends SubcommandInteraction {
     const components = [
       // 出席プルダウン
       new ActionRowBuilder<UserSelectMenuBuilder>().addComponents(
-        reviewMarkUserSelectAction.create(event, selectedUserIds, 'show'),
-      ),
-      // 除外プルダウン
-      new ActionRowBuilder<UserSelectMenuBuilder>().addComponents(
-        reviewMarkUserSelectAction.create(event, selectedUserIds, 'hide'),
+        reviewMarkUserSelectAction.create(event, interaction, selectedUserIds),
       ),
     ];
 
     // イベントの出欠状況を表示するメッセージを作成
     return {
-      embeds: [embeds],
+      embeds: [embed, embedUsage],
       components,
     };
   }
@@ -193,7 +200,10 @@ class EventReviewCommand extends SubcommandInteraction {
     event: Event,
   ): Promise<void> {
     // イベントの出欠状況を表示するメッセージを作成
-    const messageOption = await this.createReviewEventMessage(event);
+    const messageOption = await this.createReviewEventMessage(
+      interaction,
+      event,
+    );
 
     // 編集データを取得
     const editData = this.editDataHolder.get(interaction, event);

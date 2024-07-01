@@ -1,5 +1,6 @@
 import {
   ComponentType,
+  RepliableInteraction,
   UserSelectMenuBuilder,
   UserSelectMenuInteraction,
 } from 'discord.js';
@@ -10,22 +11,28 @@ import setShowStats from '../../event/setShowStats.js';
 import eventReviewCommand from '../event_command/EventReviewCommand.js';
 
 class ReviewMarkUserSelectAction extends MessageComponentActionInteraction<ComponentType.UserSelect> {
+  /** UUID -> ユーザーIDのリスト */
+  private _userIds: Record<string, string[]> = {};
+
   /**
    * 出席/欠席ユーザー選択メニューを作成
    * @param event イベント
+   * @param interaction インタラクション (ID取得用)
    * @param selectedUserIds 選択済みのユーザーID
-   * @param action 出席 or 欠席
    * @returns 作成したビルダー
    */
   override create(
     event: Event,
+    interaction: RepliableInteraction,
     selectedUserIds: string[],
-    action: 'show' | 'hide',
   ): UserSelectMenuBuilder {
+    // 選択済みのユーザーIDを保存
+    this._userIds[interaction.id] = selectedUserIds;
+
     // カスタムIDを生成
     const customId = this.createCustomId({
       event: `${event.id}`,
-      action,
+      uuid: interaction.id,
     });
 
     // ダイアログを作成
@@ -35,9 +42,7 @@ class ReviewMarkUserSelectAction extends MessageComponentActionInteraction<Compo
         .setMinValues(0)
         .setMaxValues(25)
         // プレースホルダーを設定
-        .setPlaceholder(
-          action === 'show' ? '参加した人を選択' : '参加していない人を選択',
-        )
+        .setPlaceholder('参加した人を削除')
         // まだステータスが未設定のユーザーをデフォルトで選択
         .setDefaultUsers(selectedUserIds.slice(0, 25))
     );
@@ -49,10 +54,24 @@ class ReviewMarkUserSelectAction extends MessageComponentActionInteraction<Compo
     params: URLSearchParams,
   ): Promise<void> {
     const eventId = params.get('event');
-    const action = params.get('action');
-    if (!eventId || !action) return; // 必要なパラメータがない場合は旧形式の可能性があるため無視
+    const uuid = params.get('uuid');
+    if (!eventId || !uuid) return; // 必要なパラメータがない場合は旧形式の可能性があるため無視
 
     await interaction.deferReply({ ephemeral: true });
+
+    // 選択済みのユーザーIDを取得
+    const selectedUserIds = this._userIds[uuid];
+    if (!selectedUserIds) {
+      await interaction.editReply({
+        content:
+          'このreviewメニューは古いため使用できません。\nもう一度`/event review`からやりなおしてください。',
+      });
+      return;
+    }
+    // メニューは使い捨て。自動更新されるため問題ない想定
+    delete this._userIds[uuid];
+
+    // イベントを取得
     const event = await eventManager.getEventFromId(
       eventId ? parseInt(eventId) : undefined,
     );
@@ -63,32 +82,32 @@ class ReviewMarkUserSelectAction extends MessageComponentActionInteraction<Compo
       return;
     }
 
-    switch (action) {
-      case 'show':
-        // 出席としてマーク
-        await setShowStats(event, interaction.values, true);
-        await interaction.editReply({
-          content: `${interaction.values
-            .map((userId) => `<@${userId}>`)
-            .join('')} を☑️出席としてマークしました`,
-        });
-        break;
-      case 'hide':
-        // 欠席としてマーク
-        await setShowStats(event, interaction.values, false);
-        await interaction.editReply({
-          content: `${interaction.values
-            .map((userId) => `<@${userId}>`)
-            .join('')} を❌欠席としてマークしました`,
-        });
-        break;
-    }
+    // 削除したユーザーを抽出
+    const removeUserIds = selectedUserIds.filter(
+      (userId) => !interaction.values.includes(userId),
+    );
+    // 逆に追加したユーザーを抽出
+    const addUserIds = interaction.values.filter(
+      (userId) => !selectedUserIds.includes(userId),
+    );
+    // 出席としてマークするユーザー
+    const markUserIds = [...removeUserIds, ...addUserIds];
+
+    // 出席としてマーク
+    await setShowStats(event, markUserIds, true);
+    await interaction.editReply({
+      content: `${markUserIds
+        .map((userId) => `<@${userId}>`)
+        .join('')} を☑️出席としてマークしました`,
+    });
 
     // インタラクションが保存されている場合は更新
     const editData = eventReviewCommand.editDataHolder.get(interaction, event);
     // イベントの出欠状況を表示するメッセージを作成
-    const messageOption =
-      await eventReviewCommand.createReviewEventMessage(event);
+    const messageOption = await eventReviewCommand.createReviewEventMessage(
+      interaction,
+      event,
+    );
     // 編集 または送信
     await editData.interaction.editReply(interaction, messageOption);
   }
