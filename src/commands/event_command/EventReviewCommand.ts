@@ -2,6 +2,7 @@ import {
   ActionRowBuilder,
   ChatInputCommandInteraction,
   EmbedBuilder,
+  InteractionEditReplyOptions,
   RepliableInteraction,
   SlashCommandSubcommandBuilder,
   UserSelectMenuBuilder,
@@ -14,11 +15,78 @@ import { prisma } from '../../index.js';
 import { config } from '../../utils/config.js';
 import { Event } from '@prisma/client';
 import reviewMarkUserSelectAction from '../action/ReviewMarkUserSelectAction.js';
+import { EditableInteraction } from '../../event/EditableInteraction.js';
+
+/**
+ * 編集データ
+ */
+export interface ReviewEditData {
+  /** インタラクション */
+  interaction: EditableInteraction;
+  /** 参加者のリストの履歴 */
+  history: string[][];
+}
+
+/**
+ * 編集データホルダー
+ */
+class ReviewEditDataHolder {
+  /** キー(ユーザーIDなど) -> 編集データ */
+  keyToEditData: Record<string, ReviewEditData> = {};
+
+  /**
+   * キーを取得
+   * @param interaction インタラクション (ユーザー特定用)
+   * @param event イベント
+   * @returns キー
+   */
+  private _key(interaction: RepliableInteraction, event: Event): string {
+    return new URLSearchParams({
+      user: interaction.user.id,
+      event: `${event.id}`,
+      channel: `${interaction.channel?.id}`,
+    }).toString();
+  }
+
+  /**
+   * 編集データをセット
+   * @param interaction インタラクション (ユーザー特定用)
+   * @param event イベント
+   * @param editData 編集データ
+   */
+  private _register(
+    interaction: RepliableInteraction,
+    event: Event,
+    editData: ReviewEditData,
+  ): void {
+    const key = this._key(interaction, event);
+    this.keyToEditData[key] = editData;
+  }
+
+  /**
+   * 編集データを取得
+   * @param interaction インタラクション (ユーザー特定用)
+   * @param event イベント
+   * @returns 編集データ
+   */
+  get(interaction: RepliableInteraction, event: Event): ReviewEditData {
+    const key = this._key(interaction, event);
+    const editData = this.keyToEditData[key] || {
+      interaction: new EditableInteraction(interaction),
+      history: [],
+    };
+    this._register(interaction, event, editData);
+    return editData;
+  }
+}
 
 class EventReviewCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
     .setName('review')
     .setDescription('イベントの出欠状況を表示します (自分のみに表示)');
+
+  /** 編集データホルダー */
+  readonly editDataHolder = new ReviewEditDataHolder();
 
   async onCommand(interaction: ChatInputCommandInteraction): Promise<void> {
     // 公開前のメンバー確認
@@ -30,18 +98,24 @@ class EventReviewCommand extends SubcommandInteraction {
       });
       return;
     }
-    await this.reviewEvent(interaction, event);
+
+    // 編集データを取得
+    const editData = this.editDataHolder.get(interaction, event);
+    editData.interaction.reset(interaction);
+
+    // イベントの出欠状況を表示するメッセージを作成
+    const messageOption = await this.createReviewEventMessage(event);
+    await editData.interaction.editReply(interaction, messageOption);
   }
 
   /**
    * イベントの出欠状況チェックパネルを表示します
-   * @param interaction インタラクション
    * @param event イベント
+   * @returns メッセージオプション
    */
-  async reviewEvent(
-    interaction: RepliableInteraction,
+  async createReviewEventMessage(
     event: Event,
-  ): Promise<void> {
+  ): Promise<InteractionEditReplyOptions> {
     // 集計
     await updateAttendanceTimeIfEventActive(event);
 
@@ -102,13 +176,29 @@ class EventReviewCommand extends SubcommandInteraction {
       ),
     ];
 
-    // イベントの出欠状況を表示
-    const message = await interaction.editReply({
+    // イベントの出欠状況を表示するメッセージを作成
+    return {
       embeds: [embeds],
       components,
-    });
-    // メッセージにインタラクションを関連付け
-    reviewMarkUserSelectAction.registerInteraction(message, interaction);
+    };
+  }
+
+  /**
+   * イベントの出欠状況を編集します
+   * @param interaction 返信用のインタラクション
+   * @param event イベント
+   */
+  async updateReviewEventMessage(
+    interaction: RepliableInteraction,
+    event: Event,
+  ): Promise<void> {
+    // イベントの出欠状況を表示するメッセージを作成
+    const messageOption = await this.createReviewEventMessage(event);
+
+    // 編集データを取得
+    const editData = this.editDataHolder.get(interaction, event);
+    // イベントの出欠状況を表示するメッセージを更新
+    await editData.interaction.editReply(interaction, messageOption);
   }
 }
 

@@ -1,7 +1,5 @@
 import {
   ComponentType,
-  Message,
-  RepliableInteraction,
   UserSelectMenuBuilder,
   UserSelectMenuInteraction,
 } from 'discord.js';
@@ -12,8 +10,6 @@ import setShowStats from '../../event/setShowStats.js';
 import eventReviewCommand from '../event_command/EventReviewCommand.js';
 
 class ReviewMarkUserSelectAction extends MessageComponentActionInteraction<ComponentType.UserSelect> {
-  private _msgToInteraction: Record<string, RepliableInteraction> = {};
-
   /**
    * 出席/欠席ユーザー選択メニューを作成
    * @param event イベント
@@ -45,18 +41,6 @@ class ReviewMarkUserSelectAction extends MessageComponentActionInteraction<Compo
         // まだステータスが未設定のユーザーをデフォルトで選択
         .setDefaultUsers(selectedUserIds.slice(0, 25))
     );
-  }
-
-  /**
-   * メッセージにインタラクションを関連付け
-   * @param message メッセージ
-   * @param interaction インタラクション
-   */
-  registerInteraction(
-    message: Message,
-    interaction: RepliableInteraction,
-  ): void {
-    this._msgToInteraction[message.id] = interaction;
   }
 
   /** @inheritdoc */
@@ -101,10 +85,12 @@ class ReviewMarkUserSelectAction extends MessageComponentActionInteraction<Compo
     }
 
     // インタラクションが保存されている場合は更新
-    const msgInteraction = this._msgToInteraction[interaction.message.id];
-    if (msgInteraction) {
-      await eventReviewCommand.reviewEvent(msgInteraction, event);
-    }
+    const editData = eventReviewCommand.editDataHolder.get(interaction, event);
+    // イベントの出欠状況を表示するメッセージを作成
+    const messageOption =
+      await eventReviewCommand.createReviewEventMessage(event);
+    // 編集 または送信
+    await editData.interaction.editReply(interaction, messageOption);
   }
 }
 

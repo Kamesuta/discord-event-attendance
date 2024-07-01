@@ -6,6 +6,7 @@ import {
 import { UserContextMenuInteraction } from '../base/contextmenu_base.js';
 import eventManager from '../../event/EventManager.js';
 import setShowStats from '../../event/setShowStats.js';
+import eventReviewCommand from '../event_command/EventReviewCommand.js';
 
 class MarkShowUserMenu extends UserContextMenuInteraction {
   command = new ContextMenuCommandBuilder()
@@ -27,6 +28,9 @@ class MarkShowUserMenu extends UserContextMenuInteraction {
     await interaction.editReply({
       content: `<@${interaction.targetUser.id}> を☑️出席としてマークしました`,
     });
+
+    // イベントの出欠状況を表示するメッセージを更新
+    await eventReviewCommand.updateReviewEventMessage(interaction, event);
   }
 }
 

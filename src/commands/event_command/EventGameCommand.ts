@@ -26,7 +26,6 @@ import gameEditButtonAction from '../action/event_game_command/GameEditButtonAct
 import gameClearButtonAction from '../action/event_game_command/GameClearButtonAction.js';
 import gameDeleteButtonAction from '../action/event_game_command/GameDeleteButtonAction.js';
 import gameConfirmButtonAction from '../action/event_game_command/GameConfirmButtonAction.js';
-import { EditableInteraction } from '../../event/EditableInteraction.js';
 
 /**
  * ゲーム登録データ
@@ -48,8 +47,6 @@ export interface AddGameData {
 export interface EditData extends AddGameData {
   /** キー */
   key: string;
-  /** インタラクション */
-  interaction: EditableInteraction;
   /** 参加者のリスト */
   candidates: string[];
   /** ランク指定子 */
@@ -194,7 +191,7 @@ class EventGameCommand extends SubcommandInteraction {
   async updateEmbed(
     event: Event,
     editData: EditData,
-    interaction?: RepliableInteraction,
+    interaction: RepliableInteraction,
   ): Promise<void> {
     const embeds = this.makeEditEmbed(event, editData);
 
@@ -212,7 +209,7 @@ class EventGameCommand extends SubcommandInteraction {
     };
 
     // 編集 or 送信
-    await editData.interaction.editReply(interaction, message);
+    await interaction.editReply(message);
   }
 
   /**
@@ -298,7 +295,6 @@ class EventGameCommand extends SubcommandInteraction {
       // 編集データを作成
       this._editData[key] = editData = {
         key,
-        interaction: new EditableInteraction(interaction),
         candidates: [],
         rank: '',
         game: {
@@ -312,9 +308,6 @@ class EventGameCommand extends SubcommandInteraction {
         gameNumber: 0,
       };
     }
-
-    // インタラクションをリセット
-    editData.interaction.reset(interaction);
 
     // 編集中の試合ID/イベントIDが異なる場合は初期化
     if (

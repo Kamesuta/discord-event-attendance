@@ -20,36 +20,32 @@ export class EditableInteraction {
 
   /**
    * メッセージを更新 or 新規にリプライを送信します
-   * @param interaction 現在のインタラクション
+   * @param fallbackInteraction 現在のインタラクション (フォールバック用)
    * @param message 送信するメッセージ
    * @returns 送信されたメッセージ
    */
   async editReply(
-    interaction: RepliableInteraction | undefined,
+    fallbackInteraction: RepliableInteraction,
     message: string | MessagePayload | InteractionEditReplyOptions,
   ): Promise<Message> {
-    if (!interaction) {
-      // インタラクションが指定されていない場合、元のメッセージを編集
-      return await this.interaction.editReply(message);
-    } else if (interaction === this.interaction) {
+    if (fallbackInteraction === this.interaction) {
       // 新規の場合、そのまま返信
-      return await interaction.editReply(message);
+      return await fallbackInteraction.editReply(message);
     } else {
       // 2回目以降の場合、元のメッセージを編集し、リプライを削除
       try {
-        const reply = await this.interaction.editReply(message);
-        await interaction.deleteReply();
-        return reply;
+        return await this.interaction.editReply(message);
       } catch (error) {
         // Unknown Interactionエラーが発生した場合、新しいInteractionにリプライを送信
         if (error instanceof DiscordAPIError && error.code === 10062) {
           logger.warn(
             `インタラクションの期限切れ${this.interaction.isMessageComponent() ? `: メッセージID: ${this.interaction.message.id}` : ''}`,
           );
-          const reply = await interaction.editReply(message);
-          await interaction.deleteReply();
+          const reply = await fallbackInteraction.followUp({
+            ephemeral: this.interaction.ephemeral ?? true,
+          });
           // 新しいInteractionに更新
-          this.interaction = interaction;
+          this.interaction = fallbackInteraction;
           return reply;
         }
         throw error;
