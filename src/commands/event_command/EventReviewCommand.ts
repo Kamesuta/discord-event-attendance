@@ -1,5 +1,6 @@
 import {
   ActionRowBuilder,
+  ButtonBuilder,
   ChatInputCommandInteraction,
   EmbedBuilder,
   InteractionEditReplyOptions,
@@ -14,8 +15,9 @@ import { updateAttendanceTimeIfEventActive } from '../../event/attendance_time.j
 import { prisma } from '../../index.js';
 import { config } from '../../utils/config.js';
 import { Event } from '@prisma/client';
-import reviewMarkUserSelectAction from '../action/ReviewMarkUserSelectAction.js';
 import { EditableInteraction } from '../../event/EditableInteraction.js';
+import reviewMarkUserSelectAction from '../action/event_review_command/ReviewMarkUserSelectAction.js';
+import reviewMarkClearButtonAction from '../action/event_review_command/ReviewMarkClearButtonAction.js';
 
 /**
  * 編集データ
@@ -181,6 +183,11 @@ class EventReviewCommand extends SubcommandInteraction {
       new ActionRowBuilder<UserSelectMenuBuilder>().addComponents(
         reviewMarkUserSelectAction.create(event, interaction, selectedUserIds),
       ),
+      // ボタン
+      new ActionRowBuilder<ButtonBuilder>().addComponents(
+        // 出欠状況をクリアするボタン
+        reviewMarkClearButtonAction.create(event),
+      ),
     ];
 
     // イベントの出欠状況を表示するメッセージを作成
@@ -209,6 +216,40 @@ class EventReviewCommand extends SubcommandInteraction {
     const editData = this.editDataHolder.get(interaction, event);
     // イベントの出欠状況を表示するメッセージを更新
     await editData.interaction.editReply(interaction, messageOption);
+  }
+
+  /**
+   * 出欠状況を更新する
+   * @param event イベント
+   * @param userIds ユーザーID
+   * @param isShow 出欠状況
+   */
+  async setShowStats(
+    event: Event,
+    userIds: string[],
+    isShow: boolean | null,
+  ): Promise<void> {
+    // ユーザーの出欠状況を更新
+    const query = userIds.map((userId) =>
+      prisma.userStat.upsert({
+        where: {
+          id: {
+            eventId: event.id,
+            userId,
+          },
+        },
+        update: {
+          show: isShow,
+        },
+        create: {
+          eventId: event.id,
+          userId,
+          show: isShow,
+          duration: 0,
+        },
+      }),
+    );
+    await prisma.$transaction(query);
   }
 }
 

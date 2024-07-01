@@ -4,11 +4,10 @@ import {
   UserSelectMenuBuilder,
   UserSelectMenuInteraction,
 } from 'discord.js';
-import eventManager from '../../event/EventManager.js';
-import { MessageComponentActionInteraction } from '../base/action_base.js';
+import eventManager from '../../../event/EventManager.js';
+import { MessageComponentActionInteraction } from '../../base/action_base.js';
 import { Event } from '@prisma/client';
-import setShowStats from '../../event/setShowStats.js';
-import eventReviewCommand from '../event_command/EventReviewCommand.js';
+import eventReviewCommand from '../../event_command/EventReviewCommand.js';
 
 class ReviewMarkUserSelectAction extends MessageComponentActionInteraction<ComponentType.UserSelect> {
   /** UUID -> ユーザーIDのリスト */
@@ -94,7 +93,7 @@ class ReviewMarkUserSelectAction extends MessageComponentActionInteraction<Compo
     const markUserIds = [...removeUserIds, ...addUserIds];
 
     // 出席としてマーク
-    await setShowStats(event, markUserIds, true);
+    await eventReviewCommand.setShowStats(event, markUserIds, true);
     await interaction.editReply({
       content: `${markUserIds
         .map((userId) => `<@${userId}>`)
@@ -113,4 +112,4 @@ class ReviewMarkUserSelectAction extends MessageComponentActionInteraction<Compo
   }
 }
 
-export default new ReviewMarkUserSelectAction('mark', ComponentType.UserSelect);
+export default new ReviewMarkUserSelectAction('rmrk', ComponentType.UserSelect);

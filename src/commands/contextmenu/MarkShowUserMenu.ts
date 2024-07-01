@@ -5,7 +5,6 @@ import {
 } from 'discord.js';
 import { UserContextMenuInteraction } from '../base/contextmenu_base.js';
 import eventManager from '../../event/EventManager.js';
-import setShowStats from '../../event/setShowStats.js';
 import eventReviewCommand from '../event_command/EventReviewCommand.js';
 
 class MarkShowUserMenu extends UserContextMenuInteraction {
@@ -24,7 +23,11 @@ class MarkShowUserMenu extends UserContextMenuInteraction {
       });
       return;
     }
-    await setShowStats(event, [interaction.targetUser.id], true);
+    await eventReviewCommand.setShowStats(
+      event,
+      [interaction.targetUser.id],
+      true,
+    );
     await interaction.editReply({
       content: `<@${interaction.targetUser.id}> を☑️出席としてマークしました`,
     });
