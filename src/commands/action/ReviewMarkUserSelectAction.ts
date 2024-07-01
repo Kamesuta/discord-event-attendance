@@ -9,7 +9,7 @@ import eventManager from '../../event/EventManager.js';
 import { MessageComponentActionInteraction } from '../base/action_base.js';
 import { Event } from '@prisma/client';
 import setShowStats from '../../event/setShowStats.js';
-import reviewEvent from '../../event/reviewEvent.js';
+import eventReviewCommand from '../event_command/EventReviewCommand.js';
 
 class ReviewMarkUserSelectAction extends MessageComponentActionInteraction<ComponentType.UserSelect> {
   private _msgToInteraction: Record<string, RepliableInteraction> = {};
@@ -103,7 +103,7 @@ class ReviewMarkUserSelectAction extends MessageComponentActionInteraction<Compo
     // インタラクションが保存されている場合は更新
     const msgInteraction = this._msgToInteraction[interaction.message.id];
     if (msgInteraction) {
-      await reviewEvent(msgInteraction, event);
+      await eventReviewCommand.reviewEvent(msgInteraction, event);
     }
   }
 }
