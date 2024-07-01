@@ -186,7 +186,11 @@ class EventGameCsvCommand extends SubcommandInteraction {
           eventId: event.id,
           userId: ranking.participantId,
           rank: ranking.rank,
-          xp: xpMap[ranking.rank] ?? 0,
+          group: ranking.group,
+          xp:
+            ranking.rank === 0
+              ? 0.1 // 参加者のXPは0.1
+              : xpMap[ranking.rank] ?? 0,
         })),
         updateUsers: true,
         gameNumber,
