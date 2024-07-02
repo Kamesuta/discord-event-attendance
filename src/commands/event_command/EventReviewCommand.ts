@@ -18,6 +18,7 @@ import { Event } from '@prisma/client';
 import { EditableInteraction } from '../../event/EditableInteraction.js';
 import reviewMarkUserSelectAction from '../action/event_review_command/ReviewMarkUserSelectAction.js';
 import reviewMarkClearButtonAction from '../action/event_review_command/ReviewMarkClearButtonAction.js';
+import reviewMarkUndoButtonAction from '../action/event_review_command/ReviewMarkUndoButtonAction.js';
 
 /**
  * 編集データ
@@ -26,7 +27,10 @@ export interface ReviewEditData {
   /** インタラクション */
   interaction: EditableInteraction;
   /** 参加者のリストの履歴 */
-  history: string[][];
+  history: {
+    show: string[];
+    hide: string[];
+  }[];
 }
 
 /**
@@ -187,6 +191,8 @@ class EventReviewCommand extends SubcommandInteraction {
       new ActionRowBuilder<ButtonBuilder>().addComponents(
         // 出欠状況をクリアするボタン
         reviewMarkClearButtonAction.create(event),
+        // 戻すボタン
+        reviewMarkUndoButtonAction.create(event),
       ),
     ];
 
@@ -216,6 +222,35 @@ class EventReviewCommand extends SubcommandInteraction {
     const editData = this.editDataHolder.get(interaction, event);
     // イベントの出欠状況を表示するメッセージを更新
     await editData.interaction.editReply(interaction, messageOption);
+  }
+
+  /**
+   * 履歴を追加する
+   * @param interaction インタラクション
+   * @param event イベント
+   */
+  async addToHistory(
+    interaction: RepliableInteraction,
+    event: Event,
+  ): Promise<void> {
+    // 編集データを取得
+    const editData = this.editDataHolder.get(interaction, event);
+
+    // 現在の状態を保存
+    const stats = await prisma.userStat.findMany({
+      where: {
+        eventId: event.id,
+      },
+    });
+    const show = stats
+      .filter((stat) => stat.show === true)
+      .map((stat) => stat.userId);
+    const hide = stats
+      .filter((stat) => stat.show === false)
+      .map((stat) => stat.userId);
+
+    // 現在の状態を保存
+    editData.history.push({ show, hide });
   }
 
   /**

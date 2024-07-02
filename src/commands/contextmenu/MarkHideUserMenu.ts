@@ -23,6 +23,7 @@ class MarkHideUserMenu extends UserContextMenuInteraction {
       });
       return;
     }
+    await eventReviewCommand.addToHistory(interaction, event);
     await eventReviewCommand.setShowStats(
       event,
       [interaction.targetUser.id],

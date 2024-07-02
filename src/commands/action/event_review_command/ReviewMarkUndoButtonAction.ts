@@ -10,7 +10,7 @@ import { Event } from '@prisma/client';
 import eventReviewCommand from '../../event_command/EventReviewCommand.js';
 import { prisma } from '../../../index.js';
 
-class ReviewMarkClearButtonAction extends MessageComponentActionInteraction<ComponentType.Button> {
+class ReviewMarkUndoButtonAction extends MessageComponentActionInteraction<ComponentType.Button> {
   /**
    * 出席/欠席ユーザー選択メニューを作成
    * @param event イベント
@@ -25,9 +25,9 @@ class ReviewMarkClearButtonAction extends MessageComponentActionInteraction<Comp
     // ダイアログを作成
     return new ButtonBuilder()
       .setCustomId(customId)
-      .setLabel('出席をクリア')
-      .setStyle(ButtonStyle.Danger)
-      .setEmoji('🗑️');
+      .setLabel('戻す')
+      .setStyle(ButtonStyle.Primary)
+      .setEmoji('↩️');
   }
 
   /** @inheritdoc */
@@ -60,15 +60,32 @@ class ReviewMarkClearButtonAction extends MessageComponentActionInteraction<Comp
       })
     ).map((stat) => stat.userId);
 
-    // マークをクリア
-    await eventReviewCommand.addToHistory(interaction, event);
-    await eventReviewCommand.setShowStats(event, userIds, null);
-    await interaction.editReply({
-      content: `マークをクリアしました`,
-    });
-
     // インタラクションが保存されている場合は更新
     const editData = eventReviewCommand.editDataHolder.get(interaction, event);
+
+    // 一つ前の状態を取得
+    const previous = editData.history.pop();
+    if (!previous) {
+      await interaction.editReply({
+        content: 'これ以上戻せません',
+      });
+      return;
+    }
+
+    // showでもhideでもない人を取得
+    const otherUserIds = userIds.filter(
+      (userId) =>
+        !previous.show.includes(userId) && !previous.hide.includes(userId),
+    );
+
+    // マークをクリア
+    await eventReviewCommand.setShowStats(event, otherUserIds, null);
+    await eventReviewCommand.setShowStats(event, previous.show, true);
+    await eventReviewCommand.setShowStats(event, previous.hide, false);
+    await interaction.editReply({
+      content: `一つ前へ戻しました`,
+    });
+
     // イベントの出欠状況を表示するメッセージを作成
     const messageOption = await eventReviewCommand.createReviewEventMessage(
       interaction,
@@ -79,4 +96,4 @@ class ReviewMarkClearButtonAction extends MessageComponentActionInteraction<Comp
   }
 }
 
-export default new ReviewMarkClearButtonAction('rclr', ComponentType.Button);
+export default new ReviewMarkUndoButtonAction('rundo', ComponentType.Button);

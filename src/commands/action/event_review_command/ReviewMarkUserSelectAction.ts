@@ -93,6 +93,7 @@ class ReviewMarkUserSelectAction extends MessageComponentActionInteraction<Compo
     const markUserIds = [...removeUserIds, ...addUserIds];
 
     // 出席としてマーク
+    await eventReviewCommand.addToHistory(interaction, event);
     await eventReviewCommand.setShowStats(event, markUserIds, true);
     await interaction.editReply({
       content: `${markUserIds
