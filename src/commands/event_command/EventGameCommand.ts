@@ -469,11 +469,20 @@ class EventGameCommand extends SubcommandInteraction {
       });
     });
 
-    return userAwards.map((award, _i) => ({
-      ...award,
-      eventId: editData.game.eventId,
-      xp: award.xp ?? 0,
-    }));
+    return (
+      userAwards
+        // 重複を削除
+        .filter((award, index, self) => {
+          const userIds = self.map((a) => a.userId);
+          return userIds.indexOf(award.userId) === index;
+        })
+        // データを登録用に変換
+        .map((award, _i) => ({
+          ...award,
+          eventId: editData.game.eventId,
+          xp: award.xp ?? 0,
+        }))
+    );
   }
 
   /**
