@@ -72,8 +72,12 @@ class GameConfirmButtonAction extends MessageComponentActionInteraction<Componen
       game,
     );
 
-    // 編集IDを削除
-    game.id = 0;
+    // 編集データをクリア
+    await eventGameCommand
+      .getEditData(key, interaction, event.id, undefined, true)
+      .catch(async (content: string) => {
+        await interaction.editReply({ content });
+      });
 
     await interaction.editReply({
       embeds: [embeds],
