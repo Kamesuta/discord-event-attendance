@@ -58,7 +58,7 @@ class UpdateEventMessageMenu extends MessageContextMenuInteraction {
     await showEvent(
       interaction,
       event,
-      true,
+      interaction.channel ?? undefined,
       messageMatch?.[1],
       messageMatch?.[2],
       interaction.targetMessage,

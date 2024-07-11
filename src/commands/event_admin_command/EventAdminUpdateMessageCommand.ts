@@ -77,7 +77,7 @@ class EventAdminUpdateMessageCommand extends SubcommandInteraction {
     await showEvent(
       interaction,
       event,
-      true,
+      interaction.channel ?? undefined,
       messageMatch?.[1],
       messageMatch?.[2],
       message,

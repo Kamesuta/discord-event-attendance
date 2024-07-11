@@ -41,7 +41,7 @@ class EventShowCommand extends SubcommandInteraction {
     await showEvent(
       interaction,
       event,
-      isWebhook,
+      interaction.channel ?? undefined,
       message ?? undefined,
       eventLinkMessage ?? undefined,
     );

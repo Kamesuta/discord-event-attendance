@@ -1,6 +1,6 @@
 import { GuildScheduledEvent, Interaction } from 'discord.js';
 import { prisma } from '../index.js';
-import { Event } from '@prisma/client';
+import { Event, Prisma } from '@prisma/client';
 
 /**
  * イベント情報を取得します
@@ -68,9 +68,13 @@ class EventManager {
   /**
    * 選択中のイベントを取得します
    * @param interaction インタラクション
+   * @param active true=開催中のイベント/false=開始前のイベントのみ取得するか
    * @returns イベント
    */
-  async getEvent(interaction: Interaction): Promise<Event | null> {
+  async getEvent(
+    interaction: Interaction,
+    active = true,
+  ): Promise<Event | null> {
     // 選択されている場合は選択中のイベントを取得
     const selectedEventId = this._selectedEvents[interaction.user.id];
     if (selectedEventId) {
@@ -81,16 +85,42 @@ class EventManager {
       });
     }
 
+    // activeに応じた条件
+    const where = active
+      ? // 開催中のイベントの場合は開始しているものも取得
+        {
+          active,
+        }
+      : // 開催前のイベントの場合は終了していないもののみ取得
+        {
+          active,
+          startTime: {
+            equals: null,
+          },
+          endTime: {
+            equals: null,
+          },
+        };
+    // activeに応じた並び順
+    const orderBy: {
+      startTime?: Prisma.SortOrder;
+      scheduleTime?: Prisma.SortOrder;
+    } = active
+      ? {
+          startTime: 'desc',
+        }
+      : {
+          scheduleTime: 'desc',
+        };
+
     // コマンドを打ったVCチャンネルで開催中のイベントを取得
     if (interaction.channel?.isVoiceBased()) {
       const event = await prisma.event.findFirst({
         where: {
           channelId: interaction.channel.id,
-          active: true,
+          ...where,
         },
-        orderBy: {
-          startTime: 'desc',
-        },
+        orderBy,
         take: 1,
       });
       if (event) {
@@ -105,11 +135,21 @@ class EventManager {
       const event = await prisma.event.findFirst({
         where: {
           channelId: voiceChannel.id,
-          active: true,
+          ...where,
         },
-        orderBy: {
-          startTime: 'desc',
-        },
+        orderBy,
+        take: 1,
+      });
+      if (event) {
+        return event;
+      }
+    }
+
+    // コマンドを打ったVCチャンネル/入っているVC で開催中のイベントが見つからない場合はその他で開催中のイベントを取得
+    {
+      const event = await prisma.event.findFirst({
+        where,
+        orderBy,
         take: 1,
       });
       if (event) {
@@ -119,9 +159,7 @@ class EventManager {
 
     // それでも見つからない場合は過去の最新イベントを取得
     return await prisma.event.findFirst({
-      orderBy: {
-        startTime: 'desc',
-      },
+      orderBy,
       take: 1,
     });
   }

@@ -1,6 +1,6 @@
 // 必要なパッケージをインポートする
 import { Client, Events, GatewayIntentBits } from 'discord.js';
-import dotenv from 'dotenv';
+import 'dotenv/config';
 
 import { logger } from './utils/log.js';
 import { PrismaClient } from '@prisma/client';
@@ -12,9 +12,6 @@ import {
 import CommandHandler from './commands/CommandHandler.js';
 import { nowait } from './utils/utils.js';
 import commands from './commands/commands.js';
-
-// .envファイルを読み込む
-dotenv.config();
 
 /**
  * データベースのインスタンス

@@ -4,6 +4,7 @@ import {
   Message,
   RepliableInteraction,
   StringSelectMenuBuilder,
+  TextBasedChannel,
 } from 'discord.js';
 import { prisma } from '../index.js';
 import { config } from '../utils/config.js';
@@ -17,26 +18,29 @@ import statusGameMenuAction from '../commands/action/StatusGameMenuAction.js';
  * イベント情報を表示します
  * @param interaction インタラクション
  * @param event イベント
- * @param isWebhook Webhookで送信するかどうか
+ * @param webhookChannel Webhookのチャンネル
  * @param message Webhookで送信するメッセージ
  * @param eventLinkMessage イベントリンクに表示するメッセージ
  * @param editMessage 編集するメッセージ
+ * @returns 送信したメッセージ
  */
 export default async function showEvent(
   interaction: RepliableInteraction,
   event: Event,
-  isWebhook = false,
+  webhookChannel?: TextBasedChannel,
   message?: string,
   eventLinkMessage?: string,
   editMessage?: Message,
-): Promise<void> {
+): Promise<Message | undefined> {
   // 集計
   await updateAttendanceTimeIfEventActive(event);
 
   // Webhookを取得
-  const webhook = !isWebhook ? undefined : await getWebhook(interaction);
-  if (isWebhook && !webhook) {
-    return;
+  const webhook = !webhookChannel
+    ? undefined
+    : await getWebhook(interaction, webhookChannel);
+  if (webhookChannel && !webhook) {
+    return undefined;
   }
 
   // イベントの出欠状況を表示
@@ -198,9 +202,9 @@ export default async function showEvent(
         ?.displayAvatarURL() ?? interaction.user.displayAvatarURL();
     if (editMessage) {
       // 既存メッセージを編集
-      await webhook.webhook.editMessage(editMessage, contents);
+      return await webhook.webhook.editMessage(editMessage, contents);
     } else {
-      await webhook.webhook.send({
+      return await webhook.webhook.send({
         threadId: webhook.thread?.id,
         username: memberDisplayName,
         avatarURL: memberAvatar,
@@ -209,6 +213,6 @@ export default async function showEvent(
     }
   } else {
     // 通常送信
-    await interaction.editReply(contents);
+    return await interaction.editReply(contents);
   }
 }

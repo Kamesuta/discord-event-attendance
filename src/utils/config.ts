@@ -19,6 +19,15 @@ export interface Config {
   /** サーバーID */
   guild_id: string;
 
+  /** お知らせチャンネルID */
+  announcement_channel_id: string;
+
+  /** お知らせメッセージ */
+  announcement_message: string;
+
+  /** お知らせ招待リンクメッセージ */
+  announcement_invite_link_message: string;
+
   /* eslint-enable @typescript-eslint/naming-convention */
 }
 
@@ -44,4 +53,22 @@ assert(
 assert(
   config.guild_id && typeof config.guild_id === 'string',
   'guild_id is required and must be a string.',
+);
+
+assert(
+  config.announcement_channel_id &&
+    typeof config.announcement_channel_id === 'string',
+  'announcement_channel_id is required and must be a string.',
+);
+
+assert(
+  config.announcement_message &&
+    typeof config.announcement_message === 'string',
+  'announcement_message is required and must be a string.',
+);
+
+assert(
+  config.announcement_invite_link_message &&
+    typeof config.announcement_invite_link_message === 'string',
+  'announcement_invite_link_message is required and must be a string.',
 );

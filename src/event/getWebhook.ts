@@ -3,6 +3,7 @@ import {
   Webhook,
   NonThreadGuildBasedChannel,
   ThreadChannel,
+  TextBasedChannel,
 } from 'discord.js';
 import { client } from '../index.js';
 import { logger } from '../utils/log.js';
@@ -10,10 +11,12 @@ import { logger } from '../utils/log.js';
 /**
  * Webhookを取得/作成します
  * @param interaction インタラクション
+ * @param webhookChannel チャンネル (省略時はinteraction.channel)
  * @returns Webhookのチャンネルとスレッド
  */
 export default async function getWebhook(
   interaction: RepliableInteraction,
+  webhookChannel?: TextBasedChannel,
 ): Promise<
   | {
       webhook: Webhook;
@@ -23,7 +26,7 @@ export default async function getWebhook(
   | undefined
 > {
   // Webhook送信系の処理
-  const interactionChannel = interaction.channel;
+  const interactionChannel = webhookChannel ?? interaction.channel;
   if (!interactionChannel || interactionChannel.isDMBased()) {
     await interaction.editReply({
       content: 'このコマンドはサーバー内でのみ使用できます',

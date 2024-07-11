@@ -5,6 +5,7 @@ import eventShowCommand from './EventShowCommand.js';
 import eventGameCommand from './EventGameCommand.js';
 import eventUserListCommand from './EventUserListCommand.js';
 import eventGameCsvCommand from './EventGameCsvCommand.js';
+import eventStartCommand from './EventStartCommand.js';
 
 const commands: InteractionBase[] = [
   eventCommand,
@@ -13,6 +14,7 @@ const commands: InteractionBase[] = [
   eventGameCommand,
   eventUserListCommand,
   eventGameCsvCommand,
+  eventStartCommand,
 ];
 
 export default commands;
