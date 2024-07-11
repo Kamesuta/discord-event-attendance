@@ -3,3 +3,12 @@ required_time = 10
 
 # サーバーID
 guild_id = "0000000000000000000"
+
+# アナウンスチャンネルID
+announcement_channel_id = "0000000000000000000"
+
+# アナウンスメッセージ
+announcement_message = "<@&0000000000000000000> {event} イベントが始まります～！"
+
+# アナウンス招待リンクメッセージ
+announcement_invite_link_message = "{vc} へいらっしゃい～"
