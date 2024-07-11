@@ -6,14 +6,14 @@ import {
 import { SubcommandInteraction } from '../base/command_base.js';
 import eventCommand from './EventCommand.js';
 import eventManager from '../../event/EventManager.js';
-import showEvent from '../../event/showEvent.js';
 import { config } from '../../utils/config.js';
 import { logger } from '../../utils/log.js';
+import updateEventMessageMenu from '../contextmenu/UpdateEventMessageMenu.js';
 
-class EventStartCommand extends SubcommandInteraction {
+class EventStopCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
-    .setName('start')
-    .setDescription('イベントを開始します');
+    .setName('stop')
+    .setDescription('イベントを終了します');
 
   async onCommand(interaction: ChatInputCommandInteraction): Promise<void> {
     // イベントを開始
@@ -30,8 +30,8 @@ class EventStartCommand extends SubcommandInteraction {
       return;
     }
 
-    // まだ始まっていない最新のイベントを取得
-    const event = await eventManager.getEvent(interaction, false);
+    // 最新のイベントを取得
+    const event = await eventManager.getEvent(interaction);
     const scheduledEvent = await eventManager.getScheduleEvent(
       interaction,
       event,
@@ -42,40 +42,37 @@ class EventStartCommand extends SubcommandInteraction {
       });
       return;
     }
-    // イベントを開始
+    // イベントを終了
     await scheduledEvent.edit({
-      status: GuildScheduledEventStatus.Active,
+      status: GuildScheduledEventStatus.Completed,
     });
 
-    // VC名を取得
-    const vcName = scheduledEvent.channel?.name ?? '不明';
-
-    // アナウンスチャンネルでイベントを表示
-    const message = await showEvent(
-      interaction,
-      event,
-      announcementChannel,
-      config.announcement_message
-        .replace('{event}', event.name)
-        .replace('{vc}', vcName),
-      config.announcement_invite_link_message
-        .replace('{event}', event.name)
-        .replace('{vc}', vcName),
-    );
-    // メッセージを公開
-    await message?.crosspost().catch(() => {
-      // エラーが発生した場合は無視
+    // アナウンスチャンネルの最新10件のメッセージを取得
+    const messages = await announcementChannel.messages.fetch({ limit: 10 });
+    // イベントのメッセージを取得
+    const message = messages.find((m) => {
+      try {
+        const scheduledEventId =
+          updateEventMessageMenu.parseScheduledEventId(m);
+        return scheduledEventId === scheduledEvent.id;
+      } catch (_) {
+        return false;
+      }
     });
+    // イベントのメッセージが見つかった場合、メッセージを更新
+    if (message) {
+      await updateEventMessageMenu.updateMessage(interaction, message);
+    }
 
     // ログに残す
     logger.info(
-      `${interaction.user.username} が /event start コマンドを打ってイベント「${event.name}」(ID: ${event.id})を開始しました`,
+      `${interaction.user.username} が /event stop コマンドを打ってイベント「${event.name}」(ID: ${event.id})を終了しました`,
     );
 
     await interaction.editReply({
-      content: `イベント「${event.name}」(ID: ${event.id})を開始しました`,
+      content: `イベント「${event.name}」(ID: ${event.id})を終了しました`,
     });
   }
 }
 
-export default new EventStartCommand(eventCommand);
+export default new EventStopCommand(eventCommand);

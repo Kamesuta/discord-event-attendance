@@ -1,7 +1,9 @@
 import {
   ContextMenuCommandBuilder,
+  Message,
   MessageContextMenuCommandInteraction,
   PermissionFlagsBits,
+  RepliableInteraction,
 } from 'discord.js';
 import { MessageContextMenuInteraction } from '../base/contextmenu_base.js';
 import eventManager from '../../event/EventManager.js';
@@ -17,22 +19,36 @@ class UpdateEventMessageMenu extends MessageContextMenuInteraction {
     interaction: MessageContextMenuCommandInteraction,
   ): Promise<void> {
     await interaction.deferReply({ ephemeral: true });
-    // EmbedのURLを解析
-    const url = interaction.targetMessage.embeds[0]?.url;
-    if (!url) {
+
+    try {
+      await this.updateMessage(interaction, interaction.targetMessage);
+    } catch (error) {
+      if (typeof error !== 'string') throw error;
+
       await interaction.editReply({
-        content: 'イベントお知らせメッセージに対してのみ使用できます',
+        content: error,
       });
       return;
     }
-    const match = url.match(/\/(\d+)$/);
-    if (!match) {
-      await interaction.editReply({
-        content: 'イベントお知らせメッセージのURLが不正です',
-      });
-      return;
+
+    await interaction.deleteReply();
+  }
+
+  /**
+   * イベントお知らせメッセージを更新
+   * @param interaction インタラクション
+   * @param message メッセージ
+   */
+  async updateMessage(
+    interaction: RepliableInteraction,
+    message: Message,
+  ): Promise<void> {
+    // DiscordイベントIDを取得 (取得できない場合はエラーをthrow)
+    const scheduledEventId = this.parseScheduledEventId(message);
+
+    if (!scheduledEventId) {
+      throw 'イベントが見つかりませんでした';
     }
-    const scheduledEventId = match[1];
     // ScheduledEventが取得できれば更新
     const scheduledEvent = await interaction.guild?.scheduledEvents
       .fetch(scheduledEventId)
@@ -43,14 +59,11 @@ class UpdateEventMessageMenu extends MessageContextMenuInteraction {
     // イベント情報を取得
     const event = await eventManager.getEventFromDiscordId(scheduledEventId);
     if (!event) {
-      await interaction.editReply({
-        content: 'イベントが見つかりませんでした',
-      });
-      return;
+      throw 'イベントが見つかりませんでした';
     }
 
     // メッセージを抽出 (\n\n[～](https://discord.com/events/～) は削除)
-    const messageMatch = interaction.targetMessage.content.match(
+    const messageMatch = message.content.match(
       /^(.+)(?:\n\n\[(.+)\]\(https:\/\/discord.com\/events\/.+\))?$/,
     );
 
@@ -58,13 +71,29 @@ class UpdateEventMessageMenu extends MessageContextMenuInteraction {
     await showEvent(
       interaction,
       event,
-      interaction.channel ?? undefined,
+      message.channel ?? undefined,
       messageMatch?.[1],
       messageMatch?.[2],
-      interaction.targetMessage,
+      message,
     );
+  }
 
-    await interaction.deleteReply();
+  /**
+   * イベントお知らせメッセージからScheduledEventのIDを取得
+   * @param message メッセージ
+   * @returns ScheduledEventのID
+   */
+  parseScheduledEventId(message: Message): string {
+    // EmbedのURLを解析
+    const url = message.embeds[0]?.url;
+    if (!url) {
+      throw 'イベントお知らせメッセージに対してのみ使用できます';
+    }
+    const match = url.match(/\/(\d+)$/);
+    if (!match) {
+      throw 'イベントお知らせメッセージのURLが不正です';
+    }
+    return match[1];
   }
 }
 
