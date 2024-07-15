@@ -39,8 +39,8 @@ model VoiceLog {
   timestamp DateTime @default(now())
   join      Boolean
 
-  event Event    @relation(fields: [eventId], references: [id])
-  stat  UserStat @relation(fields: [eventId, userId], references: [eventId, userId])
+  event Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  stat  UserStat @relation(fields: [eventId, userId], references: [eventId, userId], onDelete: Cascade)
 }
 
 model UserStat {
@@ -52,7 +52,7 @@ model UserStat {
   memo     String?  @db.VarChar(512)
 
   VoiceLog VoiceLog[]
-  event    Event      @relation(fields: [eventId], references: [id])
+  event    Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
   @@id([eventId, userId], name: "id")
 }
@@ -66,7 +66,7 @@ model GameResult {
   image   String? @db.VarChar(512)
 
   users UserGameResult[]
-  event Event            @relation(fields: [eventId], references: [id])
+  event Event            @relation(fields: [eventId], references: [id], onDelete: Cascade)
 }
 
 model UserGameResult {
@@ -79,7 +79,7 @@ model UserGameResult {
   xp      Float
   group   String?
 
-  event Event      @relation(fields: [eventId], references: [id])
+  event Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
   game  GameResult @relation(fields: [gameId], references: [id], onDelete: Cascade)
 
   @@unique([gameId, userId])
