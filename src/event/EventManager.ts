@@ -85,6 +85,8 @@ class EventManager {
       });
     }
 
+    // 前後3時間以内のイベントを取得
+    const timeMargin = 3 * 60 * 60 * 1000;
     // activeに応じた条件
     const where = active
       ? // 開催中のイベントの場合は開始しているものも取得
@@ -100,6 +102,10 @@ class EventManager {
           endTime: {
             equals: null,
           },
+          scheduleTime: {
+            gte: new Date(Date.now() - timeMargin),
+            lte: new Date(Date.now() + timeMargin),
+          },
         };
     // activeに応じた並び順
     const orderBy: {
@@ -110,7 +116,7 @@ class EventManager {
           startTime: 'desc',
         }
       : {
-          scheduleTime: 'desc',
+          scheduleTime: 'asc',
         };
 
     // コマンドを打ったVCチャンネルで開催中のイベントを取得
