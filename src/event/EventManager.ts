@@ -163,11 +163,8 @@ class EventManager {
       }
     }
 
-    // それでも見つからない場合は過去の最新イベントを取得
-    return await prisma.event.findFirst({
-      orderBy,
-      take: 1,
-    });
+    // それでも見つからない場合は諦める
+    return null;
   }
 
   /**
