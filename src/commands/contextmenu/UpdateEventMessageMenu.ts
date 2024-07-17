@@ -8,7 +8,7 @@ import {
 import { MessageContextMenuInteraction } from '../base/contextmenu_base.js';
 import eventManager from '../../event/EventManager.js';
 import showEvent from '../../event/showEvent.js';
-import { updateEvent } from '../../event_handler.js';
+import { onUpdateScheduledEvent } from '../../event_handler.js';
 
 class UpdateEventMessageMenu extends MessageContextMenuInteraction {
   command = new ContextMenuCommandBuilder()
@@ -54,7 +54,7 @@ class UpdateEventMessageMenu extends MessageContextMenuInteraction {
       .fetch(scheduledEventId)
       .catch(() => undefined);
     if (scheduledEvent) {
-      await updateEvent(scheduledEvent);
+      await onUpdateScheduledEvent(scheduledEvent);
     }
     // イベント情報を取得
     const event = await eventManager.getEventFromDiscordId(scheduledEventId);

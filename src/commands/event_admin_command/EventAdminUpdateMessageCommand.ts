@@ -4,7 +4,7 @@ import {
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
 import eventManager from '../../event/EventManager.js';
-import { updateEvent } from '../../event_handler.js';
+import { onUpdateScheduledEvent } from '../../event_handler.js';
 import eventAdminCommand from './EventAdminCommand.js';
 import showEvent from '../../event/showEvent.js';
 import getWebhook from '../../event/getWebhook.js';
@@ -57,7 +57,7 @@ class EventAdminUpdateMessageCommand extends SubcommandInteraction {
       .fetch(scheduledEventId)
       .catch(() => undefined);
     if (scheduledEvent) {
-      await updateEvent(scheduledEvent);
+      await onUpdateScheduledEvent(scheduledEvent);
     }
     // イベント情報を取得
     const event = await eventManager.getEventFromDiscordId(scheduledEventId);

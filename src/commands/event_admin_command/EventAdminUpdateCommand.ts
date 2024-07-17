@@ -4,7 +4,7 @@ import {
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
 import eventManager from '../../event/EventManager.js';
-import { updateEvent } from '../../event_handler.js';
+import { onUpdateScheduledEvent } from '../../event_handler.js';
 import eventAdminCommand from './EventAdminCommand.js';
 
 class EventAdminUpdateCommand extends SubcommandInteraction {
@@ -26,7 +26,7 @@ class EventAdminUpdateCommand extends SubcommandInteraction {
       });
       return;
     }
-    await updateEvent(scheduledEvent);
+    await onUpdateScheduledEvent(scheduledEvent);
     await interaction.editReply({
       content: `イベント「${scheduledEvent.name}」(ID: ${event.id})の情報を更新しました`,
     });

@@ -3,7 +3,7 @@ import {
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
-import { startEvent } from '../../event_handler.js';
+import { onStartScheduledEvent } from '../../event_handler.js';
 import eventAdminCommand from './EventAdminCommand.js';
 import eventManager from '../../event/EventManager.js';
 
@@ -25,7 +25,7 @@ class EventAdminStartCommand extends SubcommandInteraction {
       });
       return;
     }
-    const startedEvent = await startEvent(scheduledEvent);
+    const startedEvent = await onStartScheduledEvent(scheduledEvent);
     if (!startedEvent) {
       await interaction.editReply({
         content: 'イベントの開始に失敗しました',

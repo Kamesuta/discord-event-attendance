@@ -10,7 +10,7 @@ import { config } from '../../utils/config.js';
 import { logger } from '../../utils/log.js';
 import updateEventMessageMenu from '../contextmenu/UpdateEventMessageMenu.js';
 import getWebhook from '../../event/getWebhook.js';
-import { endEvent } from '../../event_handler.js';
+import { onEndEvent } from '../../event_handler.js';
 
 class EventStopCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
@@ -50,14 +50,16 @@ class EventStopCommand extends SubcommandInteraction {
       `${interaction.user.username} が /event stop コマンドを打ってイベント「${event.name}」(ID: ${event.id})を終了しました`,
     );
 
-    // イベントを終了
-    try {
-      await scheduledEvent.edit({
+    // Discordイベントを終了
+    await scheduledEvent
+      .edit({
         status: GuildScheduledEventStatus.Completed,
-      });
-    } catch (_) {
-      // イベントの状態を変更できなかった場合、イベントを終了する
-      await endEvent(scheduledEvent);
+      })
+      .catch((_) => {});
+
+    // イベントがまだアクティブなら、イベントを終了する (Discordイベントが終了していない場合などのフォールバック)
+    if (scheduledEvent.channel?.isVoiceBased() && event.active) {
+      await onEndEvent(event, scheduledEvent.channel);
     }
 
     // Webhookを取得
@@ -69,8 +71,8 @@ class EventStopCommand extends SubcommandInteraction {
       return;
     }
 
-    // アナウンスチャンネルの最新10件のメッセージを取得
-    const messages = await announcementChannel.messages.fetch({ limit: 10 });
+    // アナウンスチャンネルの最新3件のメッセージを取得
+    const messages = await announcementChannel.messages.fetch({ limit: 3 });
     // Webhook経由でメッセージを取得し直す (MessageContent Intentsがないときは自身のメッセージしか取得できないため)
     const fetchedMessages = await Promise.all(
       messages

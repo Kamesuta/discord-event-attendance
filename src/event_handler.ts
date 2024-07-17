@@ -1,5 +1,9 @@
 import { Event, PrismaClient } from '@prisma/client';
-import { GuildScheduledEvent, PartialGuildScheduledEvent } from 'discord.js';
+import {
+  GuildScheduledEvent,
+  PartialGuildScheduledEvent,
+  VoiceBasedChannel,
+} from 'discord.js';
 import { config } from './utils/config.js';
 import { tallyAttendanceTime } from './event/attendance_time.js';
 import { logger } from './utils/log.js';
@@ -15,7 +19,7 @@ const coverImageSize = 2048;
  * スケジュールイベントが作成されたときのイベントハンドラー
  * @param scheduledEvent 作成されたイベント
  */
-export async function createEvent(
+export async function onCreateScheduledEvent(
   scheduledEvent: GuildScheduledEvent,
 ): Promise<void> {
   if (!scheduledEvent.channel?.isVoiceBased()) {
@@ -50,7 +54,7 @@ export async function createEvent(
  * @param scheduledEvent 開始されたイベント
  * @returns 開始されたイベント
  */
-export async function startEvent(
+export async function onStartScheduledEvent(
   scheduledEvent: GuildScheduledEvent,
 ): Promise<Event | undefined> {
   if (!scheduledEvent.channel?.isVoiceBased()) {
@@ -121,7 +125,7 @@ export async function startEvent(
  * イベント情報をDiscord側から取得して更新する
  * @param scheduledEvent イベント
  */
-export async function updateEvent(
+export async function onUpdateScheduledEvent(
   scheduledEvent: GuildScheduledEvent,
 ): Promise<void> {
   if (!scheduledEvent.channel?.isVoiceBased()) {
@@ -155,7 +159,7 @@ export async function updateEvent(
  * @param scheduledEvent 終了されたイベント
  * @returns 終了されたイベント
  */
-export async function endEvent(
+export async function onEndScheduledEvent(
   scheduledEvent: GuildScheduledEvent,
 ): Promise<void> {
   if (!scheduledEvent.channel?.isVoiceBased()) {
@@ -176,31 +180,45 @@ export async function endEvent(
       logger.warn(`イベントが見つかりません: Name=${scheduledEvent.name}`);
       return;
     }
-    await prisma.event.update({
-      where: {
-        id: event.id,
-      },
-      data: {
-        active: false,
-        endTime: new Date(),
-      },
-    });
+    await onEndEvent(event, scheduledEvent.channel);
     logger.log(`イベントを終了しました: Name=${scheduledEvent.name}`);
-
-    // VCに参加しているユーザーに対してもログを記録する
-    for (const [_, member] of scheduledEvent.channel.members) {
-      await prisma.voiceLog.create({
-        data: {
-          eventId: event.id,
-          userId: member.id,
-          join: false,
-        },
-      });
-      // 参加時間を集計する
-      await tallyAttendanceTime(event.id, member.id);
-    }
   } catch (error) {
     logger.error('イベントの終了に失敗しました:', error);
+  }
+}
+
+/**
+ * イベントを終了する
+ * @param event 終了されたイベント
+ * @param channel VCチャンネル
+ * @returns 終了されたイベント
+ */
+export async function onEndEvent(
+  event: Event,
+  channel: VoiceBasedChannel,
+): Promise<void> {
+  // データベースを更新
+  await prisma.event.update({
+    where: {
+      id: event.id,
+    },
+    data: {
+      active: false,
+      endTime: new Date(),
+    },
+  });
+
+  // VCに参加しているユーザーに対してもログを記録する
+  for (const [_, member] of channel.members) {
+    await prisma.voiceLog.create({
+      data: {
+        eventId: event.id,
+        userId: member.id,
+        join: false,
+      },
+    });
+    // 参加時間を集計する
+    await tallyAttendanceTime(event.id, member.id);
   }
 }
 
@@ -217,7 +235,7 @@ export async function onGuildScheduledEventCreate(
       return;
     }
 
-    await createEvent(scheduledEvent);
+    await onCreateScheduledEvent(scheduledEvent);
   } catch (error) {
     logger.error(
       'onGuildScheduledEventCreate中にエラーが発生しました。',
@@ -244,9 +262,9 @@ export async function onGuildScheduledEventUpdate(
     }
 
     if (!oldScheduledEvent.isActive() && newScheduledEvent.isActive()) {
-      await startEvent(newScheduledEvent);
+      await onStartScheduledEvent(newScheduledEvent);
     } else if (oldScheduledEvent.isActive() && !newScheduledEvent.isActive()) {
-      await endEvent(newScheduledEvent);
+      await onEndScheduledEvent(newScheduledEvent);
     }
   } catch (error) {
     logger.error(

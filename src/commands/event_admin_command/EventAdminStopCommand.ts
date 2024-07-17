@@ -4,7 +4,7 @@ import {
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
 import eventManager from '../../event/EventManager.js';
-import { endEvent } from '../../event_handler.js';
+import { onEndScheduledEvent } from '../../event_handler.js';
 import eventAdminCommand from './EventAdminCommand.js';
 
 class EventAdminStopCommand extends SubcommandInteraction {
@@ -26,7 +26,7 @@ class EventAdminStopCommand extends SubcommandInteraction {
       });
       return;
     }
-    await endEvent(scheduledEvent);
+    await onEndScheduledEvent(scheduledEvent);
     await interaction.editReply({
       content: `イベント「${scheduledEvent.name}」(ID: ${event.id})を終了しました`,
     });
