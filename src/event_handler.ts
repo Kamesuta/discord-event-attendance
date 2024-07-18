@@ -261,11 +261,14 @@ export async function onGuildScheduledEventUpdate(
       return;
     }
 
+    // イベントの開始/終了処理
     if (!oldScheduledEvent.isActive() && newScheduledEvent.isActive()) {
       await onStartScheduledEvent(newScheduledEvent);
     } else if (oldScheduledEvent.isActive() && !newScheduledEvent.isActive()) {
       await onEndScheduledEvent(newScheduledEvent);
     }
+    // イベント情報を更新
+    await onUpdateScheduledEvent(newScheduledEvent);
   } catch (error) {
     logger.error(
       'onGuildScheduledEventUpdate中にエラーが発生しました。',
