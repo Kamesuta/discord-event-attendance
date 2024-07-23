@@ -7,6 +7,7 @@ import { PrismaClient } from '@prisma/client';
 import { onVoiceStateUpdate } from './voice_handler.js';
 import {
   onGuildScheduledEventCreate,
+  onGuildScheduledEventDelete,
   onGuildScheduledEventUpdate,
 } from './event_handler.js';
 import CommandHandler from './commands/CommandHandler.js';
@@ -58,6 +59,10 @@ client.on(
 client.on(
   Events.GuildScheduledEventUpdate,
   nowait(onGuildScheduledEventUpdate),
+);
+client.on(
+  Events.GuildScheduledEventDelete,
+  nowait(onGuildScheduledEventDelete),
 );
 client.on(
   Events.InteractionCreate,

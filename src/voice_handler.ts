@@ -1,4 +1,8 @@
-import { VoiceBasedChannel, VoiceState } from 'discord.js';
+import {
+  GuildScheduledEventStatus,
+  VoiceBasedChannel,
+  VoiceState,
+} from 'discord.js';
 import { prisma } from './index.js';
 import { config } from './utils/config.js';
 import { tallyAttendanceTime } from './event/attendance_time.js';
@@ -21,7 +25,7 @@ async function createVoiceLog(
     const event = await prisma.event.findFirst({
       where: {
         channelId: channel.id,
-        active: true,
+        active: GuildScheduledEventStatus.Active,
       },
     });
     if (!event) {

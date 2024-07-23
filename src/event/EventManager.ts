@@ -1,4 +1,8 @@
-import { GuildScheduledEvent, Interaction } from 'discord.js';
+import {
+  GuildScheduledEvent,
+  GuildScheduledEventStatus,
+  Interaction,
+} from 'discord.js';
 import { prisma } from '../index.js';
 import { Event, Prisma } from '@prisma/client';
 
@@ -91,11 +95,11 @@ class EventManager {
     const where = active
       ? // 開催中のイベントの場合は開始しているものも取得
         {
-          active,
+          active: GuildScheduledEventStatus.Active,
         }
       : // 開催前のイベントの場合は終了していないもののみ取得
         {
-          active,
+          active: GuildScheduledEventStatus.Scheduled,
           startTime: {
             equals: null,
           },

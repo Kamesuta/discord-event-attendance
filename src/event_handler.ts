@@ -1,6 +1,7 @@
 import { Event, PrismaClient } from '@prisma/client';
 import {
   GuildScheduledEvent,
+  GuildScheduledEventStatus,
   PartialGuildScheduledEvent,
   VoiceBasedChannel,
 } from 'discord.js';
@@ -70,7 +71,7 @@ export async function onStartScheduledEvent(
         eventId: scheduledEvent.id,
       },
       update: {
-        active: true,
+        active: GuildScheduledEventStatus.Active,
         startTime: new Date(),
 
         name: scheduledEvent.name,
@@ -82,7 +83,7 @@ export async function onStartScheduledEvent(
       create: {
         eventId: scheduledEvent.id,
 
-        active: true,
+        active: GuildScheduledEventStatus.Active,
         startTime: new Date(),
 
         name: scheduledEvent.name,
@@ -160,27 +161,20 @@ export async function onUpdateScheduledEvent(
  * @returns 終了されたイベント
  */
 export async function onEndScheduledEvent(
-  scheduledEvent: GuildScheduledEvent,
+  scheduledEvent: GuildScheduledEvent | PartialGuildScheduledEvent,
 ): Promise<void> {
-  if (!scheduledEvent.channel?.isVoiceBased()) {
-    logger.warn(
-      `VCが指定されていないイベントは無視します: ${scheduledEvent.name}`,
-    );
-    return;
-  }
-
   try {
     const event = await prisma.event.findFirst({
       where: {
         eventId: scheduledEvent.id,
-        active: true,
+        active: GuildScheduledEventStatus.Active,
       },
     });
     if (!event) {
       logger.warn(`イベントが見つかりません: Name=${scheduledEvent.name}`);
       return;
     }
-    await onEndEvent(event, scheduledEvent.channel);
+    await onEndEvent(event, scheduledEvent.channel ?? undefined);
     logger.log(`イベントを終了しました: Name=${scheduledEvent.name}`);
   } catch (error) {
     logger.error('イベントの終了に失敗しました:', error);
@@ -195,7 +189,7 @@ export async function onEndScheduledEvent(
  */
 export async function onEndEvent(
   event: Event,
-  channel: VoiceBasedChannel,
+  channel?: VoiceBasedChannel,
 ): Promise<void> {
   // データベースを更新
   await prisma.event.update({
@@ -203,22 +197,24 @@ export async function onEndEvent(
       id: event.id,
     },
     data: {
-      active: false,
+      active: GuildScheduledEventStatus.Completed,
       endTime: new Date(),
     },
   });
 
-  // VCに参加しているユーザーに対してもログを記録する
-  for (const [_, member] of channel.members) {
-    await prisma.voiceLog.create({
-      data: {
-        eventId: event.id,
-        userId: member.id,
-        join: false,
-      },
-    });
-    // 参加時間を集計する
-    await tallyAttendanceTime(event.id, member.id);
+  if (channel) {
+    // VCに参加しているユーザーに対してもログを記録する
+    for (const [_, member] of channel.members) {
+      await prisma.voiceLog.create({
+        data: {
+          eventId: event.id,
+          userId: member.id,
+          join: false,
+        },
+      });
+      // 参加時間を集計する
+      await tallyAttendanceTime(event.id, member.id);
+    }
   }
 }
 
@@ -269,6 +265,43 @@ export async function onGuildScheduledEventUpdate(
     }
     // イベント情報を更新
     await onUpdateScheduledEvent(newScheduledEvent);
+  } catch (error) {
+    logger.error(
+      'onGuildScheduledEventUpdate中にエラーが発生しました。',
+      error,
+    );
+  }
+}
+
+/**
+ * スケジュールイベントが削除されたときのイベントハンドラー
+ * @param oldScheduledEvent 更新前のイベント
+ */
+export async function onGuildScheduledEventDelete(
+  oldScheduledEvent: GuildScheduledEvent | PartialGuildScheduledEvent,
+): Promise<void> {
+  try {
+    if (!oldScheduledEvent) return;
+
+    // 指定のサーバー以外無視
+    if (oldScheduledEvent.guild?.id !== config.guild_id) {
+      return;
+    }
+
+    // イベント情報を更新
+    if (!oldScheduledEvent.partial) {
+      await onUpdateScheduledEvent(oldScheduledEvent);
+    }
+
+    // イベントのキャンセル処理
+    await prisma.event.update({
+      where: {
+        eventId: oldScheduledEvent.id,
+      },
+      data: {
+        active: GuildScheduledEventStatus.Canceled,
+      },
+    });
   } catch (error) {
     logger.error(
       'onGuildScheduledEventUpdate中にエラーが発生しました。',
