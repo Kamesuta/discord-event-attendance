@@ -35,6 +35,8 @@ export async function onCreateScheduledEvent(
       data: {
         eventId: scheduledEvent.id,
 
+        active: GuildScheduledEventStatus.Scheduled,
+
         name: scheduledEvent.name,
         channelId: scheduledEvent.channel.id,
         description: scheduledEvent.description,
@@ -142,6 +144,8 @@ export async function onUpdateScheduledEvent(
         eventId: scheduledEvent.id,
       },
       data: {
+        active: scheduledEvent.status,
+
         name: scheduledEvent.name,
         channelId: scheduledEvent.channel.id,
         description: scheduledEvent.description,

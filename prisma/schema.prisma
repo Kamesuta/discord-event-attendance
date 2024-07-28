@@ -20,7 +20,7 @@ model Event {
   description String? @db.VarChar(4096)
   coverImage  String? @db.VarChar(512)
 
-  active       Int       @default(0)
+  active       Int       @default(1)
   scheduleTime DateTime?
   startTime    DateTime?
   endTime      DateTime?

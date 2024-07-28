@@ -108,7 +108,7 @@ class EventManager {
           },
           scheduleTime: {
             gte: new Date(Date.now() - timeMargin),
-            lte: new Date(Date.now() + timeMargin),
+            lt: new Date(Date.now() + timeMargin),
           },
         };
     // activeに応じた並び順
