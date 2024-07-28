@@ -5,6 +5,7 @@ import eventAdminUpdateCommand from './EventAdminUpdateCommand.js';
 import eventAdminUpdateMessageCommand from './EventAdminUpdateMessageCommand.js';
 import eventAdminStartCommand from './EventAdminStartCommand.js';
 import eventAdminStopCommand from './EventAdminStopCommand.js';
+import eventAdminPanelCommand from './EventAdminPanelCommand.js';
 
 const commands: InteractionBase[] = [
   eventAdminCommand,
@@ -13,6 +14,7 @@ const commands: InteractionBase[] = [
   eventAdminUpdateMessageCommand,
   eventAdminStartCommand,
   eventAdminStopCommand,
+  eventAdminPanelCommand,
 ];
 
 export default commands;

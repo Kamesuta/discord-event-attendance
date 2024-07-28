@@ -138,6 +138,17 @@ export default async function showEvent(
       value: schedule,
     });
 
+  // 主催者を表示
+  if (event.hostId) {
+    const member = interaction.guild?.members.resolve(event.hostId);
+    if (member) {
+      embeds.setAuthor({
+        name: `主催者: ${member.displayName}`,
+        iconURL: member?.displayAvatarURL(),
+      });
+    }
+  }
+
   if (event.endTime) {
     // ゲームに参加したユーザーを表示
     const gameUsers = userXp.map(([userId, xp], i) => {

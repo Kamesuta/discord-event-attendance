@@ -19,6 +19,7 @@ model Event {
   channelId   String
   description String? @db.VarChar(4096)
   coverImage  String? @db.VarChar(512)
+  hostId      String?
 
   active       Int       @default(1)
   scheduleTime DateTime?

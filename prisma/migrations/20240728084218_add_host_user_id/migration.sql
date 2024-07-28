@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE `Event` ADD COLUMN `hostId` VARCHAR(191) NULL,
+    MODIFY `active` INTEGER NOT NULL DEFAULT 1;
