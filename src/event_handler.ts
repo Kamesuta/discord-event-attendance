@@ -20,10 +20,11 @@ const coverImageSize = 2048;
 /**
  * スケジュールイベントが作成されたときのイベントハンドラー
  * @param scheduledEvent 作成されたイベント
+ * @returns 作成されたイベント
  */
 export async function onCreateScheduledEvent(
   scheduledEvent: GuildScheduledEvent,
-): Promise<void> {
+): Promise<Event | undefined> {
   if (!scheduledEvent.channel?.isVoiceBased()) {
     logger.warn(
       `VCが指定されていないイベントは無視します: ${scheduledEvent.name}`,
@@ -48,6 +49,7 @@ export async function onCreateScheduledEvent(
     logger.log(
       `イベントを作成しました: ID=${event.id}, Name=${scheduledEvent.name}`,
     );
+    return event;
   } catch (error) {
     logger.error('イベントの作成に失敗しました:', error);
   }
