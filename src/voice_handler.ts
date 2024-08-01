@@ -27,6 +27,10 @@ async function createVoiceLog(
         channelId: channel.id,
         active: GuildScheduledEventStatus.Active,
       },
+      orderBy: {
+        startTime: 'desc',
+      },
+      take: 1,
     });
     if (!event) {
       return;

@@ -14,7 +14,7 @@ datasource db {
 model Event {
   id Int @id @default(autoincrement())
 
-  eventId     String  @unique
+  eventId     String
   name        String
   channelId   String
   description String? @db.VarChar(4096)

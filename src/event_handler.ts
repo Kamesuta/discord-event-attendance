@@ -8,6 +8,7 @@ import {
 import { config } from './utils/config.js';
 import { tallyAttendanceTime } from './event/attendance_time.js';
 import { logger } from './utils/log.js';
+import eventManager from './event/EventManager.js';
 
 const prisma = new PrismaClient();
 
@@ -35,7 +36,7 @@ export async function onCreateScheduledEvent(
       data: {
         eventId: scheduledEvent.id,
 
-        active: GuildScheduledEventStatus.Scheduled,
+        active: scheduledEvent.status,
 
         name: scheduledEvent.name,
         channelId: scheduledEvent.channel.id,
@@ -68,33 +69,40 @@ export async function onStartScheduledEvent(
   }
 
   try {
-    const event = await prisma.event.upsert({
-      where: {
-        eventId: scheduledEvent.id,
-      },
-      update: {
-        active: GuildScheduledEventStatus.Active,
-        startTime: new Date(),
+    // イベント情報を取得
+    let event = await eventManager.getEventFromDiscordId(scheduledEvent.id);
+    if (!event) {
+      event = await prisma.event.create({
+        data: {
+          eventId: scheduledEvent.id,
 
-        name: scheduledEvent.name,
-        channelId: scheduledEvent.channel.id,
-        description: scheduledEvent.description,
-        coverImage: scheduledEvent.coverImageURL({ size: coverImageSize }),
-        scheduleTime: scheduledEvent.scheduledStartAt,
-      },
-      create: {
-        eventId: scheduledEvent.id,
+          active: GuildScheduledEventStatus.Active,
+          startTime: new Date(),
 
-        active: GuildScheduledEventStatus.Active,
-        startTime: new Date(),
+          name: scheduledEvent.name,
+          channelId: scheduledEvent.channel.id,
+          description: scheduledEvent.description,
+          coverImage: scheduledEvent.coverImageURL({ size: coverImageSize }),
+          scheduleTime: scheduledEvent.scheduledStartAt,
+        },
+      });
+    } else {
+      event = await prisma.event.update({
+        where: {
+          id: event.id,
+        },
+        data: {
+          active: GuildScheduledEventStatus.Active,
+          startTime: new Date(),
 
-        name: scheduledEvent.name,
-        channelId: scheduledEvent.channel.id,
-        description: scheduledEvent.description,
-        coverImage: scheduledEvent.coverImageURL({ size: coverImageSize }),
-        scheduleTime: scheduledEvent.scheduledStartAt,
-      },
-    });
+          name: scheduledEvent.name,
+          channelId: scheduledEvent.channel.id,
+          description: scheduledEvent.description,
+          coverImage: scheduledEvent.coverImageURL({ size: coverImageSize }),
+          scheduleTime: scheduledEvent.scheduledStartAt,
+        },
+      });
+    }
     logger.log(
       `イベントを開始しました: ID=${event.id}, Name=${scheduledEvent.name}`,
     );
@@ -138,10 +146,19 @@ export async function onUpdateScheduledEvent(
     return;
   }
 
+  // イベント情報を取得
+  const event = await eventManager.getEventFromDiscordId(scheduledEvent.id);
+  if (!event) {
+    logger.warn(
+      `イベント情報の更新に失敗しました: イベントが見つかりません: Name=${scheduledEvent.name}`,
+    );
+    return;
+  }
+
   try {
     await prisma.event.update({
       where: {
-        eventId: scheduledEvent.id,
+        id: event.id,
       },
       data: {
         active: scheduledEvent.status,
@@ -168,12 +185,7 @@ export async function onEndScheduledEvent(
   scheduledEvent: GuildScheduledEvent | PartialGuildScheduledEvent,
 ): Promise<void> {
   try {
-    const event = await prisma.event.findFirst({
-      where: {
-        eventId: scheduledEvent.id,
-        active: GuildScheduledEventStatus.Active,
-      },
-    });
+    const event = await eventManager.getEventFromDiscordId(scheduledEvent.id);
     if (!event) {
       logger.warn(`イベントが見つかりません: Name=${scheduledEvent.name}`);
       return;
@@ -261,11 +273,16 @@ export async function onGuildScheduledEventUpdate(
       return;
     }
 
-    // イベントの開始/終了処理
     if (!oldScheduledEvent.isActive() && newScheduledEvent.isActive()) {
+      // イベントの開始処理
       await onStartScheduledEvent(newScheduledEvent);
     } else if (oldScheduledEvent.isActive() && !newScheduledEvent.isActive()) {
+      // イベントの終了処理
       await onEndScheduledEvent(newScheduledEvent);
+      if (newScheduledEvent.status === GuildScheduledEventStatus.Scheduled) {
+        // 繰り返しイベントが終了した場合、Scheduled状態に変更されるため、その場合は新しいイベントを登録する
+        await onCreateScheduledEvent(newScheduledEvent);
+      }
     }
     // イベント情報を更新
     await onUpdateScheduledEvent(newScheduledEvent);
@@ -297,10 +314,19 @@ export async function onGuildScheduledEventDelete(
       await onUpdateScheduledEvent(oldScheduledEvent);
     }
 
+    // イベント情報取得
+    const event = await eventManager.getEventFromDiscordId(
+      oldScheduledEvent.id,
+    );
+    if (!event) {
+      logger.warn(`イベントが見つかりません: Name=${oldScheduledEvent.name}`);
+      return;
+    }
+
     // イベントのキャンセル処理
     await prisma.event.update({
       where: {
-        eventId: oldScheduledEvent.id,
+        id: event.id,
       },
       data: {
         active: GuildScheduledEventStatus.Canceled,

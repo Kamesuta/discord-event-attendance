@@ -30,21 +30,40 @@ class EventManager {
 
   /**
    * DiscordのイベントIDからイベントを取得します
-   * @param eventId DiscordのイベントID
+   * @param scheduledEventId DiscordのイベントID
    * @returns イベント
    */
   async getEventFromDiscordId(
-    eventId: string | undefined,
+    scheduledEventId: string | undefined,
   ): Promise<Event | null> {
-    return await prisma.event.findFirst({
-      where: {
-        eventId,
-      },
-      orderBy: {
-        startTime: 'desc',
-      },
-      take: 1,
-    });
+    // 開催中のものを優先して取得
+    {
+      const event = await prisma.event.findFirst({
+        where: {
+          eventId: scheduledEventId,
+          active: GuildScheduledEventStatus.Active,
+        },
+        orderBy: {
+          startTime: 'desc', // 開催中のものは開始時間の新しいものを取得
+        },
+        take: 1,
+      });
+      if (event) return event;
+    }
+    {
+      const event = await prisma.event.findFirst({
+        where: {
+          eventId: scheduledEventId,
+          active: GuildScheduledEventStatus.Scheduled,
+        },
+        orderBy: {
+          scheduleTime: 'desc', // 開催前のものはスケジュール時間の新しいものを取得
+        },
+        take: 1,
+      });
+      if (event) return event;
+    }
+    return null;
   }
 
   /**
