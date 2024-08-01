@@ -1,6 +1,7 @@
 import {
   ChatInputCommandInteraction,
   EmbedBuilder,
+  GuildScheduledEventStatus,
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
@@ -18,6 +19,12 @@ class StatusEventListCommand extends SubcommandInteraction {
           'コマンドの結果をチャットに表示しますか？ (デフォルトは非公開)',
         )
         .setRequired(false),
+    )
+    .addIntegerOption((option) =>
+      option
+        .setName('month')
+        .setDescription('表示する月 (デフォルトは直近2ヶ月を表示します)')
+        .setRequired(false),
     );
 
   async onCommand(interaction: ChatInputCommandInteraction): Promise<void> {
@@ -25,8 +32,26 @@ class StatusEventListCommand extends SubcommandInteraction {
     const show = interaction.options.getBoolean('show') ?? false;
     await interaction.deferReply({ ephemeral: !show });
 
+    // 月
+    const month = interaction.options.getInteger('month');
+    const currentYear = new Date().getFullYear();
+    const startTime = month
+      ? {
+          gt: new Date(currentYear, month - 1, 1), // 月初め
+          lt: new Date(currentYear, month, 1), // 翌月初め
+        }
+      : {
+          // 直近2ヶ月
+          gt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000),
+        };
+    const piriodText = month ? `${month}月` : '直近2ヶ月';
+
     // イベントを取得
     const events = await prisma.event.findMany({
+      where: {
+        active: GuildScheduledEventStatus.Completed,
+        startTime,
+      },
       orderBy: {
         id: 'asc',
       },
@@ -50,8 +75,8 @@ class StatusEventListCommand extends SubcommandInteraction {
 
     // Embed作成
     const embeds = new EmbedBuilder()
-      .setTitle('イベント一覧')
-      .setDescription(eventList.join('\n'))
+      .setTitle(`イベント一覧 (${piriodText}, ${events.length}件)`)
+      .setDescription(eventList.join('\n') || 'イベントがありません')
       .setColor('#ff8c00')
       .setFooter({
         text: '/status event <イベントID> で詳細を確認できます',
