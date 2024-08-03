@@ -10,6 +10,7 @@ import getWebhook from '../../event/getWebhook.js';
 import showEvent from '../../event/showEvent.js';
 import eventManager from '../../event/EventManager.js';
 import { Event } from '@prisma/client';
+import { logger } from '../../utils/log.js';
 
 class EventAdminUpdateMessageCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
@@ -51,9 +52,14 @@ class EventAdminUpdateMessageCommand extends SubcommandInteraction {
         ? await this.updateEventMessage(interaction, message, eventId)
         : await this.updateMessage(interaction, message);
 
+      // ログを出力
+      logger.log(
+        `イベント「${event.name}」(ID: ${event.id})のメッセージを更新しました`,
+      );
+
       // 結果を返信
       await interaction.editReply({
-        content: `イベント「${event.name}」(ID: ${event.id})の情報を更新しました`,
+        content: `イベント「${event.name}」(ID: ${event.id})の[情報](${message.url})のメッセージを更新しました`,
       });
     } catch (error) {
       if (typeof error !== 'string') throw error;

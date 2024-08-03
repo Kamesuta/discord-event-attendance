@@ -17,10 +17,15 @@ class UpdateEventMessageMenu extends MessageContextMenuInteraction {
     await interaction.deferReply({ ephemeral: true });
 
     try {
-      await eventAdminUpdateMessageCommand.updateMessage(
+      const event = await eventAdminUpdateMessageCommand.updateMessage(
         interaction,
         interaction.targetMessage,
       );
+
+      // 結果を返信
+      await interaction.editReply({
+        content: `イベント「${event.name}」(ID: ${event.id})の[情報](${interaction.targetMessage.url})を更新しました`,
+      });
     } catch (error) {
       if (typeof error !== 'string') throw error;
 
@@ -29,8 +34,6 @@ class UpdateEventMessageMenu extends MessageContextMenuInteraction {
       });
       return;
     }
-
-    await interaction.deleteReply();
   }
 }
 
