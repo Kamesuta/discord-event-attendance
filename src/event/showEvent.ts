@@ -62,6 +62,16 @@ export default async function showEvent(
           where: {
             userId: stat.userId,
             show: true,
+            event: {
+              // イベント終了前の参加回数をカウント
+              startTime: {
+                lte:
+                  event.endTime ??
+                  event.startTime ??
+                  event.scheduleTime ??
+                  undefined,
+              },
+            },
           },
         });
         return [stat.userId, count] as const;
