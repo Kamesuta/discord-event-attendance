@@ -28,6 +28,12 @@ export interface Config {
   /** お知らせ招待リンクメッセージ */
   announcement_invite_link_message: string;
 
+  /** イベント参加済ロールのID */
+  event_join_role_id: string;
+
+  /** 最近イベントに参加したロールのID { ロールID = 必要回数 } */
+  recent_event_join_role_ids: Record<string, number>;
+
   /* eslint-enable @typescript-eslint/naming-convention */
 }
 
@@ -71,4 +77,15 @@ assert(
   config.announcement_invite_link_message &&
     typeof config.announcement_invite_link_message === 'string',
   'announcement_invite_link_message is required and must be a string.',
+);
+
+assert(
+  config.event_join_role_id && typeof config.event_join_role_id === 'string',
+  'event_join_role_id is required and must be a string.',
+);
+
+assert(
+  config.recent_event_join_role_ids &&
+    typeof config.recent_event_join_role_ids === 'object',
+  'recent_event_join_role_id is required and must be an object.',
 );

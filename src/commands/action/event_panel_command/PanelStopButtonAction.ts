@@ -13,6 +13,7 @@ import { onEndEvent } from '../../../event_handler.js';
 import getWebhook from '../../../event/getWebhook.js';
 import { checkCommandPermission } from '../../../event/checkCommandPermission.js';
 import eventAdminUpdateMessageCommand from '../../event_admin_command/EventAdminUpdateMessageCommand.js';
+import { syncRoleByCondition } from '../../../event/roleManager.js';
 
 class PanelStopButtonAction extends MessageComponentActionInteraction<ComponentType.Button> {
   /**
@@ -69,7 +70,7 @@ class PanelStopButtonAction extends MessageComponentActionInteraction<ComponentT
 
     // メンバー情報を取得
     const member = await interaction.guild?.members.fetch(interaction.user.id);
-    if (!member) {
+    if (!interaction.guild || !member) {
       await interaction.editReply({
         content: 'メンバー情報の取得に失敗しました',
       });
@@ -161,6 +162,9 @@ class PanelStopButtonAction extends MessageComponentActionInteraction<ComponentT
 
     // パネルのメッセージ削除
     await interaction.message.delete().catch(() => {});
+
+    // ロールを同期
+    await syncRoleByCondition(interaction.guild);
 
     await interaction.editReply({
       content: `イベント「${event.name}」(ID: ${event.id})を終了しました。主催お疲れ様でした！`,

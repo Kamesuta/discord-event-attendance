@@ -53,7 +53,7 @@ class EventAdminUpdateMessageCommand extends SubcommandInteraction {
         : await this.updateMessage(interaction, message);
 
       // ログを出力
-      logger.log(
+      logger.info(
         `イベント「${event.name}」(ID: ${event.id})のメッセージを更新しました`,
       );
 

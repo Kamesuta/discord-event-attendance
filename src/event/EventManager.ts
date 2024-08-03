@@ -158,8 +158,9 @@ class EventManager {
     }
 
     // 入っているVC で開催中のイベントを取得
-    const voiceChannel = interaction.guild?.members.resolve(interaction.user)
-      ?.voice.channel;
+    const voiceChannel = (
+      await interaction.guild?.members.fetch(interaction.user)
+    )?.voice.channel;
     if (voiceChannel) {
       const event = await prisma.event.findFirst({
         where: {

@@ -46,21 +46,20 @@ class EventUserListCommand extends SubcommandInteraction {
     ).map((stat) => stat.userId);
 
     // メンバーの名前とIDを取得する
-    const memberList = (
-      await Promise.all(
-        attendance.map(async (userId) => {
-          const member = await members.fetch(userId);
-          return `${member.displayName},${member.id}`;
-        }),
-      )
-    ).join('\n');
+    const memberList = await members.fetch({ user: attendance });
+    const memberTextList = attendance
+      .map((userId) => {
+        const memberName = memberList.get(userId)?.displayName ?? '取得失敗';
+        return memberName ? `${memberName},${userId}` : '';
+      })
+      .join('\n');
 
     // メッセージを送信する
     await interaction.editReply({
       embeds: [
         new EmbedBuilder()
           .setTitle('参加者リスト (CSV形式)')
-          .setDescription('```csv\n' + memberList + '\n```')
+          .setDescription('```csv\n' + memberTextList + '\n```')
           .addFields({
             name: 'スプレッドシートへの貼付け方法',
             value:

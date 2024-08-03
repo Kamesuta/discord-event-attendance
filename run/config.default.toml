@@ -12,3 +12,11 @@ announcement_message = "<@&0000000000000000000> {event} イベントが始まり
 
 # アナウンス招待リンクメッセージ
 announcement_invite_link_message = "{vc} へいらっしゃい～"
+
+# イベント参加済ロールのID
+event_join_role_id = "0000000000000000000"
+
+# 最近イベントに参加したロールのID { ロールID = 必要回数 }
+[recent_event_join_role_ids]
+"0000000000000000000" = 1
+"0000000000000000000" = 4

@@ -46,7 +46,7 @@ export async function onCreateScheduledEvent(
         scheduleTime: scheduledEvent.scheduledStartAt,
       },
     });
-    logger.log(
+    logger.info(
       `イベントを作成しました: ID=${event.id}, Name=${scheduledEvent.name}`,
     );
     return event;
@@ -105,7 +105,7 @@ export async function onStartScheduledEvent(
         },
       });
     }
-    logger.log(
+    logger.info(
       `イベントを開始しました: ID=${event.id}, Name=${scheduledEvent.name}`,
     );
 
@@ -172,7 +172,7 @@ export async function onUpdateScheduledEvent(
         scheduleTime: scheduledEvent.scheduledStartAt,
       },
     });
-    logger.log(`イベント情報を更新しました: Name=${scheduledEvent.name}`);
+    logger.info(`イベント情報を更新しました: Name=${scheduledEvent.name}`);
   } catch (error) {
     logger.error('イベント情報の更新に失敗しました:', error);
   }
@@ -193,7 +193,7 @@ export async function onEndScheduledEvent(
       return;
     }
     await onEndEvent(event, scheduledEvent.channel ?? undefined);
-    logger.log(`イベントを終了しました: Name=${scheduledEvent.name}`);
+    logger.info(`イベントを終了しました: Name=${scheduledEvent.name}`);
   } catch (error) {
     logger.error('イベントの終了に失敗しました:', error);
   }

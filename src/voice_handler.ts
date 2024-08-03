@@ -60,7 +60,7 @@ async function createVoiceLog(
         join,
       },
     });
-    logger.log(
+    logger.info(
       `ユーザー(${userId})がイベント(ID:${event.id},Name:${event.name})に${
         join ? '参加' : '退出'
       }しました。`,

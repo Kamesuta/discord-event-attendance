@@ -153,7 +153,7 @@ export default async function showEvent(
 
   // 主催者を表示
   if (event.hostId) {
-    const member = interaction.guild?.members.resolve(event.hostId);
+    const member = await interaction.guild?.members.fetch(event.hostId);
     if (member) {
       embeds.setAuthor({
         name: `主催者: ${member.displayName}`,
@@ -217,13 +217,14 @@ export default async function showEvent(
 
   if (webhook) {
     // Webhookで送信 (コマンド送信者の名前とアイコンを表示)
+    const interactionMember = await interaction.guild?.members.fetch(
+      interaction.user.id,
+    );
     const memberDisplayName =
-      interaction.guild?.members.resolve(interaction.user.id)?.displayName ??
-      interaction.user.username;
+      interactionMember?.displayName ?? interaction.user.username;
     const memberAvatar =
-      interaction.guild?.members
-        .resolve(interaction.user.id)
-        ?.displayAvatarURL() ?? interaction.user.displayAvatarURL();
+      interactionMember?.displayAvatarURL() ??
+      interaction.user.displayAvatarURL();
     if (editMessage) {
       // 既存メッセージを編集
       return await webhook.webhook.editMessage(editMessage, contents);
