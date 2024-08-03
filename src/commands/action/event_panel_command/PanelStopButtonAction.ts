@@ -11,8 +11,8 @@ import { config } from '../../../utils/config.js';
 import { logger } from '../../../utils/log.js';
 import { onEndEvent } from '../../../event_handler.js';
 import getWebhook from '../../../event/getWebhook.js';
-import updateEventMessageMenu from '../../contextmenu/UpdateEventMessageMenu.js';
 import { checkCommandPermission } from '../../../event/checkCommandPermission.js';
+import eventAdminUpdateMessageCommand from '../../event_admin_command/EventAdminUpdateMessageCommand.js';
 
 class PanelStopButtonAction extends MessageComponentActionInteraction<ComponentType.Button> {
   /**
@@ -139,7 +139,8 @@ class PanelStopButtonAction extends MessageComponentActionInteraction<ComponentT
     const message = fetchedMessages.find((m) => {
       try {
         // メッセージをパースしてイベントIDを取得
-        const scheduledEventId = updateEventMessageMenu.parseMessageEventId(m);
+        const scheduledEventId =
+          eventAdminUpdateMessageCommand.parseMessageEventId(m);
         return scheduledEventId === event.id;
       } catch (_) {
         return false;
@@ -148,7 +149,10 @@ class PanelStopButtonAction extends MessageComponentActionInteraction<ComponentT
     // イベントのメッセージが見つかった場合、メッセージを更新
     if (message) {
       try {
-        await updateEventMessageMenu.updateMessage(interaction, message);
+        await eventAdminUpdateMessageCommand.updateMessage(
+          interaction,
+          message,
+        );
       } catch (error) {
         if (typeof error !== 'string') throw error;
         logger.error(`イベント終了中にエラーが発生しました: ${error}`);

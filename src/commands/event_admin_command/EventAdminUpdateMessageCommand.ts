@@ -1,11 +1,15 @@
 import {
   ChatInputCommandInteraction,
+  Message,
+  RepliableInteraction,
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
 import eventAdminCommand from './EventAdminCommand.js';
 import getWebhook from '../../event/getWebhook.js';
-import UpdateEventMessageMenu from '../contextmenu/UpdateEventMessageMenu.js';
+import showEvent from '../../event/showEvent.js';
+import eventManager from '../../event/EventManager.js';
+import { Event } from '@prisma/client';
 
 class EventAdminUpdateMessageCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
@@ -16,6 +20,12 @@ class EventAdminUpdateMessageCommand extends SubcommandInteraction {
         .setName('message')
         .setDescription('イベントのメッセージ')
         .setRequired(true),
+    )
+    .addNumberOption((option) =>
+      option
+        .setName('event_id')
+        .setDescription('イベントID (強制的にこのイベントに変更)')
+        .setRequired(false),
     );
 
   async onCommand(interaction: ChatInputCommandInteraction): Promise<void> {
@@ -34,12 +44,12 @@ class EventAdminUpdateMessageCommand extends SubcommandInteraction {
       return;
     }
 
+    const eventId = interaction.options.getNumber('event_id');
     try {
       // イベントメッセージを更新
-      const event = await UpdateEventMessageMenu.updateMessage(
-        interaction,
-        message,
-      );
+      const event = eventId
+        ? await this.updateEventMessage(interaction, message, eventId)
+        : await this.updateMessage(interaction, message);
 
       // 結果を返信
       await interaction.editReply({
@@ -53,6 +63,84 @@ class EventAdminUpdateMessageCommand extends SubcommandInteraction {
       });
       return;
     }
+  }
+
+  /**
+   * イベントお知らせメッセージを更新
+   * @param interaction インタラクション
+   * @param message メッセージ
+   * @returns イベント
+   */
+  async updateMessage(
+    interaction: RepliableInteraction,
+    message: Message,
+  ): Promise<Event> {
+    // DiscordイベントIDを取得 (取得できない場合はエラーをthrow)
+    const eventId = this.parseMessageEventId(message);
+    if (!eventId) {
+      throw 'イベントが見つかりませんでした';
+    }
+
+    // イベント情報を編集
+    return await this.updateEventMessage(interaction, message, eventId);
+  }
+
+  /**
+   * イベントお知らせメッセージを更新
+   * @param interaction インタラクション
+   * @param message メッセージ
+   * @param eventId イベントID
+   * @returns イベント
+   */
+  async updateEventMessage(
+    interaction: RepliableInteraction,
+    message: Message,
+    eventId: number,
+  ): Promise<Event> {
+    // イベント情報を取得
+    const event = await eventManager.getEventFromId(eventId);
+    if (!event) {
+      throw 'イベントが見つかりませんでした';
+    }
+
+    // メッセージを抽出 (\n\n[～](https://discord.com/events/～) は削除)
+    const messageMatch = message.content.match(
+      /^(.+)(?:\n\n\[(.+)\]\(https:\/\/discord.com\/events\/.+\))?$/,
+    );
+
+    // イベント情報を編集
+    await showEvent(
+      interaction,
+      event,
+      message.channel ?? undefined,
+      messageMatch?.[1],
+      messageMatch?.[2],
+      message,
+    );
+
+    return event;
+  }
+
+  /**
+   * イベントお知らせメッセージからイベントIDを取得
+   * @param message メッセージ
+   * @returns イベントID
+   */
+  parseMessageEventId(message: Message): number {
+    // EmbedのURLを解析
+    const footerText = message.embeds
+      .flatMap((embed) => {
+        const footerText = embed.footer?.text;
+        return footerText ? [footerText] : [];
+      })
+      .flatMap((footerText) => {
+        const match = footerText.match(/イベントID: (\d+)/);
+        return match ? [parseInt(match[1])] : [];
+      })[0];
+    if (!footerText || isNaN(footerText)) {
+      throw 'イベントお知らせメッセージに対してのみ使用できます';
+    }
+    return footerText;
   }
 }
 
