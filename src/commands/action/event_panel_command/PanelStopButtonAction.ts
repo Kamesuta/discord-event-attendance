@@ -139,16 +139,20 @@ class PanelStopButtonAction extends MessageComponentActionInteraction<ComponentT
     const message = fetchedMessages.find((m) => {
       try {
         // メッセージをパースしてイベントIDを取得
-        const scheduledEventId =
-          updateEventMessageMenu.parseScheduledEventId(m);
-        return scheduledEventId === scheduledEvent.id;
+        const scheduledEventId = updateEventMessageMenu.parseMessageEventId(m);
+        return scheduledEventId === event.id;
       } catch (_) {
         return false;
       }
     });
     // イベントのメッセージが見つかった場合、メッセージを更新
     if (message) {
-      await updateEventMessageMenu.updateMessage(interaction, message);
+      try {
+        await updateEventMessageMenu.updateMessage(interaction, message);
+      } catch (error) {
+        if (typeof error !== 'string') throw error;
+        logger.error(`イベント終了中にエラーが発生しました: ${error}`);
+      }
     }
 
     // パネルのメッセージ削除

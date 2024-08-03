@@ -8,7 +8,7 @@ import {
 import { MessageContextMenuInteraction } from '../base/contextmenu_base.js';
 import eventManager from '../../event/EventManager.js';
 import showEvent from '../../event/showEvent.js';
-import { onUpdateScheduledEvent } from '../../event_handler.js';
+import { Event } from '@prisma/client';
 
 class UpdateEventMessageMenu extends MessageContextMenuInteraction {
   command = new ContextMenuCommandBuilder()
@@ -38,26 +38,19 @@ class UpdateEventMessageMenu extends MessageContextMenuInteraction {
    * イベントお知らせメッセージを更新
    * @param interaction インタラクション
    * @param message メッセージ
+   * @returns イベント
    */
   async updateMessage(
     interaction: RepliableInteraction,
     message: Message,
-  ): Promise<void> {
+  ): Promise<Event> {
     // DiscordイベントIDを取得 (取得できない場合はエラーをthrow)
-    const scheduledEventId = this.parseScheduledEventId(message);
-
-    if (!scheduledEventId) {
+    const eventId = this.parseMessageEventId(message);
+    if (!eventId) {
       throw 'イベントが見つかりませんでした';
     }
-    // ScheduledEventが取得できれば更新
-    const scheduledEvent = await interaction.guild?.scheduledEvents
-      .fetch(scheduledEventId)
-      .catch(() => undefined);
-    if (scheduledEvent) {
-      await onUpdateScheduledEvent(scheduledEvent);
-    }
     // イベント情報を取得
-    const event = await eventManager.getEventFromDiscordId(scheduledEventId);
+    const event = await eventManager.getEventFromId(eventId);
     if (!event) {
       throw 'イベントが見つかりませんでした';
     }
@@ -76,24 +69,30 @@ class UpdateEventMessageMenu extends MessageContextMenuInteraction {
       messageMatch?.[2],
       message,
     );
+
+    return event;
   }
 
   /**
-   * イベントお知らせメッセージからScheduledEventのIDを取得
+   * イベントお知らせメッセージからイベントIDを取得
    * @param message メッセージ
-   * @returns ScheduledEventのID
+   * @returns イベントID
    */
-  parseScheduledEventId(message: Message): string {
+  parseMessageEventId(message: Message): number {
     // EmbedのURLを解析
-    const url = message.embeds[0]?.url;
-    if (!url) {
+    const footerText = message.embeds
+      .flatMap((embed) => {
+        const footerText = embed.footer?.text;
+        return footerText ? [footerText] : [];
+      })
+      .flatMap((footerText) => {
+        const match = footerText.match(/イベントID: (\d+)/);
+        return match ? [parseInt(match[1])] : [];
+      })[0];
+    if (!footerText || isNaN(footerText)) {
       throw 'イベントお知らせメッセージに対してのみ使用できます';
     }
-    const match = url.match(/\/(\d+)$/);
-    if (!match) {
-      throw 'イベントお知らせメッセージのURLが不正です';
-    }
-    return match[1];
+    return footerText;
   }
 }
 
