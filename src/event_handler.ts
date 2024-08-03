@@ -231,7 +231,7 @@ export async function onEndEvent(
         },
       });
       // 参加時間を集計する
-      await tallyAttendanceTime(event.id, member.id);
+      await tallyAttendanceTime(event.id, member.id, new Date());
     }
   }
 }

@@ -5,24 +5,32 @@ import { prisma } from '../index.js';
  * ユーザーの参加時間を計算する
  * @param eventId イベントのDB ID
  * @param userId ユーザーのID
+ * @param endTime イベントの終了時間
  * @returns 参加時間の集計結果
  */
 export async function calculateAttendanceTime(
   eventId: number,
   userId: string,
+  endTime: Date,
 ): Promise<number> {
   const logs = await prisma.voiceLog.findMany({
     where: {
       eventId,
       userId,
     },
+    orderBy: {
+      timestamp: 'asc',
+    },
   });
 
   // ユーザーのログを取得する
-  return calculateTime(logs);
+  return calculateTime(logs, endTime);
 }
 
-function calculateTime(logs: { timestamp: Date; join: boolean }[]): number {
+function calculateTime(
+  logs: { timestamp: Date; join: boolean }[],
+  endTime: Date,
+): number {
   // 参加時間を計算する
   let totalTime = 0;
   let joinTime: number | null = null;
@@ -37,7 +45,7 @@ function calculateTime(logs: { timestamp: Date; join: boolean }[]): number {
   }
   if (joinTime !== null) {
     // 参加中の場合
-    totalTime += new Date().getTime() - joinTime;
+    totalTime += endTime.getTime() - joinTime;
   }
   return totalTime;
 }
@@ -46,12 +54,14 @@ function calculateTime(logs: { timestamp: Date; join: boolean }[]): number {
  * 参加時間を集計し、DBに保存する
  * @param eventId イベントのDB ID
  * @param userId ユーザーのID
+ * @param endTime イベントの終了時間
  */
 export async function tallyAttendanceTime(
   eventId: number,
   userId: string,
+  endTime: Date,
 ): Promise<void> {
-  const totalTime = await calculateAttendanceTime(eventId, userId);
+  const totalTime = await calculateAttendanceTime(eventId, userId, endTime);
 
   // 集計結果をDBに保存する
   await prisma.userStat.upsert({
@@ -75,21 +85,21 @@ export async function tallyAttendanceTime(
 /**
  * 参加時間を集計し、DBに保存する
  * @param event イベント
+ * @param endTime イベントの終了時間
  */
-export async function updateAttendanceTimeIfEventActive(
+export async function updateAttendanceTime(
   event: Event,
+  endTime: Date,
 ): Promise<void> {
-  if (event.active) {
-    // アクティブなイベントに参加しているユーザーを取得する
-    const userStats = await prisma.voiceLog.findMany({
-      where: {
-        eventId: event.id,
-      },
-    });
-    const participants = new Set(userStats.map((user) => user.userId));
+  // アクティブなイベントに参加しているユーザーを取得する
+  const userStats = await prisma.voiceLog.findMany({
+    where: {
+      eventId: event.id,
+    },
+  });
+  const participants = new Set(userStats.map((user) => user.userId));
 
-    for (const userId of participants) {
-      await tallyAttendanceTime(event.id, userId);
-    }
+  for (const userId of participants) {
+    await tallyAttendanceTime(event.id, userId, endTime);
   }
 }

@@ -1,6 +1,7 @@
 import {
   ActionRowBuilder,
   EmbedBuilder,
+  GuildScheduledEventStatus,
   Message,
   RepliableInteraction,
   StringSelectMenuBuilder,
@@ -9,7 +10,7 @@ import {
 import { prisma } from '../index.js';
 import { config } from '../utils/config.js';
 import { Event } from '@prisma/client';
-import { updateAttendanceTimeIfEventActive } from './attendance_time.js';
+import { updateAttendanceTime } from './attendance_time.js';
 import getWebhook from './getWebhook.js';
 import splitStrings from './splitStrings.js';
 import statusGameMenuAction from '../commands/action/StatusGameMenuAction.js';
@@ -33,7 +34,9 @@ export default async function showEvent(
   editMessage?: Message,
 ): Promise<Message | undefined> {
   // 集計
-  await updateAttendanceTimeIfEventActive(event);
+  if (event.active === (GuildScheduledEventStatus.Active as number)) {
+    await updateAttendanceTime(event, new Date());
+  }
 
   // Webhookを取得
   const webhook = !webhookChannel

@@ -67,7 +67,7 @@ async function createVoiceLog(
     );
     if (!join) {
       // 参加時間を集計する
-      await tallyAttendanceTime(event.id, userId);
+      await tallyAttendanceTime(event.id, userId, new Date());
     }
   } catch (error) {
     logger.error('ログの記録に失敗しました。', error);

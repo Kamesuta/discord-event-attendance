@@ -3,6 +3,7 @@ import {
   ButtonBuilder,
   ChatInputCommandInteraction,
   EmbedBuilder,
+  GuildScheduledEventStatus,
   InteractionEditReplyOptions,
   RepliableInteraction,
   SlashCommandSubcommandBuilder,
@@ -11,7 +12,7 @@ import {
 import { SubcommandInteraction } from '../base/command_base.js';
 import eventCommand from './EventCommand.js';
 import eventManager from '../../event/EventManager.js';
-import { updateAttendanceTimeIfEventActive } from '../../event/attendance_time.js';
+import { updateAttendanceTime } from '../../event/attendance_time.js';
 import { prisma } from '../../index.js';
 import { config } from '../../utils/config.js';
 import { Event } from '@prisma/client';
@@ -128,7 +129,9 @@ class EventReviewCommand extends SubcommandInteraction {
     event: Event,
   ): Promise<InteractionEditReplyOptions> {
     // 集計
-    await updateAttendanceTimeIfEventActive(event);
+    if (event.active === (GuildScheduledEventStatus.Active as number)) {
+      await updateAttendanceTime(event, new Date());
+    }
 
     // イベントの出欠状況を表示
     const stats = await prisma.userStat.findMany({
