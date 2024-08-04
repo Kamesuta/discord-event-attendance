@@ -53,7 +53,7 @@ class StatusEventListCommand extends SubcommandInteraction {
         startTime,
       },
       orderBy: {
-        id: 'asc',
+        startTime: 'asc',
       },
       include: {
         stats: {
