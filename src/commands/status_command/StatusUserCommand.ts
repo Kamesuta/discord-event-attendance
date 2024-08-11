@@ -1,15 +1,14 @@
 import {
   ChatInputCommandInteraction,
   EmbedBuilder,
+  GuildScheduledEventStatus,
   RepliableInteraction,
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
 import statusCommand from './StatusCommand.js';
-import { getUserGameResults } from '../../event/game.js';
 import splitStrings from '../../event/splitStrings.js';
 import { prisma } from '../../index.js';
-import { config } from '../../utils/config.js';
 
 class StatusUserCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
@@ -48,13 +47,22 @@ class StatusUserCommand extends SubcommandInteraction {
     userId: string,
   ): Promise<void> {
     // ユーザーの過去のイベント参加状況を表示
-    const stats = await prisma.userStat.findMany({
+    const events = await prisma.event.findMany({
       where: {
-        userId,
-        show: true,
+        active: GuildScheduledEventStatus.Completed,
+        stats: {
+          some: {
+            userId,
+            show: true,
+          },
+        },
       },
       include: {
-        event: true,
+        stats: true,
+        games: true,
+      },
+      orderBy: {
+        startTime: 'desc',
       },
     });
 
@@ -84,25 +92,21 @@ class StatusUserCommand extends SubcommandInteraction {
       .setColor('#ff8c00')
       .addFields({
         name: '参加イベント数',
-        value: `${stats.length} / ${eventCount} 回`,
+        value: `${events.length} / ${eventCount} 回`,
       });
 
     splitStrings(
-      stats.map((stat) => {
-        if (!stat.event) return '- 不明';
-        return `- [${stat.event.name}](https://discord.com/events/${config.guild_id}/${stat.event.eventId})`;
+      events.map((event) => {
+        if (!event) return '- 不明';
+        const date = !event.startTime
+          ? '未定'
+          : `<t:${Math.floor(event.startTime.getTime() / 1000)}>`;
+        return `- [${event.id.toString().padStart(3, ' ')}]　${date}　${event.name}　(${event.stats.length}人, ${event.games.length}試合)`;
       }),
       1024,
     ).forEach((line, i) => {
       embeds.addFields({
         name: i === 0 ? '参加イベントリスト' : '\u200b',
-        value: line,
-      });
-    });
-
-    splitStrings(await getUserGameResults(userId), 1024).forEach((line, i) => {
-      embeds.addFields({
-        name: i === 0 ? 'ゲーム戦績' : '\u200b',
         value: line,
       });
     });

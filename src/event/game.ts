@@ -165,34 +165,6 @@ export function makeEmbed(
 }
 
 /**
- * ユーザーの戦績を取得する
- * @param userId ユーザーID
- * @returns 戦績
- */
-export async function getUserGameResults(userId: string): Promise<string[]> {
-  // 戦績
-  const gameResults = await prisma.userGameResult.findMany({
-    where: {
-      userId,
-    },
-    orderBy: {
-      rank: 'asc',
-    },
-    include: {
-      game: true,
-      event: true,
-    },
-  });
-
-  return gameResults.flatMap((result) => {
-    if (!result.event || !result.game) return [];
-    return [
-      `- [${result.event.name}](https://discord.com/events/${config.guild_id}/${result.event.eventId}) ${result.game.name}(ID:${result.game.id}) ${result.rank}位`,
-    ];
-  });
-}
-
-/**
  * 何回目の試合かを取得する
  * @param eventId イベントID
  * @param gameId 試合ID
