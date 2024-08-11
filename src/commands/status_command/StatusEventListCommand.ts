@@ -23,7 +23,7 @@ class StatusEventListCommand extends SubcommandInteraction {
     .addIntegerOption((option) =>
       option
         .setName('month')
-        .setDescription('表示する月 (デフォルトは直近2ヶ月を表示します)')
+        .setDescription('表示する月 (デフォルトは直近30日間を表示します)')
         .setRequired(false),
     );
 
@@ -41,10 +41,10 @@ class StatusEventListCommand extends SubcommandInteraction {
           lt: new Date(currentYear, month, 1), // 翌月初め
         }
       : {
-          // 直近2ヶ月
-          gt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000),
+          // 直近1ヶ月
+          gt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
         };
-    const piriodText = month ? `${month}月` : '直近2ヶ月';
+    const piriodText = month ? `${month}月` : '直近30日間';
 
     // イベントを取得
     const events = await prisma.event.findMany({
@@ -70,7 +70,8 @@ class StatusEventListCommand extends SubcommandInteraction {
       const date = !event.startTime
         ? '未定'
         : `<t:${Math.floor(event.startTime.getTime() / 1000)}>`;
-      return `- [${event.id.toString().padStart(3, ' ')}]　${date}　${event.name}　(${event.stats.length}人, ${event.games.length}試合)`;
+      const host = event.hostId ? `<@${event.hostId}>主催` : '主催者未定';
+      return `- [${event.id.toString().padStart(3, ' ')}]　${date}　${event.name}　(${event.stats.length}人, ${event.games.length}試合, ${host})`;
     });
 
     // Embed作成
