@@ -26,6 +26,12 @@ class StatusEventListCommand extends SubcommandInteraction {
         .setName('month')
         .setDescription('表示する月 (デフォルトは直近30日間を表示します)')
         .setRequired(false),
+    )
+    .addStringOption((option) =>
+      option
+        .setName('search')
+        .setDescription('イベント名で検索')
+        .setRequired(false),
     );
 
   async onCommand(interaction: ChatInputCommandInteraction): Promise<void> {
@@ -49,10 +55,19 @@ class StatusEventListCommand extends SubcommandInteraction {
       ? `${month}月`
       : `直近30日間 (<t:${Math.floor(startTime.gt.getTime() / 1000)}:D> 〜 <t:${Math.floor(startTime.lt?.getTime() ?? Date.now() / 1000)}:D>)`;
 
+    // 検索条件
+    const search = interaction.options.getString('search');
+    const name: Prisma.EventWhereInput['name'] = search
+      ? {
+          contains: search,
+        }
+      : undefined;
+
     // イベント一覧のテキストを取得
     const eventList = await this.getEventListText({
       active: GuildScheduledEventStatus.Completed,
       startTime,
+      name,
     });
 
     // Embed作成
