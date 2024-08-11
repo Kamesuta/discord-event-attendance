@@ -3,7 +3,7 @@ import {
   UserContextMenuCommandInteraction,
 } from 'discord.js';
 import { UserContextMenuInteraction } from '../base/contextmenu_base.js';
-import showUserStatus from '../../event/showUserStatus.js';
+import statusUserCommand from '../status_command/StatusUserCommand.js';
 
 class StatusUserMenu extends UserContextMenuInteraction {
   command = new ContextMenuCommandBuilder().setName('イベントの参加状況を確認');
@@ -12,7 +12,10 @@ class StatusUserMenu extends UserContextMenuInteraction {
     interaction: UserContextMenuCommandInteraction,
   ): Promise<void> {
     await interaction.deferReply({ ephemeral: true });
-    await showUserStatus(interaction, interaction.targetUser.id);
+    await statusUserCommand.showUserStatus(
+      interaction,
+      interaction.targetUser.id,
+    );
   }
 }
 
