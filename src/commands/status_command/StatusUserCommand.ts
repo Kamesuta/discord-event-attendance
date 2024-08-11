@@ -46,6 +46,21 @@ class StatusUserCommand extends SubcommandInteraction {
     interaction: RepliableInteraction,
     userId: string,
   ): Promise<void> {
+    // 主催イベント一覧を取得
+    const hostEvents = await prisma.event.findMany({
+      where: {
+        active: GuildScheduledEventStatus.Completed,
+        hostId: userId,
+      },
+      include: {
+        stats: true,
+        games: true,
+      },
+      orderBy: {
+        startTime: 'desc',
+      },
+    });
+
     // ユーザーの過去のイベント参加状況を表示
     const events = await prisma.event.findMany({
       where: {
@@ -78,6 +93,30 @@ class StatusUserCommand extends SubcommandInteraction {
     // ユーザーを取得
     const user = await interaction.guild?.members.fetch(userId);
 
+    // 参加率ランキング順位 (直近30日間)
+    const ranking = await prisma.userStat.groupBy({
+      by: ['userId'],
+      where: {
+        show: true,
+        event: {
+          startTime: {
+            gt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+          },
+        },
+      },
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      _count: true,
+    });
+    const rank =
+      ranking
+        .sort((a, b) => b._count - a._count)
+        .findIndex((r) => r.userId === userId) + 1;
+    const rankSymbols = ['', '👑', '🥈', '🥉'];
+    const rankText = rank
+      ? `${rankSymbols[rank] ?? ''}${rank}位/${ranking.length}人`
+      : '参加なし';
+
+    // 概要情報を表示
     const embeds = new EmbedBuilder()
       .setTitle('イベント参加状況')
       .setDescription(`<@${userId}> さんの過去のイベント参加状況です`)
@@ -93,8 +132,30 @@ class StatusUserCommand extends SubcommandInteraction {
       .addFields({
         name: '参加イベント数',
         value: `${events.length} / ${eventCount} 回`,
+      })
+      .addFields({
+        name: '参加率ランキング (直近30日間)',
+        value: rankText,
       });
 
+    // 主催イベントリストを表示
+    splitStrings(
+      hostEvents.map((event) => {
+        if (!event) return '- 不明';
+        const date = !event.startTime
+          ? '未定'
+          : `<t:${Math.floor(event.startTime.getTime() / 1000)}>`;
+        return `- [${event.id.toString().padStart(3, ' ')}]　${date}　${event.name}　(${event.stats.length}人, ${event.games.length}試合)`;
+      }),
+      1024,
+    ).forEach((line, i) => {
+      embeds.addFields({
+        name: i === 0 ? '主催イベントリスト' : '\u200b',
+        value: line,
+      });
+    });
+
+    // 参加イベントリストを表示
     splitStrings(
       events.map((event) => {
         if (!event) return '- 不明';
