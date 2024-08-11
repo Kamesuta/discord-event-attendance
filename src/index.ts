@@ -13,6 +13,7 @@ import {
 import CommandHandler from './commands/CommandHandler.js';
 import { nowait } from './utils/utils.js';
 import commands from './commands/commands.js';
+import { onMessageCreate } from './message_handler.js';
 
 /**
  * データベースのインスタンス
@@ -30,6 +31,7 @@ export const client: Client = new Client({
     GatewayIntentBits.GuildVoiceStates,
     GatewayIntentBits.GuildScheduledEvents,
     GatewayIntentBits.GuildMembers,
+    GatewayIntentBits.MessageContent,
   ],
 });
 
@@ -65,6 +67,7 @@ client.on(
   Events.GuildScheduledEventDelete,
   nowait(onGuildScheduledEventDelete),
 );
+client.on(Events.MessageCreate, nowait(onMessageCreate));
 client.on(
   Events.InteractionCreate,
   nowait(commandHandler.onInteractionCreate.bind(commandHandler)),

@@ -162,6 +162,14 @@ export default async function showEvent(
     }
   }
 
+  // VCメッセージへのリンクを表示
+  if (event.messageId) {
+    embeds.addFields({
+      name: 'イベント時のVCチャット履歴',
+      value: `[クリックしてイベント時のVCの会話内容を見る](https://discord.com/channels/${config.guild_id}/${event.channelId}/${event.messageId})`,
+    });
+  }
+
   if (event.endTime) {
     // ゲームに参加したユーザーを表示
     const gameUsers = userXp.map(([userId, xp], i) => {

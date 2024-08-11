@@ -20,6 +20,7 @@ model Event {
   description String? @db.VarChar(4096)
   coverImage  String? @db.VarChar(512)
   hostId      String?
+  messageId   String?
 
   active       Int       @default(1)
   scheduleTime DateTime?
