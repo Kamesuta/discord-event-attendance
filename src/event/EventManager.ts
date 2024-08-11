@@ -2,6 +2,8 @@ import {
   GuildScheduledEvent,
   GuildScheduledEventStatus,
   Interaction,
+  TextBasedChannel,
+  VoiceBasedChannel,
 } from 'discord.js';
 import { prisma } from '../index.js';
 import { Event, Prisma } from '@prisma/client';
@@ -89,35 +91,29 @@ class EventManager {
   }
 
   /**
-   * 選択中のイベントを取得します
-   * @param interaction インタラクション
+   * 選択中のイベントを取得します (チャンネルを指定して取得)
+   * @param commandChannel コマンドを打ったチャンネル
+   * @param voiceChannel トーク中のチャンネル
    * @param active true=開催中のイベント/false=開始前のイベントのみ取得するか
    * @returns イベント
    */
-  async getEvent(
-    interaction: Interaction,
-    active = true,
+  async getRecentEvent(
+    commandChannel?: TextBasedChannel,
+    voiceChannel?: VoiceBasedChannel,
+    active = GuildScheduledEventStatus.Active,
   ): Promise<Event | null> {
-    // 選択されている場合は選択中のイベントを取得
-    const selectedEventId = this._selectedEvents[interaction.user.id];
-    if (selectedEventId) {
-      return await prisma.event.findUnique({
-        where: {
-          id: selectedEventId,
-        },
-      });
-    }
-
     // 前後3時間以内のイベントを取得
     const timeMargin = 3 * 60 * 60 * 1000;
     // activeに応じた条件
-    const where = active
-      ? // 開催中のイベントの場合は開始しているものも取得
-        {
+    let where: Prisma.EventWhereInput;
+    switch (active) {
+      case GuildScheduledEventStatus.Active:
+        where = {
           active: GuildScheduledEventStatus.Active,
-        }
-      : // 開催前のイベントの場合は終了していないもののみ取得
-        {
+        };
+        break;
+      case GuildScheduledEventStatus.Scheduled:
+        where = {
           active: GuildScheduledEventStatus.Scheduled,
           startTime: {
             equals: null,
@@ -130,23 +126,49 @@ class EventManager {
             lt: new Date(Date.now() + timeMargin),
           },
         };
+        break;
+      case GuildScheduledEventStatus.Completed:
+        where = {
+          active: GuildScheduledEventStatus.Completed,
+          startTime: {
+            gte: new Date(Date.now() - timeMargin),
+            lt: new Date(Date.now() + timeMargin),
+          },
+        };
+        break;
+      default:
+        // その他(キャンセルされたイベントなど)は非対応
+        return null;
+    }
+
     // activeに応じた並び順
-    const orderBy: {
-      startTime?: Prisma.SortOrder;
-      scheduleTime?: Prisma.SortOrder;
-    } = active
-      ? {
+    let orderBy: Prisma.EventOrderByWithRelationInput;
+    switch (active) {
+      case GuildScheduledEventStatus.Active:
+        orderBy = {
           startTime: 'desc',
-        }
-      : {
+        };
+        break;
+      case GuildScheduledEventStatus.Scheduled:
+        orderBy = {
           scheduleTime: 'asc',
         };
+        break;
+      case GuildScheduledEventStatus.Completed:
+        orderBy = {
+          startTime: 'desc',
+        };
+        break;
+      default:
+        // その他(キャンセルされたイベントなど)は非対応
+        return null;
+    }
 
     // コマンドを打ったVCチャンネルで開催中のイベントを取得
-    if (interaction.channel?.isVoiceBased()) {
+    if (commandChannel?.isVoiceBased()) {
       const event = await prisma.event.findFirst({
         where: {
-          channelId: interaction.channel.id,
+          channelId: commandChannel.id,
           ...where,
         },
         orderBy,
@@ -158,9 +180,6 @@ class EventManager {
     }
 
     // 入っているVC で開催中のイベントを取得
-    const voiceChannel = (
-      await interaction.guild?.members.fetch(interaction.user)
-    )?.voice.channel;
     if (voiceChannel) {
       const event = await prisma.event.findFirst({
         where: {
@@ -189,6 +208,35 @@ class EventManager {
 
     // それでも見つからない場合は諦める
     return null;
+  }
+
+  /**
+   * 選択中のイベントを取得します
+   * @param interaction インタラクション
+   * @param active true=開催中のイベント/false=開始前のイベントのみ取得するか
+   * @returns イベント
+   */
+  async getEvent(
+    interaction: Interaction,
+    active = GuildScheduledEventStatus.Active,
+  ): Promise<Event | null> {
+    // 選択されている場合は選択中のイベントを取得
+    const selectedEventId = this._selectedEvents[interaction.user.id];
+    if (selectedEventId) {
+      return await prisma.event.findUnique({
+        where: {
+          id: selectedEventId,
+        },
+      });
+    }
+
+    // 前後3時間以内のイベントを取得
+    return await this.getRecentEvent(
+      interaction.channel ?? undefined,
+      interaction.guild?.members.cache.get(interaction.user.id)?.voice
+        .channel ?? undefined,
+      active,
+    );
   }
 
   /**

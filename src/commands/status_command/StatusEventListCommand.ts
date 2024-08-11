@@ -7,6 +7,7 @@ import {
 import { SubcommandInteraction } from '../base/command_base.js';
 import statusCommand from './StatusCommand.js';
 import { prisma } from '../../index.js';
+import { Prisma } from '@prisma/client';
 
 class StatusEventListCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
@@ -48,15 +49,43 @@ class StatusEventListCommand extends SubcommandInteraction {
       ? `${month}月`
       : `直近30日間 (<t:${Math.floor(startTime.gt.getTime() / 1000)}:D> 〜 <t:${Math.floor(startTime.lt?.getTime() ?? Date.now() / 1000)}:D>)`;
 
+    // イベント一覧のテキストを取得
+    const eventList = await this.getEventListText({
+      active: GuildScheduledEventStatus.Completed,
+      startTime,
+    });
+
+    // Embed作成
+    const embeds = new EmbedBuilder()
+      .setTitle(`イベント一覧 (${piriodText}, ${eventList.length}件)`)
+      .setDescription(eventList.join('\n') || 'イベントがありません')
+      .setColor('#ff8c00')
+      .setFooter({
+        text: '/status event <イベントID> で詳細を確認できます',
+      });
+
+    await interaction.editReply({
+      embeds: [embeds],
+    });
+  }
+
+  /**
+   * イベント一覧のテキストを取得
+   * @param where イベントの検索条件
+   * @returns イベント一覧のテキスト
+   */
+  async getEventListText(where: Prisma.EventWhereInput): Promise<string[]> {
     // イベントを取得
     const events = await prisma.event.findMany({
-      where: {
-        active: GuildScheduledEventStatus.Completed,
-        startTime,
-      },
-      orderBy: {
-        startTime: 'asc',
-      },
+      where,
+      orderBy: [
+        {
+          startTime: 'asc',
+        },
+        {
+          scheduleTime: 'desc',
+        },
+      ],
       include: {
         stats: {
           where: {
@@ -76,18 +105,7 @@ class StatusEventListCommand extends SubcommandInteraction {
       return `- [${event.id.toString().padStart(3, ' ')}]　${date}　${event.name}　(${event.stats.length}人, ${event.games.length}試合, ${host})`;
     });
 
-    // Embed作成
-    const embeds = new EmbedBuilder()
-      .setTitle(`イベント一覧 (${piriodText}, ${events.length}件)`)
-      .setDescription(eventList.join('\n') || 'イベントがありません')
-      .setColor('#ff8c00')
-      .setFooter({
-        text: '/status event <イベントID> で詳細を確認できます',
-      });
-
-    await interaction.editReply({
-      embeds: [embeds],
-    });
+    return eventList;
   }
 }
 
