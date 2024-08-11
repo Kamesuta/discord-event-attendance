@@ -41,7 +41,9 @@ class StatusHostListCommand extends SubcommandInteraction {
           lt: new Date(currentYear, month, 1), // 翌月初め
         }
       : undefined;
-    const piriodText = month ? `${month}月` : '全期間';
+    const piriodText = month
+      ? `${month}月`
+      : `全期間 (～<t:${new Date().getTime() / 1000}:D>)`;
 
     // イベントを取得
     const hostList = await prisma.event.groupBy({

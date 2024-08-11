@@ -8,10 +8,10 @@ import { SubcommandInteraction } from '../base/command_base.js';
 import statusCommand from './StatusCommand.js';
 import { prisma } from '../../index.js';
 
-class StatusEventListCommand extends SubcommandInteraction {
+class StatusRankingCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
-    .setName('event_list')
-    .setDescription('イベントの一覧を確認')
+    .setName('ranking')
+    .setDescription('イベント参加率ランキングを確認')
     .addBooleanOption((option) =>
       option
         .setName('show')
@@ -24,6 +24,14 @@ class StatusEventListCommand extends SubcommandInteraction {
       option
         .setName('month')
         .setDescription('表示する月 (デフォルトは直近30日間を表示します)')
+        .setRequired(false),
+    )
+    .addIntegerOption((option) =>
+      option
+        .setName('max_count')
+        .setDescription(
+          '表示するユーザー数 (デフォルトはトップ20, 0で全員表示)',
+        )
         .setRequired(false),
     );
 
@@ -48,41 +56,50 @@ class StatusEventListCommand extends SubcommandInteraction {
       ? `${month}月`
       : `直近30日間 (<t:${Math.floor(startTime.gt.getTime() / 1000)}:D> 〜 <t:${Math.floor(startTime.lt?.getTime() ?? Date.now() / 1000)}:D>)`;
 
-    // イベントを取得
-    const events = await prisma.event.findMany({
+    // 表示数
+    const maxCount = interaction.options.getInteger('max_count') ?? 20;
+    const maxCountText = maxCount ? `トップ${maxCount}/` : '';
+
+    // 参加率ランキングを集計
+    const ranking = await prisma.userStat.groupBy({
+      by: ['userId'],
       where: {
-        active: GuildScheduledEventStatus.Completed,
-        startTime,
-      },
-      orderBy: {
-        startTime: 'asc',
-      },
-      include: {
-        stats: {
-          where: {
-            show: true,
-          },
+        show: true,
+        event: {
+          startTime,
         },
-        games: true,
       },
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      _count: true,
     });
 
-    // [${イベントID(3桁空白埋め)}] <t:${開始日時}:> イベント名 (${参加者数}人, ${試合数}試合)
-    const eventList = events.map((event) => {
-      const date = !event.startTime
-        ? '未定'
-        : `<t:${Math.floor(event.startTime.getTime() / 1000)}>`;
-      const host = event.hostId ? `<@${event.hostId}>主催` : '主催者未定';
-      return `- [${event.id.toString().padStart(3, ' ')}]　${date}　${event.name}　(${event.stats.length}人, ${event.games.length}試合, ${host})`;
+    // - <@ユーザーID> (◯回)
+    const userList = ranking
+      .sort((a, b) => b._count - a._count)
+      .slice(0, maxCount || ranking.length)
+      .map((event) => {
+        const userId = event.userId;
+        const count = event._count;
+        return `<@${userId}>: ${count}回`;
+      });
+
+    // 全イベント数を取得
+    const allEventCount = await prisma.event.count({
+      where: {
+        startTime,
+        active: GuildScheduledEventStatus.Completed,
+      },
     });
 
     // Embed作成
     const embeds = new EmbedBuilder()
-      .setTitle(`イベント一覧 (${piriodText}, ${events.length}件)`)
-      .setDescription(eventList.join('\n') || 'イベントがありません')
+      .setTitle(
+        `参加率ランキング (${piriodText}, ${maxCountText}全${ranking.length}件, 全${allEventCount}イベント)`,
+      )
+      .setDescription(userList.join('\n') || 'イベントがありません')
       .setColor('#ff8c00')
       .setFooter({
-        text: '/status event <イベントID> で詳細を確認できます',
+        text: '/status user <ユーザーID> で詳細を確認できます',
       });
 
     await interaction.editReply({
@@ -91,4 +108,4 @@ class StatusEventListCommand extends SubcommandInteraction {
   }
 }
 
-export default new StatusEventListCommand(statusCommand);
+export default new StatusRankingCommand(statusCommand);
