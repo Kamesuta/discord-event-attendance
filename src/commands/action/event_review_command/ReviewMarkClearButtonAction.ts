@@ -12,7 +12,7 @@ import { prisma } from '../../../index.js';
 
 class ReviewMarkClearButtonAction extends MessageComponentActionInteraction<ComponentType.Button> {
   /**
-   * 出席/欠席ユーザー選択メニューを作成
+   * ボタンを作成
    * @param event イベント
    * @returns 作成したビルダー
    */

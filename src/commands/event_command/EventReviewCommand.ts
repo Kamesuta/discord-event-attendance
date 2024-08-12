@@ -20,6 +20,7 @@ import { EditableInteraction } from '../../event/EditableInteraction.js';
 import reviewMarkUserSelectAction from '../action/event_review_command/ReviewMarkUserSelectAction.js';
 import reviewMarkClearButtonAction from '../action/event_review_command/ReviewMarkClearButtonAction.js';
 import reviewMarkUndoButtonAction from '../action/event_review_command/ReviewMarkUndoButtonAction.js';
+import reviewFilterMarkButtonAction from '../action/event_review_command/ReviewFilterMarkButtonAction.js';
 
 /**
  * 編集データ
@@ -192,6 +193,8 @@ class EventReviewCommand extends SubcommandInteraction {
       ),
       // ボタン
       new ActionRowBuilder<ButtonBuilder>().addComponents(
+        // ◯分以上参加している人を全員追加するボタン
+        reviewFilterMarkButtonAction.create(event),
         // 出欠状況をクリアするボタン
         reviewMarkClearButtonAction.create(event),
         // 戻すボタン
