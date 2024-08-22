@@ -231,12 +231,28 @@ class EventManager {
     }
 
     // 前後3時間以内のイベントを取得
-    return await this.getRecentEvent(
+    const event = await this.getRecentEvent(
       interaction.channel ?? undefined,
       interaction.guild?.members.cache.get(interaction.user.id)?.voice
         .channel ?? undefined,
       active,
     );
+    if (event) {
+      return event;
+    }
+
+    // 開催中のイベントが見つからない場合は終了後のイベントを取得
+    if (active === GuildScheduledEventStatus.Active) {
+      return await this.getRecentEvent(
+        interaction.channel ?? undefined,
+        interaction.guild?.members.cache.get(interaction.user.id)?.voice
+          .channel ?? undefined,
+        GuildScheduledEventStatus.Completed,
+      );
+    }
+
+    // それでも見つからない場合は諦める
+    return null;
   }
 
   /**
