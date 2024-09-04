@@ -45,6 +45,26 @@ export async function showGameResults(
   interaction: RepliableInteraction,
   gameId: number,
 ): Promise<void> {
+  try {
+    const embeds = await makeGameResultEmbed(gameId);
+    await interaction.editReply({
+      embeds: [embeds],
+    });
+  } catch (error) {
+    if (error instanceof Error) {
+      await interaction.editReply(error.message);
+    }
+  }
+}
+
+/**
+ * ゲームの勝敗の表示を作成する
+ * @param gameId 試合ID
+ * @returns Discordの埋め込み
+ */
+export async function makeGameResultEmbed(
+  gameId: number,
+): Promise<EmbedBuilder> {
   // 戦績
   const game = await prisma.gameResult.findUnique({
     where: {
@@ -62,8 +82,7 @@ export async function showGameResults(
 
   // 戦績が見つからない場合
   if (!game) {
-    await interaction.editReply('試合が見つかりませんでした');
-    return;
+    throw new Error('試合が見つかりませんでした');
   }
 
   // 回目を取得
@@ -82,9 +101,7 @@ export async function showGameResults(
       : 'なし',
   });
 
-  await interaction.editReply({
-    embeds: [embeds],
-  });
+  return embeds;
 }
 
 /**

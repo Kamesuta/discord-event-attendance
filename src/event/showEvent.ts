@@ -1,19 +1,22 @@
 import {
   ActionRowBuilder,
+  ChannelType,
   EmbedBuilder,
   GuildScheduledEventStatus,
   Message,
   RepliableInteraction,
   StringSelectMenuBuilder,
   TextBasedChannel,
+  ThreadAutoArchiveDuration,
 } from 'discord.js';
-import { prisma } from '../index.js';
+import { client, prisma } from '../index.js';
 import { config } from '../utils/config.js';
 import { Event } from '@prisma/client';
 import { updateAttendanceTime } from './attendance_time.js';
 import getWebhook from './getWebhook.js';
 import splitStrings from './splitStrings.js';
 import statusGameMenuAction from '../commands/action/StatusGameMenuAction.js';
+import { logger } from '../utils/log.js';
 
 /**
  * イベント情報を表示します
@@ -223,6 +226,7 @@ export default async function showEvent(
     components: gameResults.length === 0 ? [] : [components],
   };
 
+  let sentMessage: Message | undefined;
   if (webhook) {
     // Webhookで送信 (コマンド送信者の名前とアイコンを表示)
     const interactionMember = await interaction.guild?.members.fetch(
@@ -235,9 +239,9 @@ export default async function showEvent(
       interaction.user.displayAvatarURL();
     if (editMessage) {
       // 既存メッセージを編集
-      return await webhook.webhook.editMessage(editMessage, contents);
+      sentMessage = await webhook.webhook.editMessage(editMessage, contents);
     } else {
-      return await webhook.webhook.send({
+      sentMessage = await webhook.webhook.send({
         threadId: webhook.thread?.id,
         username: memberDisplayName,
         avatarURL: memberAvatar,
@@ -246,6 +250,61 @@ export default async function showEvent(
     }
   } else {
     // 通常送信
-    return await interaction.editReply(contents);
+    sentMessage = await interaction.editReply(contents);
+  }
+
+  // メッセージの更新ではなく、イベントチャンネルの場合
+  if (
+    !editMessage &&
+    webhookChannel &&
+    (webhookChannel.type === ChannelType.GuildAnnouncement ||
+      webhookChannel.type === ChannelType.GuildText) &&
+    webhookChannel.id === config.announcement_channel_id
+  ) {
+    // 最新のアーカイブ済みスレッドを取得
+    try {
+      const threads = await webhookChannel.threads.fetchArchived({
+        limit: 5,
+      });
+      for (const [, thread] of threads.threads) {
+        const fetched = await thread.messages.fetch({ limit: 1 });
+        const lastMessage = fetched.first();
+        // イベントの思い出を記録しておきましょう！というBOTのメッセージが取得できた場合、そのスレッドには何も投稿されていないため、そのスレッドを削除する
+        if (
+          lastMessage &&
+          lastMessage.author.id === client.user?.id &&
+          lastMessage.content.includes(
+            'イベントの思い出を記録しておきましょう！',
+          )
+        ) {
+          // スレッドを削除
+          await thread.delete();
+        }
+      }
+    } catch (error) {
+      logger.error('イベントチャンネルの旧スレッド削除に失敗しました。', error);
+    }
+
+    // スレッドを作成してリプライ
+    try {
+      // 日付を取得して文字列(◯◯/◯◯)に変換
+      const date = event.scheduleTime
+        ? `${String(event.scheduleTime.getMonth()).padStart(2, '0')}/${String(event.scheduleTime.getDate()).padStart(2, '0')}`
+        : '未定';
+      const thread = await webhookChannel.threads.create({
+        name: `${date} ${event.name}`,
+        autoArchiveDuration: ThreadAutoArchiveDuration.OneDay,
+        startMessage: sentMessage,
+      });
+      if (thread) {
+        await thread.send({
+          content:
+            'イベントの思い出を記録しておきましょう！\n- ⭕イベントの感想\n- ⭕イベントで取ったスクショ/動画\n- ⭕戦績のメモなど\n- ❌会話や議論などの後で見返しても役に立たない情報',
+          target: sentMessage,
+        });
+      }
+    } catch (error) {
+      logger.error('イベントチャンネルのスレッド作成に失敗しました。', error);
+    }
   }
 }

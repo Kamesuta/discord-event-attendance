@@ -2,8 +2,11 @@ import {
   ButtonBuilder,
   ButtonInteraction,
   ButtonStyle,
+  ChannelType,
   ComponentType,
+  EmbedBuilder,
   GuildScheduledEventStatus,
+  Message,
 } from 'discord.js';
 import eventManager from '../../../event/EventManager.js';
 import { MessageComponentActionInteraction } from '../../base/action_base.js';
@@ -14,6 +17,9 @@ import getWebhook from '../../../event/getWebhook.js';
 import { checkCommandPermission } from '../../../event/checkCommandPermission.js';
 import eventAdminUpdateMessageCommand from '../../event_admin_command/EventAdminUpdateMessageCommand.js';
 import { syncRoleByCondition } from '../../../event/roleManager.js';
+import { client, prisma } from '../../../index.js';
+import { makeGameResultEmbed } from '../../../event/game.js';
+import { GameResult } from '@prisma/client';
 
 class PanelStopButtonAction extends MessageComponentActionInteraction<ComponentType.Button> {
   /**
@@ -157,6 +163,66 @@ class PanelStopButtonAction extends MessageComponentActionInteraction<ComponentT
       } catch (error) {
         if (typeof error !== 'string') throw error;
         logger.error(`イベント終了中にエラーが発生しました: ${error}`);
+      }
+    }
+
+    // このイベントのスレッドを取得
+    if (
+      announcementChannel.type === ChannelType.GuildAnnouncement ||
+      announcementChannel.type === ChannelType.GuildText
+    ) {
+      const threads = await announcementChannel.threads.fetchActive();
+      for (const [, thread] of threads.threads) {
+        // スレッドのスターターメッセージがこのイベントのメッセージであるか確認
+        const startMessage = await thread.fetchStarterMessage();
+        if (startMessage?.id !== message?.id) continue;
+
+        // 試合結果
+        const gameResults = await prisma.gameResult.findMany({
+          where: {
+            eventId: event.id,
+          },
+          include: {
+            users: true,
+          },
+        });
+        // ゲームの戦績をすべて表示
+        const gameResultMessages: { game: GameResult; message: Message }[] = [];
+        for (const game of gameResults) {
+          const embeds = await makeGameResultEmbed(game.id);
+          const gameResultMessage = await thread.send({ embeds: [embeds] });
+          gameResultMessages.push({ game, message: gameResultMessage });
+        }
+        if (gameResultMessages.length === 0) continue;
+
+        const fetched = await thread.messages.fetch({ limit: 2, after: '0' });
+        const lastMessage = fetched.first();
+        // イベントの思い出を記録しておきましょう！というBOTのメッセージが取得できた場合、そのメッセージに戦績を記録する
+        if (
+          lastMessage &&
+          lastMessage.author.id === client.user?.id &&
+          lastMessage.content.includes(
+            'イベントの思い出を記録しておきましょう！',
+          )
+        ) {
+          // Embedを作成
+          const embed = new EmbedBuilder()
+            .setTitle(`${event.name} の試合結果一覧`)
+            .setDescription(
+              gameResultMessages
+                .map(
+                  ({ game, message }) =>
+                    `[${game.name} (試合ID: ${game.id})](${message.url})`,
+                )
+                .join('\n'),
+            )
+            .setColor('#ff8c00');
+
+          // 最初のメッセージにリンクを追加
+          await lastMessage.edit({
+            embeds: [embed],
+          });
+        }
       }
     }
 
