@@ -149,19 +149,35 @@ class StatusEventListCommand extends SubcommandInteraction {
       ? `<t:${Math.floor(startTime.gte.getTime() / 1000)}:D> 〜 <t:${Math.floor(startTime.lt.getTime() / 1000)}:D>`
       : '全期間';
 
-    // 検索条件
+    // 検索条件 (空白でAND検索、「 OR 」でOR検索)
     const search = interaction.options.getString('search');
-    const name: Prisma.EventWhereInput['name'] = search
-      ? {
-          contains: search,
-        }
-      : undefined;
+    // 「 OR 」で分割
+    const orTerms = search ? search.split(' OR ') : [];
+    const nameCondition: Prisma.EventWhereInput = {
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      OR:
+        orTerms.length > 0
+          ? orTerms.map((orTerm) => {
+              const andTerms = orTerm.split(' ');
+              return {
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                AND: andTerms.map((andTerm) => {
+                  return {
+                    name: {
+                      contains: andTerm,
+                    },
+                  };
+                }),
+              };
+            })
+          : undefined,
+    };
 
     // イベント一覧のテキストを取得
     const eventList = await this.getEventListText({
       active: GuildScheduledEventStatus.Completed,
       startTime,
-      name,
+      ...nameCondition,
     });
 
     // 2000文字以上の場合は切り捨てる
@@ -173,9 +189,17 @@ class StatusEventListCommand extends SubcommandInteraction {
       truncated += truncatedText;
     }
 
+    // 条件テキスト
+    const conditionText = [];
+    conditionText.push(`${eventList.length}件`);
+    conditionText.push(periodText);
+    if (search) {
+      conditionText.push(`🔍️「${search}」`);
+    }
+
     // Embed作成
     const embeds = new EmbedBuilder()
-      .setTitle(`イベント一覧 (${periodText}, ${eventList.length}件)`)
+      .setTitle(`イベント一覧 (${conditionText.join(', ')})`)
       .setDescription(truncated || 'イベントがありません')
       .setColor('#ff8c00')
       .setFooter({
