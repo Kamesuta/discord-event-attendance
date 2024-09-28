@@ -9,6 +9,25 @@ import statusCommand from './StatusCommand.js';
 import { prisma } from '../../index.js';
 import { Prisma } from '@prisma/client';
 import splitStrings from '../../event/splitStrings.js';
+import countBy from 'lodash/countBy';
+
+/**
+ * イベントの取得条件
+ */
+export const eventInclude = {
+  include: {
+    stats: {
+      where: {
+        show: true,
+      },
+    },
+    games: true,
+  },
+};
+/**
+ * イベントの取得結果
+ */
+export type EventDetail = Prisma.EventGetPayload<typeof eventInclude>;
 
 class StatusEventListCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
@@ -173,21 +192,35 @@ class StatusEventListCommand extends SubcommandInteraction {
           : undefined,
     };
 
-    // イベント一覧のテキストを取得
-    const eventList = await this.getEventListText({
+    // イベントを取得
+    const events: EventDetail[] = await this.getEvents({
       active: GuildScheduledEventStatus.Completed,
       startTime,
       ...nameCondition,
     });
 
-    // 2000文字以上の場合は切り捨てる
-    const truncatedText =
-      '\n\n～以下略～ (表示するためには検索条件を絞ってください)';
-    const split = splitStrings(eventList, 2000 - truncatedText.length);
-    let truncated = split[0];
-    if (split.length > 1) {
-      truncated += truncatedText;
-    }
+    // イベント一覧のテキストを取得
+    const eventList = this.getEventListText(events);
+    const userList = this.getUserListText(events);
+    const hostList = this.getHostListText(events);
+
+    // n文字以上の場合は切り捨てる
+    const truncateText = (
+      lines: string[],
+      maxLength: number,
+    ): string | undefined => {
+      const truncatedText =
+        '\n～以下略～ (表示するためには検索条件を絞ってください)';
+      const [text, more] = splitStrings(
+        lines,
+        maxLength - truncatedText.length,
+      );
+      if (text && more) {
+        return `${text}${truncatedText}`;
+      }
+      return text;
+    };
+    const truncated = truncateText(eventList, 2000);
 
     // 条件テキスト
     const conditionText = [];
@@ -202,6 +235,16 @@ class StatusEventListCommand extends SubcommandInteraction {
       .setTitle(`イベント一覧 (${conditionText.join(', ')})`)
       .setDescription(truncated || 'イベントがありません')
       .setColor('#ff8c00')
+      .addFields({
+        name: '参加回数 (上記イベント内合計)',
+        value: truncateText(userList, 1024) || '参加者がいません',
+        inline: true,
+      })
+      .addFields({
+        name: '主催者一覧 (上記イベント内合計)',
+        value: truncateText(hostList, 1024) || '主催者がいません',
+        inline: true,
+      })
       .setFooter({
         text: '/status event <イベントID> で詳細を確認できます',
       });
@@ -212,13 +255,12 @@ class StatusEventListCommand extends SubcommandInteraction {
   }
 
   /**
-   * イベント一覧のテキストを取得
-   * @param where イベントの検索条件
-   * @returns イベント一覧のテキスト
+   * イベントを取得
+   * @param where 取得条件
+   * @returns イベント一覧
    */
-  async getEventListText(where: Prisma.EventWhereInput): Promise<string[]> {
-    // イベントを取得
-    const events = await prisma.event.findMany({
+  async getEvents(where: Prisma.EventWhereInput): Promise<EventDetail[]> {
+    return await prisma.event.findMany({
       where,
       orderBy: [
         {
@@ -228,16 +270,16 @@ class StatusEventListCommand extends SubcommandInteraction {
           scheduleTime: 'desc',
         },
       ],
-      include: {
-        stats: {
-          where: {
-            show: true,
-          },
-        },
-        games: true,
-      },
+      ...eventInclude,
     });
+  }
 
+  /**
+   * イベント一覧のテキストを取得
+   * @param events イベント一覧
+   * @returns イベント一覧のテキスト
+   */
+  getEventListText(events: EventDetail[]): string[] {
     // [${イベントID(3桁空白埋め)}] <t:${開始日時}:> イベント名 (${参加者数}人, ${試合数}試合)
     const eventList = events.map((event) => {
       const date = !event.startTime
@@ -248,6 +290,50 @@ class StatusEventListCommand extends SubcommandInteraction {
     });
 
     return eventList;
+  }
+
+  /**
+   * イベントに参加したユーザーと参加回数一覧のテキストを取得
+   * @param events イベント一覧
+   * @returns イベントに参加したユーザーと参加回数一覧のテキスト
+   */
+  getUserListText(events: EventDetail[]): string[] {
+    // すべてのイベント内に含まれるユーザーIDのリスト
+    const userList = events
+      .flatMap((event) => event.stats)
+      .map((stat) => stat.userId);
+    // 重複をカウントしてユーザーIDと参加回数のリストを作成
+    const userCount = countBy(userList);
+
+    // ソート後、テキストに変換
+    const userListText = Object.entries(userCount)
+      .sort((a, b) => b[1] - a[1])
+      .map(([userId, count]) => {
+        return `<@${userId}> ${count}回`;
+      });
+
+    return userListText;
+  }
+
+  /**
+   * イベントを主催したユーザーと主催回数一覧のテキストを取得
+   * @param events イベント一覧
+   * @returns イベントを主催したユーザーと主催回数一覧のテキスト
+   */
+  getHostListText(events: EventDetail[]): string[] {
+    // すべてのイベント内に含まれる主催者IDのリスト
+    const hostList = events.map((event) => event.hostId);
+    // 重複をカウントしてユーザーIDと主催回数のリストを作成
+    const hostCount = countBy(hostList);
+
+    // ソート後、テキストに変換
+    const hostListText = Object.entries(hostCount)
+      .sort((a, b) => b[1] - a[1])
+      .map(([userId, count]) => {
+        return `<@${userId}> ${count}回`;
+      });
+
+    return hostListText;
   }
 }
 

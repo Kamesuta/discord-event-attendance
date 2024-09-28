@@ -76,19 +76,25 @@ class EventAdminSelectCommand extends SubcommandInteraction {
 
   private async _makeSuggestionEmbed(): Promise<EmbedBuilder> {
     // イベント一覧のテキストを取得
-    const eventListPast = await statusEventListCommand.getEventListText({
-      active: GuildScheduledEventStatus.Completed,
-      // 直近5日間
-      startTime: { gt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000) },
-    });
-    const eventListActive = await statusEventListCommand.getEventListText({
-      active: GuildScheduledEventStatus.Active,
-    });
-    const eventListFuture = await statusEventListCommand.getEventListText({
-      active: GuildScheduledEventStatus.Scheduled,
-      // 直近5日間
-      scheduleTime: { gt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000) },
-    });
+    const eventListPast = statusEventListCommand.getEventListText(
+      await statusEventListCommand.getEvents({
+        active: GuildScheduledEventStatus.Completed,
+        // 直近5日間
+        startTime: { gt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000) },
+      }),
+    );
+    const eventListActive = statusEventListCommand.getEventListText(
+      await statusEventListCommand.getEvents({
+        active: GuildScheduledEventStatus.Active,
+      }),
+    );
+    const eventListFuture = statusEventListCommand.getEventListText(
+      await statusEventListCommand.getEvents({
+        active: GuildScheduledEventStatus.Scheduled,
+        // 直近5日間
+        scheduleTime: { gt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000) },
+      }),
+    );
 
     // Embed作成
     const embed = new EmbedBuilder().setTitle(`候補リスト`).setColor('#ff8c00');
