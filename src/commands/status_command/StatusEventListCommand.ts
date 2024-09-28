@@ -8,6 +8,7 @@ import { SubcommandInteraction } from '../base/command_base.js';
 import statusCommand from './StatusCommand.js';
 import { prisma } from '../../index.js';
 import { Prisma } from '@prisma/client';
+import splitStrings from '../../event/splitStrings.js';
 
 class StatusEventListCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
@@ -163,10 +164,19 @@ class StatusEventListCommand extends SubcommandInteraction {
       name,
     });
 
+    // 2000文字以上の場合は切り捨てる
+    const truncatedText =
+      '\n\n～以下略～ (表示するためには検索条件を絞ってください)';
+    const split = splitStrings(eventList, 2000 - truncatedText.length);
+    let truncated = split[0];
+    if (split.length > 1) {
+      truncated += truncatedText;
+    }
+
     // Embed作成
     const embeds = new EmbedBuilder()
       .setTitle(`イベント一覧 (${periodText}, ${eventList.length}件)`)
-      .setDescription(eventList.join('\n') || 'イベントがありません')
+      .setDescription(truncated || 'イベントがありません')
       .setColor('#ff8c00')
       .setFooter({
         text: '/status event <イベントID> で詳細を確認できます',
