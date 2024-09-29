@@ -1,4 +1,5 @@
 import {
+  APIEmbedField,
   ChatInputCommandInteraction,
   EmbedBuilder,
   GuildScheduledEventStatus,
@@ -27,6 +28,13 @@ class StatusUserCommand extends SubcommandInteraction {
           'コマンドの結果をチャットに表示しますか？ (デフォルトは非公開)',
         )
         .setRequired(false),
+    )
+    .addIntegerOption((option) =>
+      option
+        .setName('page')
+        .setDescription('ページ番号')
+        .setRequired(false)
+        .setMinValue(1),
     );
 
   async onCommand(interaction: ChatInputCommandInteraction): Promise<void> {
@@ -34,17 +42,20 @@ class StatusUserCommand extends SubcommandInteraction {
     const show = interaction.options.getBoolean('show') ?? false;
     await interaction.deferReply({ ephemeral: !show });
     const user = interaction.options.getUser('user') ?? interaction.user;
-    await this.showUserStatus(interaction, user.id);
+    const page = interaction.options.getInteger('page') ?? 1;
+    await this.showUserStatus(interaction, user.id, page);
   }
 
   /**
    * ユーザーの過去のイベント参加状況を表示
    * @param interaction インタラクション
    * @param userId ユーザーID
+   * @param page ページ番号
    */
   async showUserStatus(
     interaction: RepliableInteraction,
     userId: string,
+    page: number = 1,
   ): Promise<void> {
     // 主催イベント一覧を取得
     const hostEvents = await prisma.event.findMany({
@@ -138,6 +149,10 @@ class StatusUserCommand extends SubcommandInteraction {
         value: rankText,
       });
 
+    // 一旦フィールドを配列に入れ、ページング処理を行う
+    const numFieldsPerPage = 5;
+    const fields: APIEmbedField[] = [];
+
     // 主催イベントリストを表示
     splitStrings(
       hostEvents.map((event) => {
@@ -148,9 +163,9 @@ class StatusUserCommand extends SubcommandInteraction {
         return `- [${event.id.toString().padStart(3, ' ')}]　${date}　${event.name}　(${event.stats.length}人, ${event.games.length}試合)`;
       }),
       1024,
-    ).forEach((line, i) => {
-      embeds.addFields({
-        name: i === 0 ? '主催イベントリスト' : '\u200b',
+    ).forEach((line) => {
+      fields.push({
+        name: '主催イベントリスト',
         value: line,
       });
     });
@@ -165,12 +180,36 @@ class StatusUserCommand extends SubcommandInteraction {
         return `- [${event.id.toString().padStart(3, ' ')}]　${date}　${event.name}　(${event.stats.length}人, ${event.games.length}試合)`;
       }),
       1024,
-    ).forEach((line, i) => {
-      embeds.addFields({
-        name: i === 0 ? '参加イベントリスト' : '\u200b',
+    ).forEach((line) => {
+      fields.push({
+        name: '参加イベントリスト',
         value: line,
       });
     });
+
+    // フィールドをページング
+    const pages = fields.slice(
+      (page - 1) * numFieldsPerPage,
+      page * numFieldsPerPage,
+    );
+    let lastTitle: string | undefined = undefined;
+    for (const pageField of pages) {
+      // 同じタイトルの場合はゼロ幅スペース文字を入れる
+      if (lastTitle === pageField.name) {
+        pageField.name = '\u200b';
+      }
+      lastTitle = pageField.name;
+
+      // フィールドを追加
+      embeds.addFields(pageField);
+    }
+
+    // ページングしたことを表示
+    if (fields.length > numFieldsPerPage) {
+      embeds.setFooter({
+        text: `ページ ${page}/${Math.ceil(fields.length / numFieldsPerPage)}\n\`/status user ～ page:${page + 1}\` で次のページを表示`,
+      });
+    }
 
     await interaction.editReply({
       embeds: [embeds],
