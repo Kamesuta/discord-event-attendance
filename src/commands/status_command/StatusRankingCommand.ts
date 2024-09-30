@@ -7,6 +7,8 @@ import {
 import { SubcommandInteraction } from '../base/command_base.js';
 import statusCommand from './StatusCommand.js';
 import { prisma } from '../../index.js';
+import { parsePeriod } from '../../event/periodParser.js';
+import { parseSearch } from '../../event/searchParser.js';
 
 class StatusRankingCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
@@ -20,10 +22,20 @@ class StatusRankingCommand extends SubcommandInteraction {
         )
         .setRequired(false),
     )
-    .addIntegerOption((option) =>
+    .addStringOption((option) =>
       option
-        .setName('month')
-        .setDescription('表示する月 (デフォルトは直近30日間を表示します)')
+        .setName('period')
+        .setDescription(
+          '表示する月 (ハイフンで範囲指定可: 「3-5」 = 3月〜5月、スラッシュで年/日指定可: 「2023/3」 = 2023年3月, 「8/5」 = 今年の8月5日、デフォルトで全期間)',
+        )
+        .setRequired(false),
+    )
+    .addStringOption((option) =>
+      option
+        .setName('search')
+        .setDescription(
+          'イベント名で検索 (空白区切りでAND検索、「 OR 」区切りでOR検索)',
+        )
         .setRequired(false),
     )
     .addIntegerOption((option) =>
@@ -40,21 +52,13 @@ class StatusRankingCommand extends SubcommandInteraction {
     const show = interaction.options.getBoolean('show') ?? false;
     await interaction.deferReply({ ephemeral: !show });
 
-    // 月
-    const month = interaction.options.getInteger('month');
-    const currentYear = new Date().getFullYear();
-    const startTime = month
-      ? {
-          gt: new Date(currentYear, month - 1, 1), // 月初め
-          lt: new Date(currentYear, month, 1), // 翌月初め
-        }
-      : {
-          // 直近1ヶ月
-          gt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-        };
-    const piriodText = month
-      ? `${month}月`
-      : `直近30日間 (<t:${Math.floor(startTime.gt.getTime() / 1000)}:D> 〜 <t:${Math.floor(startTime.lt?.getTime() ?? Date.now() / 1000)}:D>)`;
+    // 期間指定
+    const periodOption = interaction.options.getString('period');
+    const period = parsePeriod(periodOption ?? undefined);
+
+    // 検索条件
+    const search = interaction.options.getString('search');
+    const nameCondition = parseSearch(search ?? undefined);
 
     // 表示数
     const maxCount = interaction.options.getInteger('max_count') ?? 20;
@@ -66,7 +70,9 @@ class StatusRankingCommand extends SubcommandInteraction {
       where: {
         show: true,
         event: {
-          startTime,
+          startTime: period.period,
+          active: GuildScheduledEventStatus.Completed,
+          ...nameCondition,
         },
       },
       // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -86,16 +92,24 @@ class StatusRankingCommand extends SubcommandInteraction {
     // 全イベント数を取得
     const allEventCount = await prisma.event.count({
       where: {
-        startTime,
+        startTime: period.period,
         active: GuildScheduledEventStatus.Completed,
+        ...nameCondition,
       },
     });
 
+    // 条件テキスト
+    const conditionText = [];
+    conditionText.push(`${maxCountText}全${ranking.length}件`);
+    conditionText.push(period.text);
+    conditionText.push(`全${allEventCount}イベント`);
+    if (search) {
+      conditionText.push(`🔍️「${search}」`);
+    }
+
     // Embed作成
     const embeds = new EmbedBuilder()
-      .setTitle(
-        `参加率ランキング (${piriodText}, ${maxCountText}全${ranking.length}件, 全${allEventCount}イベント)`,
-      )
+      .setTitle(`参加率ランキング (${conditionText.join(', ')})`)
       .setDescription(userList.join('\n') || 'イベントがありません')
       .setColor('#ff8c00')
       .setFooter({

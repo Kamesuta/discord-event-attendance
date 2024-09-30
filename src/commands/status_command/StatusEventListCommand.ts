@@ -11,6 +11,7 @@ import { Prisma } from '@prisma/client';
 import splitStrings from '../../event/splitStrings.js';
 import countBy from 'lodash/countBy';
 import { parsePeriod } from '../../event/periodParser.js';
+import { parseSearch } from '../../event/searchParser.js';
 
 /**
  * イベントの取得条件
@@ -53,7 +54,9 @@ class StatusEventListCommand extends SubcommandInteraction {
     .addStringOption((option) =>
       option
         .setName('search')
-        .setDescription('イベント名で検索')
+        .setDescription(
+          'イベント名で検索 (空白区切りでAND検索、「 OR 」区切りでOR検索)',
+        )
         .setRequired(false),
     );
 
@@ -66,29 +69,9 @@ class StatusEventListCommand extends SubcommandInteraction {
     const periodOption = interaction.options.getString('period');
     const period = parsePeriod(periodOption ?? undefined);
 
-    // 検索条件 (空白でAND検索、「 OR 」でOR検索)
+    // 検索条件
     const search = interaction.options.getString('search');
-    // 「 OR 」で分割
-    const orTerms = search ? search.split(' OR ') : [];
-    const nameCondition: Prisma.EventWhereInput = {
-      // eslint-disable-next-line @typescript-eslint/naming-convention
-      OR:
-        orTerms.length > 0
-          ? orTerms.map((orTerm) => {
-              const andTerms = orTerm.split(' ');
-              return {
-                // eslint-disable-next-line @typescript-eslint/naming-convention
-                AND: andTerms.map((andTerm) => {
-                  return {
-                    name: {
-                      contains: andTerm,
-                    },
-                  };
-                }),
-              };
-            })
-          : undefined,
-    };
+    const nameCondition = parseSearch(search ?? undefined);
 
     // イベントを取得
     const events: EventDetail[] = await this.getEvents({
