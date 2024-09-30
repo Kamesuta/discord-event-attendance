@@ -7,6 +7,7 @@ import {
 import { SubcommandInteraction } from '../base/command_base.js';
 import statusCommand from './StatusCommand.js';
 import { prisma } from '../../index.js';
+import { parsePeriod } from '../../event/periodParser.js';
 
 class StatusHostListCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
@@ -20,10 +21,12 @@ class StatusHostListCommand extends SubcommandInteraction {
         )
         .setRequired(false),
     )
-    .addIntegerOption((option) =>
+    .addStringOption((option) =>
       option
-        .setName('month')
-        .setDescription('表示する月 (デフォルトは全期間を表示します)')
+        .setName('period')
+        .setDescription(
+          '表示する月 (ハイフンで範囲指定可: 「3-5」 = 3月〜5月、スラッシュで年/日指定可: 「2023/3」 = 2023年3月, 「8/5」 = 今年の8月5日、デフォルトで全期間)',
+        )
         .setRequired(false),
     );
 
@@ -32,25 +35,16 @@ class StatusHostListCommand extends SubcommandInteraction {
     const show = interaction.options.getBoolean('show') ?? false;
     await interaction.deferReply({ ephemeral: !show });
 
-    // 月
-    const month = interaction.options.getInteger('month');
-    const currentYear = new Date().getFullYear();
-    const startTime = month
-      ? {
-          gt: new Date(currentYear, month - 1, 1), // 月初め
-          lt: new Date(currentYear, month, 1), // 翌月初め
-        }
-      : undefined;
-    const piriodText = month
-      ? `${month}月`
-      : `全期間 (～<t:${new Date().getTime() / 1000}:D>)`;
+    // 期間指定
+    const periodOption = interaction.options.getString('period');
+    const period = parsePeriod(periodOption ?? undefined);
 
     // イベントを取得
     const hostList = await prisma.event.groupBy({
       by: ['hostId'],
       where: {
         active: GuildScheduledEventStatus.Completed,
-        startTime,
+        startTime: period.period,
       },
       // eslint-disable-next-line @typescript-eslint/naming-convention
       _count: true,
@@ -67,7 +61,7 @@ class StatusHostListCommand extends SubcommandInteraction {
 
     // Embed作成
     const embeds = new EmbedBuilder()
-      .setTitle(`主催者一覧 (${piriodText}, ${hostList.length}人)`)
+      .setTitle(`主催者一覧 (${hostList.length}人, ${period.text})`)
       .setDescription(eventList.join('\n') || '主催者がいません')
       .setColor('#ff8c00');
 
