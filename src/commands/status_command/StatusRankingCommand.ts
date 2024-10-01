@@ -1,5 +1,4 @@
 import {
-  APIEmbedField,
   ChatInputCommandInteraction,
   EmbedBuilder,
   GuildScheduledEventStatus,
