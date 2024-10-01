@@ -120,6 +120,18 @@ class StatusRankingCommand extends SubcommandInteraction {
       },
     });
 
+    // 全イベントのべ参加者数を取得
+    const allUserCount = await prisma.userStat.count({
+      where: {
+        event: {
+          startTime: period.period,
+          active: GuildScheduledEventStatus.Completed,
+          ...nameCondition,
+        },
+        show: true,
+      },
+    });
+
     // 一旦フィールドを配列に入れ、ページング処理を行う
     const chunks = splitStrings(userList, 4096);
     const page = interaction.options.getInteger('page') ?? 1;
@@ -133,6 +145,7 @@ class StatusRankingCommand extends SubcommandInteraction {
     conditionText.push(`${maxCountText}参加者数${numMatch}人`);
     conditionText.push(period.text);
     conditionText.push(`全${allEventCount}イベント`);
+    conditionText.push(`のべ${allUserCount}人の参加者`);
     if (search) {
       conditionText.push(`🔍️「${search}」`);
     }
