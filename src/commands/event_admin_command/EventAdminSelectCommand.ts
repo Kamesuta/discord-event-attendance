@@ -76,42 +76,25 @@ class EventAdminSelectCommand extends SubcommandInteraction {
   }
 
   private async _makeSuggestionEmbed(): Promise<EmbedBuilder> {
-    const orderBy: Prisma.EventOrderByWithRelationInput[] = [
-      {
-        startTime: 'asc',
-      },
-      {
-        scheduleTime: 'desc',
-      },
-    ];
     // イベント一覧のテキストを取得
     const eventListPast = statusEventListCommand.getEventListText(
-      await statusEventListCommand.getEvents(
-        {
-          active: GuildScheduledEventStatus.Completed,
-          // 直近5日間
-          startTime: { gt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000) },
-        },
-        orderBy,
-      ),
+      await statusEventListCommand.getEvents({
+        active: GuildScheduledEventStatus.Completed,
+        // 直近5日間
+        startTime: { gt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000) },
+      }),
     );
     const eventListActive = statusEventListCommand.getEventListText(
-      await statusEventListCommand.getEvents(
-        {
-          active: GuildScheduledEventStatus.Active,
-        },
-        orderBy,
-      ),
+      await statusEventListCommand.getEvents({
+        active: GuildScheduledEventStatus.Active,
+      }),
     );
     const eventListFuture = statusEventListCommand.getEventListText(
-      await statusEventListCommand.getEvents(
-        {
-          active: GuildScheduledEventStatus.Scheduled,
-          // 直近5日間
-          scheduleTime: { gt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000) },
-        },
-        orderBy,
-      ),
+      await statusEventListCommand.getEvents({
+        active: GuildScheduledEventStatus.Scheduled,
+        // 直近5日間
+        scheduleTime: { gt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000) },
+      }),
     );
 
     // Embed作成

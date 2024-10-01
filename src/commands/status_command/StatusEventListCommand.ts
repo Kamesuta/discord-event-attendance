@@ -92,37 +92,15 @@ class StatusEventListCommand extends SubcommandInteraction {
 
     // ソート順
     const sort = interaction.options.getString('sort') ?? 'join';
-    let orderBy: Prisma.EventOrderByWithRelationInput[] = [];
     let sortText = '不明順';
     switch (sort) {
       case 'join':
-        orderBy = [
-          {
-            stats: {
-              // eslint-disable-next-line @typescript-eslint/naming-convention
-              _count: 'desc',
-            },
-          },
-        ];
         sortText = '人気イベント順';
         break;
       case 'startTime':
-        orderBy = [
-          {
-            startTime: 'asc',
-          },
-          {
-            scheduleTime: 'desc',
-          },
-        ];
         sortText = '開始時間順';
         break;
       case 'id':
-        orderBy = [
-          {
-            id: 'asc',
-          },
-        ];
         sortText = 'ID順';
         break;
     }
@@ -134,7 +112,7 @@ class StatusEventListCommand extends SubcommandInteraction {
         startTime: period.period,
         ...nameCondition,
       },
-      orderBy,
+      sort,
     );
 
     // イベント一覧のテキストを取得
@@ -174,18 +152,45 @@ class StatusEventListCommand extends SubcommandInteraction {
   /**
    * イベントを取得
    * @param where 取得条件
-   * @param orderBy ソート順
+   * @param sort ソート順
    * @returns イベント一覧
    */
   async getEvents(
     where: Prisma.EventWhereInput,
-    orderBy: Prisma.EventOrderByWithRelationInput[],
+    sort: string = 'join',
   ): Promise<EventDetail[]> {
-    return await prisma.event.findMany({
+    const result = await prisma.event.findMany({
       where,
-      orderBy,
+      orderBy: [
+        {
+          startTime: 'asc',
+        },
+        {
+          scheduleTime: 'desc',
+        },
+      ],
       ...eventInclude,
     });
+
+    // ソート
+    switch (sort) {
+      case 'join':
+        result.sort((a, b) => b.stats.length - a.stats.length);
+        break;
+      case 'startTime':
+        result.sort((a, b) => {
+          if (!a.startTime && !b.startTime) return 0;
+          if (!a.startTime) return 1;
+          if (!b.startTime) return -1;
+          return a.startTime.getTime() - b.startTime.getTime();
+        });
+        break;
+      case 'id':
+        result.sort((a, b) => a.id - b.id);
+        break;
+    }
+
+    return result;
   }
 
   /**
