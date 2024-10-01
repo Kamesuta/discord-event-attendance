@@ -58,6 +58,17 @@ class StatusEventListCommand extends SubcommandInteraction {
         )
         .setRequired(false),
     )
+    .addStringOption((option) =>
+      option
+        .setName('sort')
+        .setDescription('ソート順 (デフォルトは参加者数)')
+        .addChoices([
+          { name: '参加者数', value: 'join' },
+          { name: '開始日時', value: 'startTime' },
+          { name: 'ID', value: 'id' },
+        ])
+        .setRequired(false),
+    )
     .addIntegerOption((option) =>
       option
         .setName('page')
@@ -79,12 +90,52 @@ class StatusEventListCommand extends SubcommandInteraction {
     const search = interaction.options.getString('search');
     const nameCondition = parseSearch(search ?? undefined);
 
+    // ソート順
+    const sort = interaction.options.getString('sort') ?? 'join';
+    let orderBy: Prisma.EventOrderByWithRelationInput[] = [];
+    let sortText = '不明順';
+    switch (sort) {
+      case 'join':
+        orderBy = [
+          {
+            stats: {
+              // eslint-disable-next-line @typescript-eslint/naming-convention
+              _count: 'desc',
+            },
+          },
+        ];
+        sortText = '人気イベント順';
+        break;
+      case 'startTime':
+        orderBy = [
+          {
+            startTime: 'asc',
+          },
+          {
+            scheduleTime: 'desc',
+          },
+        ];
+        sortText = '開始時間順';
+        break;
+      case 'id':
+        orderBy = [
+          {
+            id: 'asc',
+          },
+        ];
+        sortText = 'ID順';
+        break;
+    }
+
     // イベントを取得
-    const events: EventDetail[] = await this.getEvents({
-      active: GuildScheduledEventStatus.Completed,
-      startTime: period.period,
-      ...nameCondition,
-    });
+    const events: EventDetail[] = await this.getEvents(
+      {
+        active: GuildScheduledEventStatus.Completed,
+        startTime: period.period,
+        ...nameCondition,
+      },
+      orderBy,
+    );
 
     // イベント一覧のテキストを取得
     const eventList = this.getEventListText(events);
@@ -99,7 +150,8 @@ class StatusEventListCommand extends SubcommandInteraction {
 
     // 条件テキスト
     const conditionText = [];
-    conditionText.push(`${eventList.length}件`);
+    conditionText.push(`イベント数${eventList.length}件`);
+    conditionText.push(sortText);
     conditionText.push(period.text);
     if (search) {
       conditionText.push(`🔍️「${search}」`);
@@ -122,19 +174,16 @@ class StatusEventListCommand extends SubcommandInteraction {
   /**
    * イベントを取得
    * @param where 取得条件
+   * @param orderBy ソート順
    * @returns イベント一覧
    */
-  async getEvents(where: Prisma.EventWhereInput): Promise<EventDetail[]> {
+  async getEvents(
+    where: Prisma.EventWhereInput,
+    orderBy: Prisma.EventOrderByWithRelationInput[],
+  ): Promise<EventDetail[]> {
     return await prisma.event.findMany({
       where,
-      orderBy: [
-        {
-          startTime: 'asc',
-        },
-        {
-          scheduleTime: 'desc',
-        },
-      ],
+      orderBy,
       ...eventInclude,
     });
   }

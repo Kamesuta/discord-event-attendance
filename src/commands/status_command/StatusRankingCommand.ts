@@ -130,7 +130,7 @@ class StatusRankingCommand extends SubcommandInteraction {
 
     // 条件テキスト
     const conditionText = [];
-    conditionText.push(`${maxCountText}全${numMatch}件`);
+    conditionText.push(`${maxCountText}参加者数${numMatch}人`);
     conditionText.push(period.text);
     conditionText.push(`全${allEventCount}イベント`);
     if (search) {

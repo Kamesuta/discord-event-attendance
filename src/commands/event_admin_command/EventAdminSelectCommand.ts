@@ -9,6 +9,7 @@ import eventManager from '../../event/EventManager.js';
 import eventAdminCommand from './EventAdminCommand.js';
 import EventManager from '../../event/EventManager.js';
 import statusEventListCommand from '../status_command/StatusEventListCommand.js';
+import { Prisma } from '@prisma/client';
 
 class EventAdminSelectCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
@@ -75,25 +76,42 @@ class EventAdminSelectCommand extends SubcommandInteraction {
   }
 
   private async _makeSuggestionEmbed(): Promise<EmbedBuilder> {
+    const orderBy: Prisma.EventOrderByWithRelationInput[] = [
+      {
+        startTime: 'asc',
+      },
+      {
+        scheduleTime: 'desc',
+      },
+    ];
     // イベント一覧のテキストを取得
     const eventListPast = statusEventListCommand.getEventListText(
-      await statusEventListCommand.getEvents({
-        active: GuildScheduledEventStatus.Completed,
-        // 直近5日間
-        startTime: { gt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000) },
-      }),
+      await statusEventListCommand.getEvents(
+        {
+          active: GuildScheduledEventStatus.Completed,
+          // 直近5日間
+          startTime: { gt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000) },
+        },
+        orderBy,
+      ),
     );
     const eventListActive = statusEventListCommand.getEventListText(
-      await statusEventListCommand.getEvents({
-        active: GuildScheduledEventStatus.Active,
-      }),
+      await statusEventListCommand.getEvents(
+        {
+          active: GuildScheduledEventStatus.Active,
+        },
+        orderBy,
+      ),
     );
     const eventListFuture = statusEventListCommand.getEventListText(
-      await statusEventListCommand.getEvents({
-        active: GuildScheduledEventStatus.Scheduled,
-        // 直近5日間
-        scheduleTime: { gt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000) },
-      }),
+      await statusEventListCommand.getEvents(
+        {
+          active: GuildScheduledEventStatus.Scheduled,
+          // 直近5日間
+          scheduleTime: { gt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000) },
+        },
+        orderBy,
+      ),
     );
 
     // Embed作成
