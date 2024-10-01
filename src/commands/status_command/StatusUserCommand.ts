@@ -207,7 +207,7 @@ class StatusUserCommand extends SubcommandInteraction {
     // ページングしたことを表示
     if (fields.length > numFieldsPerPage) {
       embeds.setFooter({
-        text: `ページ ${page}/${Math.ceil(fields.length / numFieldsPerPage)}\n\`/status user ～ page:${page + 1}\` で次のページを表示`,
+        text: `ページ ${page}/${Math.ceil(fields.length / numFieldsPerPage)}\n/status user ～ page:${page + 1} で次のページを表示`,
       });
     }
 
