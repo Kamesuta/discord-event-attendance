@@ -132,7 +132,10 @@ class StatusEventListCommand extends SubcommandInteraction {
     conditionText.push(sortText);
     conditionText.push(period.text);
     if (search) {
-      conditionText.push(`🔍️「${search}」`);
+      // searchが128文字以上は...で省略
+      const searchDisplay =
+        search.length > 128 ? `${search.slice(0, 128)}...` : search;
+      conditionText.push(`🔍️「${searchDisplay}」`);
     }
 
     // Embed作成

@@ -147,7 +147,10 @@ class StatusRankingCommand extends SubcommandInteraction {
     conditionText.push(`全${allEventCount}イベント`);
     conditionText.push(`のべ${allUserCount}人の参加者`);
     if (search) {
-      conditionText.push(`🔍️「${search}」`);
+      // searchが128文字以上は...で省略
+      const searchDisplay =
+        search.length > 128 ? `${search.slice(0, 128)}...` : search;
+      conditionText.push(`🔍️「${searchDisplay}」`);
     }
 
     // Embed作成
