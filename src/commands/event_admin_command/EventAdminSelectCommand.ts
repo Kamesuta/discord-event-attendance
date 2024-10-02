@@ -9,7 +9,6 @@ import eventManager from '../../event/EventManager.js';
 import eventAdminCommand from './EventAdminCommand.js';
 import EventManager from '../../event/EventManager.js';
 import statusEventListCommand from '../status_command/StatusEventListCommand.js';
-import { Prisma } from '@prisma/client';
 
 class EventAdminSelectCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
@@ -24,19 +23,32 @@ class EventAdminSelectCommand extends SubcommandInteraction {
           'イベントID (省略時は最新のイベントを選択、0で選択解除)',
         )
         .setRequired(false),
+    )
+    .addBooleanOption((option) =>
+      option
+        .setName('suggest')
+        .setDescription(
+          '前後のイベント候補を表示しますか？ (デフォルトは非表示)',
+        )
+        .setRequired(false),
     );
 
   async onCommand(interaction: ChatInputCommandInteraction): Promise<void> {
     // イベントを終了
     await interaction.deferReply({ ephemeral: true });
+    const suggest = interaction.options.getBoolean('suggest') ?? false;
+    const embeds = suggest ? [await this._makeSuggestionEmbed()] : [];
     const eventId = interaction.options.getInteger('event_id') ?? undefined;
+
     if (eventId === 0) {
       // 0が指定された場合はイベントを選択解除
       EventManager.selectEvent(interaction.user.id, undefined);
+      // デフォルト状態で選択されるイベントを取得
+      const event = await eventManager.getEvent(interaction);
       // イベント情報を表示
       await interaction.editReply({
-        content: `選択中のイベントをデフォルトに設定しました`,
-        embeds: [await this._makeSuggestionEmbed()],
+        content: `選択中のイベントをデフォルトに設定しました\n現在デフォルト状態で 「${event?.name ?? 'なし'}」 (ID: ${event?.id ?? 'なし'}) が取得されます`,
+        embeds,
       });
       return;
     }
@@ -60,8 +72,9 @@ class EventAdminSelectCommand extends SubcommandInteraction {
         ));
     if (!event) {
       await interaction.editReply({
-        content: 'イベントが見つかりませんでした',
-        embeds: [await this._makeSuggestionEmbed()],
+        content:
+          'イベントが見つかりませんでした\n`/event_admin select suggest:True` で候補を表示できます',
+        embeds,
       });
       return;
     }
@@ -71,7 +84,7 @@ class EventAdminSelectCommand extends SubcommandInteraction {
     // イベント情報を表示
     await interaction.editReply({
       content: `選択中のイベントを 「${event.name}」 (ID: ${event.id}) に設定しました`,
-      embeds: [await this._makeSuggestionEmbed()],
+      embeds,
     });
   }
 
