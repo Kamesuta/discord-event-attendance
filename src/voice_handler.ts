@@ -86,7 +86,7 @@ export async function onVoiceStateUpdate(
   try {
     if (oldState.channel === newState.channel) return;
 
-    if (newState.channel) {
+    if (newState.channel && !newState.member?.user.bot) {
       // ユーザーがボイスチャンネルに参加たとき
       const userId = newState.member?.id;
       if (userId) {
@@ -94,7 +94,7 @@ export async function onVoiceStateUpdate(
       }
     }
 
-    if (oldState.channel) {
+    if (oldState.channel && !oldState.member?.user.bot) {
       // ユーザーがボイスチャンネルから退出したとき
       const userId = oldState.member?.id;
       if (userId) {
