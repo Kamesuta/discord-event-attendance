@@ -289,7 +289,7 @@ export default async function showEvent(
     try {
       // 日付を取得して文字列(◯◯/◯◯)に変換
       const date = event.scheduleTime
-        ? `${String(event.scheduleTime.getMonth()).padStart(2, '0')}/${String(event.scheduleTime.getDate()).padStart(2, '0')}`
+        ? `${String(event.scheduleTime.getMonth() + 1).padStart(2, '0')}/${String(event.scheduleTime.getDate()).padStart(2, '0')}`
         : '未定';
       const thread = await webhookChannel.threads.create({
         name: `${date} ${event.name}`,
