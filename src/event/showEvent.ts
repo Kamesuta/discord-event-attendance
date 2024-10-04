@@ -46,7 +46,7 @@ export default async function showEvent(
     ? undefined
     : await getWebhook(interaction, webhookChannel);
   if (webhookChannel && !webhook) {
-    return undefined;
+    return;
   }
 
   // イベントの出欠状況を表示
@@ -261,6 +261,11 @@ export default async function showEvent(
       webhookChannel.type === ChannelType.GuildText) &&
     webhookChannel.id === config.announcement_channel_id
   ) {
+    // メッセージを公開
+    await sentMessage?.crosspost().catch(() => {
+      // エラーが発生した場合は無視
+    });
+
     // 最新のアーカイブ済みスレッドを取得
     try {
       const threads = await webhookChannel.threads.fetchActive();
@@ -318,4 +323,6 @@ export default async function showEvent(
       logger.error('イベントチャンネルのスレッド作成に失敗しました。', error);
     }
   }
+
+  return sentMessage;
 }

@@ -7,10 +7,9 @@ import {
 } from 'discord.js';
 import eventManager from '../../../event/EventManager.js';
 import { MessageComponentActionInteraction } from '../../base/action_base.js';
-import { config } from '../../../utils/config.js';
-import showEvent from '../../../event/showEvent.js';
 import { logger } from '../../../utils/log.js';
 import { checkCommandPermission } from '../../../event/checkCommandPermission.js';
+import eventAdminAnnounceCommand from '../../event_admin_command/EventAdminAnnounceCommand.js';
 
 class PanelStartButtonAction extends MessageComponentActionInteraction<ComponentType.Button> {
   /**
@@ -88,41 +87,13 @@ class PanelStartButtonAction extends MessageComponentActionInteraction<Component
       return;
     }
 
-    // アナウンスチャンネルを取得
-    const announcementChannel = interaction.guild?.channels.cache.get(
-      config.announcement_channel_id,
-    );
-    if (!announcementChannel || !announcementChannel.isTextBased()) {
-      await interaction.editReply({
-        content: 'アナウンスチャンネルが見つかりませんでした',
-      });
-      return;
-    }
-
     // イベントを開始
     await scheduledEvent.edit({
       status: GuildScheduledEventStatus.Active,
     });
 
-    // VC名を取得
-    const vcName = scheduledEvent.channel?.name ?? '不明';
-
-    // アナウンスチャンネルでイベントを表示
-    const message = await showEvent(
-      interaction,
-      event,
-      announcementChannel,
-      config.announcement_message
-        .replace('{event}', event.name)
-        .replace('{vc}', vcName),
-      config.announcement_invite_link_message
-        .replace('{event}', event.name)
-        .replace('{vc}', vcName),
-    );
-    // メッセージを公開
-    await message?.crosspost().catch(() => {
-      // エラーが発生した場合は無視
-    });
+    // イベントをアナウンス
+    await eventAdminAnnounceCommand.showAnnounceMessage(interaction, event);
 
     // ログに残す
     logger.info(
