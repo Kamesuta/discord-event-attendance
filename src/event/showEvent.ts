@@ -263,10 +263,18 @@ export default async function showEvent(
   ) {
     // 最新のアーカイブ済みスレッドを取得
     try {
-      const threads = await webhookChannel.threads.fetchArchived({
-        limit: 5,
-      });
+      const threads = await webhookChannel.threads.fetchActive();
       for (const [, thread] of threads.threads) {
+        // 1日以上前のスレッドかどうかを判定
+        if (
+          thread.createdAt &&
+          new Date().getTime() - thread.createdAt.getTime() <
+            24 * 60 * 60 * 1000
+        ) {
+          // 1日以内のスレッドはスキップ
+          continue;
+        }
+
         const fetched = await thread.messages.fetch({ limit: 1 });
         const lastMessage = fetched.first();
         // イベントの思い出を記録しておきましょう！というBOTのメッセージが取得できた場合、そのスレッドには何も投稿されていないため、そのスレッドを削除する
@@ -279,6 +287,9 @@ export default async function showEvent(
         ) {
           // スレッドを削除
           await thread.delete();
+        } else {
+          // それ以外の場合はスレッドをアーカイブ
+          await thread.setArchived(true);
         }
       }
     } catch (error) {
