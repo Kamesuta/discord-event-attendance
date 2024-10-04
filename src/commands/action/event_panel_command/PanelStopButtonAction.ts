@@ -4,6 +4,7 @@ import {
   ButtonStyle,
   ChannelType,
   ComponentType,
+  DiscordAPIError,
   EmbedBuilder,
   GuildScheduledEventStatus,
   Message,
@@ -227,7 +228,16 @@ class PanelStopButtonAction extends MessageComponentActionInteraction<ComponentT
     }
 
     // パネルのメッセージ削除
-    await interaction.message.delete().catch(() => {});
+    await interaction.message.delete().catch((e) => {
+      // 権限エラーの場合警告を出す
+      if (e instanceof DiscordAPIError && e.code === 50013) {
+        logger.warn(
+          'パネルのメッセージ削除に失敗しました: 権限がありません。「メッセージの管理」権限の他に、「チャンネルを見る」権限も必要です。',
+        );
+      } else {
+        logger.error('パネルのメッセージ削除に失敗しました', e);
+      }
+    });
 
     // ロールを同期
     await syncRoleByCondition(interaction.guild);
