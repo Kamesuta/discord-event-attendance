@@ -109,19 +109,25 @@ class PanelStopConfirmButtonAction extends MessageComponentActionInteraction<Com
     });
 
     // 参加者記録がされていない場合は警告を表示
+    const isWarning = stats.filter((stat) => stat.show === true).length === 0;
     const warningMessage = `
-■■■■■■■■■■■■■■■■■■■■■■
+■■■■■■■■■■■■■■■■■■■■■■■■■■■
 ## <a:alert:1303007357562785812> イベント参加者がチェックされていません！！ <a:alert:1303007357562785812>
 参加者記録はイベント終了前に行う必要があります。
 「②参加者記録」ボタンから記録をお願いします
 
-■■■■■■■■■■■■■■■■■■■■■■`.replaceAll(
+■■■■■■■■■■■■■■■■■■■■■■■■■■■`.replaceAll(
       '■',
       '<:warning_stripe:1303007373392220190>',
     );
-    // 記録されている場合
     const defaultMessage =
       'イベント終了前に、もう一度イベント出席/欠席者が正しくチェックできているか確認してください';
+
+    // ボタン
+    const stopButton = PanelStopButtonAction.create(event.id);
+    if (isWarning) {
+      stopButton.setLabel('イベント参加者を記録せずにイベントを終了する');
+    }
 
     // メッセージを作成
     const embed = new EmbedBuilder()
@@ -129,11 +135,7 @@ class PanelStopConfirmButtonAction extends MessageComponentActionInteraction<Com
       .setFooter({
         text: `イベントID: ${event.id}`,
       })
-      .setDescription(
-        stats.filter((stat) => stat.show === true).length > 0
-          ? defaultMessage
-          : warningMessage,
-      )
+      .setDescription(isWarning ? warningMessage : defaultMessage)
       .addFields({
         name: '現在の参加者チェックリスト',
         value:
@@ -152,9 +154,7 @@ class PanelStopConfirmButtonAction extends MessageComponentActionInteraction<Com
       content: 'イベントを終了しますか？',
       embeds: [embed],
       components: [
-        new ActionRowBuilder<ButtonBuilder>().addComponents(
-          PanelStopButtonAction.create(event.id),
-        ),
+        new ActionRowBuilder<ButtonBuilder>().addComponents(stopButton),
       ],
     });
   }
