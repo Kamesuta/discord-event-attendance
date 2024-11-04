@@ -228,7 +228,10 @@ class PanelStopButtonAction extends MessageComponentActionInteraction<ComponentT
     }
 
     // パネルのメッセージ削除
-    await interaction.message.delete().catch((e) => {
+    const panelMessage = await interaction.message // 確認メッセージの元のメッセージ=パネルを取得
+      .fetchReference()
+      .catch(() => undefined);
+    await panelMessage?.delete().catch((e) => {
       // 権限エラーの場合警告を出す
       if (e instanceof DiscordAPIError && e.code === 50013) {
         logger.warn(
