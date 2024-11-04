@@ -264,8 +264,9 @@ export default async function showEvent(
     webhookChannel.id === config.announcement_channel_id
   ) {
     // メッセージを公開
-    await sentMessage?.crosspost().catch(() => {
-      // エラーが発生した場合は無視
+    await sentMessage?.crosspost().catch((e) => {
+      // エラーが発生した場合はログを出力して続行
+      logger.error('メッセージの公開に失敗しました。', e);
     });
 
     // 最新のアーカイブ済みスレッドを取得
