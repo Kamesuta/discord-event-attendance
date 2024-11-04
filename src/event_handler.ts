@@ -223,6 +223,22 @@ export async function onEndEvent(
   if (channel) {
     // VCに参加しているユーザーに対してもログを記録する
     for (const [_, member] of channel.members) {
+      // ユーザー情報を初期化 (初期化されていない人がいる可能性があるためここで初期化)
+      await prisma.userStat.upsert({
+        where: {
+          id: {
+            eventId: event.id,
+            userId: member.id,
+          },
+        },
+        create: {
+          eventId: event.id,
+          userId: member.id,
+          duration: 0,
+        },
+        update: {},
+      });
+      // VC参加ログを記録する
       await prisma.voiceLog.create({
         data: {
           eventId: event.id,
