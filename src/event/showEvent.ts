@@ -2,6 +2,7 @@ import {
   ActionRowBuilder,
   ChannelType,
   EmbedBuilder,
+  GuildMember,
   GuildScheduledEventStatus,
   Message,
   RepliableInteraction,
@@ -155,12 +156,13 @@ export default async function showEvent(
     });
 
   // 主催者を表示
+  let hostMember: GuildMember | undefined = undefined;
   if (event.hostId) {
-    const member = await interaction.guild?.members.fetch(event.hostId);
-    if (member) {
+    hostMember = await interaction.guild?.members.fetch(event.hostId);
+    if (hostMember) {
       embeds.setAuthor({
-        name: `主催者: ${member.displayName}`,
-        iconURL: member?.displayAvatarURL(),
+        name: `主催者: ${hostMember.displayName}`,
+        iconURL: hostMember?.displayAvatarURL(),
       });
     }
   }
@@ -229,9 +231,9 @@ export default async function showEvent(
   let sentMessage: Message | undefined;
   if (webhook) {
     // Webhookで送信 (コマンド送信者の名前とアイコンを表示)
-    const interactionMember = await interaction.guild?.members.fetch(
-      interaction.user.id,
-    );
+    const interactionMember =
+      hostMember ?? // 主催者がいる場合は主催者の情報を優先
+      (await interaction.guild?.members.fetch(interaction.user.id));
     const memberDisplayName =
       interactionMember?.displayName ?? interaction.user.username;
     const memberAvatar =
