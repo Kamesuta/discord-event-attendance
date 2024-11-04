@@ -109,8 +109,10 @@ export async function onStartScheduledEvent(
       `イベントを開始しました: ID=${event.id}, Name=${scheduledEvent.name}`,
     );
 
-    // VCに既に参加しているユーザーに対してもログを記録する
-    const members = Array.from(scheduledEvent.channel.members.values());
+    // VCに既に参加しているユーザーに対してもログを記録する (Botは無視)
+    const members = Array.from(scheduledEvent.channel.members.values()).filter(
+      (member) => !member.user.bot,
+    );
     // ユーザー情報を初期化
     await prisma.userStat.createMany({
       data: members.map((member) => ({
@@ -221,8 +223,11 @@ export async function onEndEvent(
   });
 
   if (channel) {
-    // VCに参加しているユーザーに対してもログを記録する
-    for (const [_, member] of channel.members) {
+    // VCに参加しているユーザーに対してもログを記録する (Botは無視)
+    const members = Array.from(channel.members.values()).filter(
+      (member) => !member.user.bot,
+    );
+    for (const member of members) {
       // ユーザー情報を初期化 (初期化されていない人がいる可能性があるためここで初期化)
       await prisma.userStat.upsert({
         where: {
