@@ -38,7 +38,7 @@ class PanelStopButtonAction extends MessageComponentActionInteraction<ComponentT
     return new ButtonBuilder()
       .setCustomId(customId)
       .setEmoji('⏹️')
-      .setLabel('③イベント終了')
+      .setLabel('イベントを終了する')
       .setStyle(ButtonStyle.Danger);
   }
 
