@@ -10,6 +10,7 @@ import eventAdminCreateCommand from './EventAdminCreateCommand.js';
 import eventAdminRecalcTimeCommand from './EventAdminRecalcTimeCommand.js';
 import eventAdminSyncRoleCommand from './EventAdminSyncRoleCommand.js';
 import eventAdminAnnounceCommand from './EventAdminAnnounceCommand.js';
+import eventAdminSetupCommand from './EventAdminSetupCommand.js';
 
 const commands: InteractionBase[] = [
   eventAdminCommand,
@@ -23,6 +24,7 @@ const commands: InteractionBase[] = [
   eventAdminRecalcTimeCommand,
   eventAdminSyncRoleCommand,
   eventAdminAnnounceCommand,
+  eventAdminSetupCommand,
 ];
 
 export default commands;
