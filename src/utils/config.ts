@@ -34,6 +34,12 @@ export interface Config {
   /** 最近イベントに参加したロールのID { ロールID = 必要回数 } */
   recent_event_join_role_ids: Record<string, number>;
 
+  /** イベント操作チャンネル */
+  event_panel_channel_id: string;
+
+  /** イベント連絡チャンネル */
+  event_contact_channel_id: string;
+
   /* eslint-enable @typescript-eslint/naming-convention */
 }
 
@@ -88,4 +94,16 @@ assert(
   config.recent_event_join_role_ids &&
     typeof config.recent_event_join_role_ids === 'object',
   'recent_event_join_role_id is required and must be an object.',
+);
+
+assert(
+  config.event_panel_channel_id &&
+    typeof config.event_panel_channel_id === 'string',
+  'event_panel_channel_id is required and must be a string.',
+);
+
+assert(
+  config.event_contact_channel_id &&
+    typeof config.event_contact_channel_id === 'string',
+  'event_contact_channel_id is required and must be a string.',
 );

@@ -9,6 +9,7 @@ import {
   onGuildScheduledEventCreate,
   onGuildScheduledEventDelete,
   onGuildScheduledEventUpdate,
+  updateSchedules,
 } from './event_handler.js';
 import CommandHandler from './commands/CommandHandler.js';
 import { nowait } from './utils/utils.js';
@@ -50,6 +51,9 @@ client.on(
 
     // イベント管理者用のコマンドを登録
     await commandHandler.registerCommands();
+
+    // イベントスケジュール更新
+    await updateSchedules();
 
     logger.info(`インタラクションの登録が完了しました`);
   }),

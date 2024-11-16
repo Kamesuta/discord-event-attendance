@@ -1,7 +1,9 @@
 import {
   ActionRowBuilder,
+  BaseMessageOptions,
   ButtonBuilder,
   ChatInputCommandInteraction,
+  GuildScheduledEvent,
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
@@ -13,6 +15,7 @@ import panelStartButtonAction from '../action/event_panel_command/PanelStartButt
 import panelReviewButtonAction from '../action/event_panel_command/PanelReviewButtonAction.js';
 import panelStopConfirmButtonAction from '../action/event_panel_command/PanelStopConfirmButtonAction.js';
 import { config } from '../../utils/config.js';
+import { Event } from '@prisma/client';
 
 class EventAdminPanelCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
@@ -76,6 +79,20 @@ class EventAdminPanelCommand extends SubcommandInteraction {
       });
     }
 
+    // パネルを表示
+    await interaction.editReply(this.createPanel(scheduledEvent, event));
+  }
+
+  /**
+   * パネルを作成
+   * @param scheduledEvent Discordイベント
+   * @param event イベント
+   * @returns 作成したメッセージ
+   */
+  createPanel(
+    scheduledEvent: GuildScheduledEvent,
+    event: Event,
+  ): BaseMessageOptions {
     // 日付を取得
     const date = scheduledEvent.scheduledStartAt;
     const dateStr = date
@@ -84,7 +101,7 @@ class EventAdminPanelCommand extends SubcommandInteraction {
 
     // パネルを表示
     // <@～> 1/2(月) はイベント「～」(ID: ◯)の開催日です。\n開始時間になったら「開始」ボタンを押して始めてください～
-    await interaction.editReply({
+    return {
       content: `<@${event.hostId}> ${dateStr} は [イベント「${event.name}」(ID: ${event.id})](https://discord.com/events/${config.guild_id}/${event.eventId}) の開催日です。\n開始時間になったら「イベント開始」ボタンを押して始めてください～\nイベントを行うVC: <#${event.channelId}> (違っていたら始める前に教えて下さい)`,
       components: [
         new ActionRowBuilder<ButtonBuilder>().addComponents(
@@ -93,7 +110,7 @@ class EventAdminPanelCommand extends SubcommandInteraction {
           panelStopConfirmButtonAction.create(event.id),
         ),
       ],
-    });
+    };
   }
 }
 

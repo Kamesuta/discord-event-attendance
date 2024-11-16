@@ -8,6 +8,7 @@ import { MessageComponentActionInteraction } from '../../base/action_base.js';
 import { prisma } from '../../../index.js';
 import { Event } from '@prisma/client';
 import eventAdminSetupCommand from '../../event_admin_command/EventAdminSetupCommand.js';
+import { updateSchedules } from '../../../event_handler.js';
 
 class SetupUserSelectAction extends MessageComponentActionInteraction<ComponentType.UserSelect> {
   /**
@@ -86,6 +87,9 @@ class SetupUserSelectAction extends MessageComponentActionInteraction<ComponentT
     } else {
       await interaction.deleteReply();
     }
+
+    // スケジュールを更新
+    await updateSchedules();
   }
 }
 
