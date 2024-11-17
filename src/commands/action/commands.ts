@@ -4,7 +4,7 @@ import eventGameCommands from './event_game_command/commands.js';
 import eventReviewCommands from './event_review_command/commands.js';
 import statusGameMenuAction from './StatusGameMenuAction.js';
 import eventPanelCommands from './event_panel_command/commands.js';
-import setupUserSelectAction from './event_setup_command/SetupUserSelectAction.js';
+import eventSetupCommands from './event_setup_command/commands.js';
 
 const commands: InteractionBase[] = [
   setMemoAction,
@@ -12,7 +12,7 @@ const commands: InteractionBase[] = [
   ...eventGameCommands,
   ...eventReviewCommands,
   ...eventPanelCommands,
-  setupUserSelectAction,
+  ...eventSetupCommands,
 ];
 
 export default commands;

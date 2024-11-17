@@ -1,52 +1,54 @@
 import {
   ComponentType,
-  UserSelectMenuBuilder,
-  UserSelectMenuInteraction,
+  StringSelectMenuBuilder,
+  StringSelectMenuInteraction,
 } from 'discord.js';
 import eventManager from '../../../event/EventManager.js';
 import { MessageComponentActionInteraction } from '../../base/action_base.js';
 import { prisma } from '../../../index.js';
 import { Event } from '@prisma/client';
 import eventAdminSetupCommand from '../../event_admin_command/EventAdminSetupCommand.js';
-import { updateSchedules } from '../../../event_handler.js';
 
-class SetupUserSelectAction extends MessageComponentActionInteraction<ComponentType.UserSelect> {
+class SetupEventSelectAction extends MessageComponentActionInteraction<ComponentType.StringSelect> {
   /**
    * ボタンを作成
-   * @param event イベント
+   * @param events イベントリスト
+   * @param selectedEvent 選択中のイベント
    * @returns 作成したビルダー
    */
-  override create(event?: Event): UserSelectMenuBuilder {
+  override create(
+    events: Event[],
+    selectedEvent?: Event,
+  ): StringSelectMenuBuilder {
     // カスタムIDを生成
-    const customId = this.createCustomId({
-      evt: `${event?.id ?? 0}`,
-    });
+    const customId = this.createCustomId();
 
     // ダイアログを作成
-    const userSelect = new UserSelectMenuBuilder()
+    const eventSelect = new StringSelectMenuBuilder()
       .setCustomId(customId)
-      .setPlaceholder(event?.name ?? 'ユーザーを選択してください')
+      .setPlaceholder('設定するイベントを選択してください')
       .setMinValues(1)
-      .setMaxValues(1);
+      .setMaxValues(1)
+      .addOptions(
+        events.map((event) => ({
+          label: `${event.name} (ID: ${event.id})`,
+          value: event.id.toString(),
+          default: event.id === selectedEvent?.id,
+        })),
+      );
 
-    if (event?.hostId) {
-      userSelect.setDefaultUsers([event.hostId]);
-    }
-
-    return userSelect;
+    return eventSelect;
   }
 
   /** @inheritdoc */
   async onCommand(
-    interaction: UserSelectMenuInteraction,
-    params: URLSearchParams,
+    interaction: StringSelectMenuInteraction,
+    _params: URLSearchParams,
   ): Promise<void> {
-    const eventId = params.get('evt');
-    if (!eventId) return; // 必要なパラメータがない場合は旧形式の可能性があるため無視
-
     await interaction.deferReply({ ephemeral: true });
 
     // イベントを取得
+    const eventId = interaction.values[0];
     const event = await eventManager.getEventFromId(
       eventId ? parseInt(eventId) : undefined,
     );
@@ -56,22 +58,6 @@ class SetupUserSelectAction extends MessageComponentActionInteraction<ComponentT
       });
       return;
     }
-
-    // ホストユーザーを取得
-    const hostUserId = interaction.values[0];
-    const hostUser = await interaction.guild?.members.fetch(hostUserId);
-    if (!hostUser) {
-      await interaction.editReply({
-        content: 'ユーザーが見つかりませんでした',
-      });
-      return;
-    }
-
-    // イベントを更新
-    await prisma.event.update({
-      where: { id: event.id },
-      data: { hostId: hostUserId },
-    });
 
     // パネルを取得
     const editData =
@@ -84,6 +70,9 @@ class SetupUserSelectAction extends MessageComponentActionInteraction<ComponentT
       });
       return;
     }
+
+    // 選択中のイベントを更新
+    editData.selectedEvent = event.id;
 
     // パネルを表示
     const reply = await eventAdminSetupCommand.createSetupPanel(interaction);
@@ -98,10 +87,10 @@ class SetupUserSelectAction extends MessageComponentActionInteraction<ComponentT
     } else {
       await interaction.deleteReply();
     }
-
-    // スケジュールを更新
-    await updateSchedules();
   }
 }
 
-export default new SetupUserSelectAction('setupus', ComponentType.UserSelect);
+export default new SetupEventSelectAction(
+  'setupes',
+  ComponentType.StringSelect,
+);

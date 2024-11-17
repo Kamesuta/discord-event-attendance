@@ -6,6 +6,7 @@ import {
   InteractionEditReplyOptions,
   RepliableInteraction,
   SlashCommandSubcommandBuilder,
+  StringSelectMenuBuilder,
   UserSelectMenuBuilder,
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
@@ -14,9 +15,18 @@ import eventManager from '../../event/EventManager.js';
 import { Event } from '@prisma/client';
 import { config } from '../../utils/config.js';
 import setupUserSelectAction from '../action/event_setup_command/SetupUserSelectAction.js';
+import setupEventSelectAction from '../action/event_setup_command/SetupEventSelectAction.js';
+
+/**
+ * 設定中のデータ
+ */
+interface EditData {
+  interaction: RepliableInteraction;
+  selectedEvent: number;
+}
 
 class EventAdminSetupCommand extends SubcommandInteraction {
-  setupPanels: Record<string, RepliableInteraction> = {};
+  setupPanels: Record<string, EditData> = {};
 
   command = new SlashCommandSubcommandBuilder()
     .setName('setup')
@@ -26,7 +36,6 @@ class EventAdminSetupCommand extends SubcommandInteraction {
     await interaction.deferReply({ ephemeral: true });
 
     // パネルを作成
-    this.setupPanels[this.key(interaction)] = interaction;
     const reply = await this.createSetupPanel(interaction);
     if (!reply) return;
     await interaction.editReply(reply);
@@ -61,7 +70,7 @@ class EventAdminSetupCommand extends SubcommandInteraction {
     }
 
     // イベントを取得
-    const eventList: [GuildScheduledEvent, Event | undefined][] =
+    const eventTupleList: [GuildScheduledEvent, Event | undefined][] =
       await Promise.all(
         scheduledEvents.map(async (discordEvent) => {
           const event = await eventManager.getEventFromDiscordId(
@@ -70,9 +79,12 @@ class EventAdminSetupCommand extends SubcommandInteraction {
           return [discordEvent, event ?? undefined];
         }),
       );
+    const eventList = eventTupleList.flatMap(([, event]) =>
+      event ? [event] : [],
+    );
 
     // イベントとイベント主催者の表を表示
-    const eventTable = eventList
+    const eventTable = eventTupleList
       .map(([discordEvent, event]) => {
         const eventInfo = `[「${event?.name ?? discordEvent?.name ?? '？'}」(ID: ${event?.id ?? '？'})](https://discord.com/events/${config.guild_id}/${discordEvent.id})`;
         const hostInfo = event
@@ -90,16 +102,30 @@ class EventAdminSetupCommand extends SubcommandInteraction {
       .setDescription(eventTable)
       .setColor('#ff8c00');
 
+    // パネル読み込み
+    let editData = this.setupPanels[this.key(interaction)];
+
+    // パネルを保存
+    this.setupPanels[this.key(interaction)] = editData = {
+      interaction,
+      selectedEvent: editData?.selectedEvent ?? eventList[0]?.id ?? 0,
+    };
+
+    // 選択中のイベントを取得
+    const selectedEvent = eventList.find(
+      (event) => event?.id === editData?.selectedEvent,
+    );
+
     return {
       embeds: [embed],
-      components: eventList.flatMap(([_discordEvent, event]) => {
-        if (!event) return [];
-        return [
-          new ActionRowBuilder<UserSelectMenuBuilder>().addComponents(
-            setupUserSelectAction.create(event),
-          ),
-        ];
-      }),
+      components: [
+        new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+          setupEventSelectAction.create(eventList, selectedEvent),
+        ),
+        new ActionRowBuilder<UserSelectMenuBuilder>().addComponents(
+          setupUserSelectAction.create(selectedEvent),
+        ),
+      ],
     };
   }
 }
