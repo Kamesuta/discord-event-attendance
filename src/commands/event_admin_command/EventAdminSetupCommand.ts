@@ -2,7 +2,6 @@ import {
   ActionRowBuilder,
   ChatInputCommandInteraction,
   EmbedBuilder,
-  GuildScheduledEvent,
   InteractionEditReplyOptions,
   RepliableInteraction,
   SlashCommandSubcommandBuilder,
@@ -11,11 +10,10 @@ import {
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
 import eventAdminCommand from './EventAdminCommand.js';
-import eventManager from '../../event/EventManager.js';
-import { Event } from '@prisma/client';
 import { config } from '../../utils/config.js';
 import setupUserSelectAction from '../action/event_setup_command/SetupUserSelectAction.js';
 import setupEventSelectAction from '../action/event_setup_command/SetupEventSelectAction.js';
+import { prisma } from '../../index.js';
 
 /**
  * 設定中のデータ
@@ -70,23 +68,28 @@ class EventAdminSetupCommand extends SubcommandInteraction {
     }
 
     // イベントを取得
-    const eventTupleList: [GuildScheduledEvent, Event | undefined][] =
-      await Promise.all(
-        scheduledEvents.map(async (discordEvent) => {
-          const event = await eventManager.getEventFromDiscordId(
-            discordEvent.id,
-          );
-          return [discordEvent, event ?? undefined];
-        }),
+    const events = await prisma.event.findMany({
+      where: {
+        eventId: {
+          in: scheduledEvents.map((event) => event.id),
+        },
+      },
+    });
+    const eventList = scheduledEvents
+      .map((scheduledEvent) => {
+        const event = events.find((e) => e.eventId === scheduledEvent.id);
+        return event ? [event] : [];
+      })
+      .flat()
+      .sort(
+        (a, b) =>
+          (a.scheduleTime?.getTime() ?? 0) - (b.scheduleTime?.getTime() ?? 0),
       );
-    const eventList = eventTupleList.flatMap(([, event]) =>
-      event ? [event] : [],
-    );
 
     // イベントとイベント主催者の表を表示
-    const eventTable = eventTupleList
-      .map(([discordEvent, event]) => {
-        const eventInfo = `[「${event?.name ?? discordEvent?.name ?? '？'}」(ID: ${event?.id ?? '？'})](https://discord.com/events/${config.guild_id}/${discordEvent.id})`;
+    const eventTable = eventList
+      .map((event) => {
+        const eventInfo = `[「${event?.name ?? '？'}」(ID: ${event?.id ?? '？'})](https://discord.com/events/${config.guild_id}/${event?.eventId})`;
         const hostInfo = event
           ? event.hostId
             ? `<@${event.hostId}>`
