@@ -40,6 +40,9 @@ export interface Config {
   /** イベント連絡チャンネル */
   event_contact_channel_id: string;
 
+  /** 絵文字リスト */
+  emojis: Record<string, string>;
+
   /* eslint-enable @typescript-eslint/naming-convention */
 }
 
@@ -106,4 +109,9 @@ assert(
   config.event_contact_channel_id &&
     typeof config.event_contact_channel_id === 'string',
   'event_contact_channel_id is required and must be a string.',
+);
+
+assert(
+  config.emojis && typeof config.emojis === 'object',
+  'emojis is required and must be an object.',
 );
