@@ -23,10 +23,12 @@ const coverImageSize = 2048;
 /**
  * スケジュールイベントが作成されたときのイベントハンドラー
  * @param scheduledEvent 作成されたイベント
+ * @param hostId 主催者のID
  * @returns 作成されたイベント
  */
 export async function onCreateScheduledEvent(
   scheduledEvent: GuildScheduledEvent,
+  hostId?: string,
 ): Promise<Event | undefined> {
   if (!scheduledEvent.channel?.isVoiceBased()) {
     logger.warn(
@@ -47,6 +49,7 @@ export async function onCreateScheduledEvent(
         description: scheduledEvent.description,
         coverImage: scheduledEvent.coverImageURL({ size: coverImageSize }),
         scheduleTime: scheduledEvent.scheduledStartAt,
+        hostId,
       },
     });
     logger.info(
@@ -279,6 +282,11 @@ export async function onGuildScheduledEventCreate(
   try {
     // 指定のサーバー以外無視
     if (scheduledEvent.guild?.id !== config.guild_id) {
+      return;
+    }
+
+    // イベントBOTの操作を無視
+    if (scheduledEvent.creatorId === client.user?.id) {
       return;
     }
 

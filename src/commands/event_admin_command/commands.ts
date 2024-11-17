@@ -6,6 +6,7 @@ import eventAdminUpdateMessageCommand from './EventAdminUpdateMessageCommand.js'
 import eventAdminStartCommand from './EventAdminStartCommand.js';
 import eventAdminStopCommand from './EventAdminStopCommand.js';
 import eventAdminPanelCommand from './EventAdminPanelCommand.js';
+import eventAdminImportCommand from './EventAdminImportCommand.js';
 import eventAdminCreateCommand from './EventAdminCreateCommand.js';
 import eventAdminRecalcTimeCommand from './EventAdminRecalcTimeCommand.js';
 import eventAdminSyncRoleCommand from './EventAdminSyncRoleCommand.js';
@@ -20,6 +21,7 @@ const commands: InteractionBase[] = [
   eventAdminStartCommand,
   eventAdminStopCommand,
   eventAdminPanelCommand,
+  eventAdminImportCommand,
   eventAdminCreateCommand,
   eventAdminRecalcTimeCommand,
   eventAdminSyncRoleCommand,

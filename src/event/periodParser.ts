@@ -129,3 +129,49 @@ export function parsePeriod(periodText: string | undefined): Period {
     text,
   };
 }
+
+/**
+ * 日付を解析してDateオブジェクトを返す
+ * 月曜日 → 今週の月曜日の21時
+ * 01/23 19:00 → 今年の1月23日の19時
+ * 2023/01/23 → 2023年1月23日の21時
+ * @param dateText 解析する日付文字列
+ * @returns 解析した日付
+ */
+export function parseDate(dateText: string): Date {
+  const result = new Date();
+  result.setHours(21, 0, 0, 0); // デフォルトは21時
+
+  // スペース区切りで処理
+  for (const part of dateText.split(' ')) {
+    // 月火水金土日が含まれている場合は、dateは今週のその曜日の日付とする
+    const dayOfWeek = ['日', '月', '火', '水', '木', '金', '土'].findIndex(
+      (day) => part.includes(day),
+    );
+    if (dayOfWeek !== -1) {
+      result.setDate(
+        result.getDate() + ((dayOfWeek - result.getDay() + 7) % 7),
+      );
+    }
+
+    // スラッシュを含む場合は日付指定
+    const dateSplit = part.split('/');
+    if (dateSplit.length === 2) {
+      result.setMonth(Number(dateSplit[0]) - 1);
+      result.setDate(Number(dateSplit[1]));
+    } else if (dateSplit.length === 3) {
+      result.setFullYear(Number(dateSplit[0]));
+      result.setMonth(Number(dateSplit[1]) - 1);
+      result.setDate(Number(dateSplit[2]));
+    }
+
+    // コロンを含む場合は時間指定
+    if (part.includes(':')) {
+      const timeSplit = part.split(':');
+      result.setHours(Number(timeSplit[0]));
+      result.setMinutes(Number(timeSplit[1]));
+    }
+  }
+
+  return result;
+}
