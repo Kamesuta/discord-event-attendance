@@ -6,10 +6,9 @@ import {
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
 import eventAdminCommand from './EventAdminCommand.js';
-import statusEventListCommand, {
-  EventDetail,
-} from '../status_command/StatusEventListCommand.js';
 import { config } from '../../utils/config.js';
+import { prisma } from '../../index.js';
+import { Event } from '@prisma/client';
 
 class EventAdminScheduleCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
@@ -34,18 +33,22 @@ class EventAdminScheduleCommand extends SubcommandInteraction {
     end.setDate(end.getDate() + 7);
 
     // イベントを取得
-    const events: EventDetail[] = await statusEventListCommand.getEvents(
-      {
+    const events: Event[] = await prisma.event.findMany({
+      where: {
         active: {
           not: GuildScheduledEventStatus.Canceled,
         },
-        startTime: {
+        scheduleTime: {
           gte: start,
           lt: end,
         },
       },
-      'startTime',
-    );
+      orderBy: [
+        {
+          scheduleTime: 'asc',
+        },
+      ],
+    });
 
     // イベントごとのメッセージを作成
     const eventMessages = events.flatMap((event) => {
@@ -79,7 +82,7 @@ class EventAdminScheduleCommand extends SubcommandInteraction {
 
       return [
         `
-### ${dateText}${timeText}: ${emoji} [${event.name}](https://discord.com/events/${config.guild_id}/${event.eventId})
+### ${dateText}${timeText}: ${emoji}[${event.name}](https://discord.com/events/${config.guild_id}/${event.eventId})
 ${lines.join('\n')}
 <@${event.hostId}> さんが主催してくれます～
 `,

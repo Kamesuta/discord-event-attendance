@@ -69,7 +69,7 @@ class EventAdminCreateCommand extends SubcommandInteraction {
         },
         'startTime',
       );
-      event = events[0];
+      event = events[events.length - 1];
     }
     if (!event) {
       await interaction.editReply({
