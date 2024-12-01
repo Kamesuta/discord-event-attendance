@@ -6,9 +6,13 @@ import {
 import eventManager from '../../../event/EventManager.js';
 import { MessageComponentActionInteraction } from '../../base/action_base.js';
 import { prisma } from '../../../index.js';
-import { Event } from '@prisma/client';
-import eventAdminSetupCommand from '../../event_admin_command/EventAdminSetupCommand.js';
-import { updateSchedules } from '../../../event_handler.js';
+import eventAdminSetupCommand, {
+  EventSpec,
+} from '../../event_admin_command/EventAdminSetupCommand.js';
+import {
+  onCreateScheduledEvent,
+  updateSchedules,
+} from '../../../event_handler.js';
 
 class SetupUserSelectAction extends MessageComponentActionInteraction<ComponentType.UserSelect> {
   /**
@@ -16,21 +20,21 @@ class SetupUserSelectAction extends MessageComponentActionInteraction<ComponentT
    * @param event イベント
    * @returns 作成したビルダー
    */
-  override create(event?: Event): UserSelectMenuBuilder {
+  override create(event?: EventSpec): UserSelectMenuBuilder {
     // カスタムIDを生成
     const customId = this.createCustomId({
-      evt: `${event?.id ?? 0}`,
+      evt: `${event?.scheduledEvent.id ?? 0}`,
     });
 
     // ダイアログを作成
     const userSelect = new UserSelectMenuBuilder()
       .setCustomId(customId)
-      .setPlaceholder(event?.name ?? 'ユーザーを選択してください')
+      .setPlaceholder(event?.event?.name ?? 'ユーザーを選択してください')
       .setMinValues(1)
       .setMaxValues(1);
 
-    if (event?.hostId) {
-      userSelect.setDefaultUsers([event.hostId]);
+    if (event?.event?.hostId) {
+      userSelect.setDefaultUsers([event.event.hostId]);
     }
 
     return userSelect;
@@ -46,13 +50,14 @@ class SetupUserSelectAction extends MessageComponentActionInteraction<ComponentT
 
     await interaction.deferReply({ ephemeral: true });
 
-    // イベントを取得
-    const event = await eventManager.getEventFromId(
-      eventId ? parseInt(eventId) : undefined,
-    );
-    if (!event) {
+    // パネルを取得
+    const editData =
+      eventAdminSetupCommand.setupPanels[
+        eventAdminSetupCommand.key(interaction)
+      ];
+    if (!editData) {
       await interaction.editReply({
-        content: 'イベントが見つかりませんでした',
+        content: 'パネルが賞味期限切れです。もう一度出してやり直してください',
       });
       return;
     }
@@ -67,23 +72,33 @@ class SetupUserSelectAction extends MessageComponentActionInteraction<ComponentT
       return;
     }
 
+    // イベントを取得
+    let event =
+      (await eventManager.getEventFromDiscordId(eventId)) ?? undefined;
+    if (!event) {
+      // イベントを作成
+      const scheduledEvent =
+        await interaction.guild?.scheduledEvents.fetch(eventId);
+      if (!scheduledEvent) {
+        await interaction.editReply({
+          content: 'Discordイベントが見つかりませんでした',
+        });
+        return;
+      }
+      event = await onCreateScheduledEvent(scheduledEvent);
+      if (!event) {
+        await interaction.editReply({
+          content: 'イベントの作成に失敗しました',
+        });
+        return;
+      }
+    }
+
     // イベントを更新
     await prisma.event.update({
       where: { id: event.id },
       data: { hostId: hostUserId },
     });
-
-    // パネルを取得
-    const editData =
-      eventAdminSetupCommand.setupPanels[
-        eventAdminSetupCommand.key(interaction)
-      ];
-    if (!editData) {
-      await interaction.editReply({
-        content: 'パネルが賞味期限切れです。もう一度出してやり直してください',
-      });
-      return;
-    }
 
     // パネルを表示
     const reply = await eventAdminSetupCommand.createSetupPanel(interaction);

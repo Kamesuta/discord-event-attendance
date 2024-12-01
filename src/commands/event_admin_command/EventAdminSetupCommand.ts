@@ -2,6 +2,8 @@ import {
   ActionRowBuilder,
   ChatInputCommandInteraction,
   EmbedBuilder,
+  GuildScheduledEvent,
+  GuildScheduledEventStatus,
   InteractionEditReplyOptions,
   RepliableInteraction,
   SlashCommandSubcommandBuilder,
@@ -14,13 +16,28 @@ import { config } from '../../utils/config.js';
 import setupUserSelectAction from '../action/event_setup_command/SetupUserSelectAction.js';
 import setupEventSelectAction from '../action/event_setup_command/SetupEventSelectAction.js';
 import { prisma } from '../../index.js';
+import { Event } from '@prisma/client';
+
+/**
+ * イベント情報
+ */
+export interface EventSpec {
+  /**
+   * Discordイベント
+   */
+  scheduledEvent: GuildScheduledEvent;
+  /**
+   * イベント
+   */
+  event?: Event;
+}
 
 /**
  * 設定中のデータ
  */
 interface EditData {
   interaction: RepliableInteraction;
-  selectedEvent: number;
+  selectedEvent: string;
 }
 
 class EventAdminSetupCommand extends SubcommandInteraction {
@@ -73,23 +90,35 @@ class EventAdminSetupCommand extends SubcommandInteraction {
         eventId: {
           in: scheduledEvents.map((event) => event.id),
         },
+        active: GuildScheduledEventStatus.Scheduled,
       },
     });
-    const eventList = scheduledEvents
+    const eventList: EventSpec[] = scheduledEvents
       .map((scheduledEvent) => {
         const event = events.find((e) => e.eventId === scheduledEvent.id);
-        return event ? [event] : [];
+        return {
+          scheduledEvent,
+          event,
+        };
       })
-      .flat()
       .sort(
         (a, b) =>
-          (a.scheduleTime?.getTime() ?? 0) - (b.scheduleTime?.getTime() ?? 0),
+          (a.event?.scheduleTime?.getTime() ??
+            a.scheduledEvent.scheduledStartTimestamp ??
+            0) -
+          (b.event?.scheduleTime?.getTime() ??
+            b.scheduledEvent.scheduledStartTimestamp ??
+            0),
       );
 
     // イベントとイベント主催者の表を表示
     const eventTable = eventList
-      .map((event) => {
-        const eventInfo = `[「${event?.name ?? '？'}」(ID: ${event?.id ?? '？'})](https://discord.com/events/${config.guild_id}/${event?.eventId})`;
+      .map(({ event, scheduledEvent }) => {
+        const date = event?.scheduleTime ?? scheduledEvent.scheduledStartAt;
+        const dateStr = date
+          ? `<t:${Math.floor(date.getTime() / 1000)}:D>`
+          : '未定';
+        const eventInfo = `${dateStr} [「${event?.name ?? scheduledEvent?.name ?? '？'}」(ID: ${event?.id ?? '？'})](https://discord.com/events/${config.guild_id}/${scheduledEvent.id})`;
         const hostInfo = event
           ? event.hostId
             ? `<@${event.hostId}>`
@@ -111,12 +140,13 @@ class EventAdminSetupCommand extends SubcommandInteraction {
     // パネルを保存
     this.setupPanels[this.key(interaction)] = editData = {
       interaction,
-      selectedEvent: editData?.selectedEvent ?? eventList[0]?.id ?? 0,
+      selectedEvent:
+        editData?.selectedEvent ?? eventList[0]?.scheduledEvent.id ?? '',
     };
 
     // 選択中のイベントを取得
     const selectedEvent = eventList.find(
-      (event) => event?.id === editData?.selectedEvent,
+      ({ scheduledEvent }) => scheduledEvent.id === editData?.selectedEvent,
     );
 
     return {

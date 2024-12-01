@@ -121,8 +121,14 @@ class PanelStopButtonAction extends MessageComponentActionInteraction<ComponentT
       .catch((_) => {});
 
     // イベントがまだアクティブなら、イベントを終了する (Discordイベントが終了していない場合などのフォールバック)
-    if (scheduledEvent.channel?.isVoiceBased() && event.active) {
-      await onEndEvent(event, scheduledEvent.channel);
+    const eventAfterStop = await eventManager.getEventFromId(
+      eventId ? parseInt(eventId) : undefined,
+    );
+    if (
+      scheduledEvent.channel?.isVoiceBased() &&
+      eventAfterStop?.active === (GuildScheduledEventStatus.Active as number)
+    ) {
+      await onEndEvent(eventAfterStop, scheduledEvent.channel);
     }
 
     // Webhookを取得
@@ -242,12 +248,12 @@ class PanelStopButtonAction extends MessageComponentActionInteraction<ComponentT
       }
     });
 
-    // ロールを同期
-    await syncRoleByCondition(interaction.guild);
-
     await interaction.editReply({
       content: `イベント「${event.name}」(ID: ${event.id})を終了しました。主催お疲れ様でした！`,
     });
+
+    // ロールを同期
+    await syncRoleByCondition(interaction.guild);
   }
 }
 

@@ -3,11 +3,10 @@ import {
   StringSelectMenuBuilder,
   StringSelectMenuInteraction,
 } from 'discord.js';
-import eventManager from '../../../event/EventManager.js';
 import { MessageComponentActionInteraction } from '../../base/action_base.js';
-import { prisma } from '../../../index.js';
-import { Event } from '@prisma/client';
-import eventAdminSetupCommand from '../../event_admin_command/EventAdminSetupCommand.js';
+import eventAdminSetupCommand, {
+  EventSpec,
+} from '../../event_admin_command/EventAdminSetupCommand.js';
 
 class SetupEventSelectAction extends MessageComponentActionInteraction<ComponentType.StringSelect> {
   /**
@@ -17,8 +16,8 @@ class SetupEventSelectAction extends MessageComponentActionInteraction<Component
    * @returns 作成したビルダー
    */
   override create(
-    events: Event[],
-    selectedEvent?: Event,
+    events: EventSpec[],
+    selectedEvent?: EventSpec,
   ): StringSelectMenuBuilder {
     // カスタムIDを生成
     const customId = this.createCustomId();
@@ -30,10 +29,10 @@ class SetupEventSelectAction extends MessageComponentActionInteraction<Component
       .setMinValues(1)
       .setMaxValues(1)
       .addOptions(
-        events.map((event) => ({
-          label: `${event.name} (ID: ${event.id})`,
-          value: event.id.toString(),
-          default: event.id === selectedEvent?.id,
+        events.map(({ scheduledEvent, event }) => ({
+          label: `${event?.name ?? scheduledEvent.name} (ID: ${event?.id ?? '未生成'})`,
+          value: scheduledEvent.id,
+          default: scheduledEvent.id === selectedEvent?.scheduledEvent.id,
         })),
       );
 
@@ -49,15 +48,6 @@ class SetupEventSelectAction extends MessageComponentActionInteraction<Component
 
     // イベントを取得
     const eventId = interaction.values[0];
-    const event = await eventManager.getEventFromId(
-      eventId ? parseInt(eventId) : undefined,
-    );
-    if (!event) {
-      await interaction.editReply({
-        content: 'イベントが見つかりませんでした',
-      });
-      return;
-    }
 
     // パネルを取得
     const editData =
@@ -72,7 +62,7 @@ class SetupEventSelectAction extends MessageComponentActionInteraction<Component
     }
 
     // 選択中のイベントを更新
-    editData.selectedEvent = event.id;
+    editData.selectedEvent = eventId;
 
     // パネルを表示
     const reply = await eventAdminSetupCommand.createSetupPanel(interaction);
