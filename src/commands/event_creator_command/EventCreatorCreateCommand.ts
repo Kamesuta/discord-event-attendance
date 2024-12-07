@@ -8,7 +8,6 @@ import {
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
 import { onCreateScheduledEvent } from '../../event_handler.js';
-import eventAdminCommand from './EventAdminCommand.js';
 import { parseSearch } from '../../event/searchParser.js';
 import statusEventListCommand, {
   EventDetail,
@@ -16,8 +15,9 @@ import statusEventListCommand, {
 import eventManager from '../../event/EventManager.js';
 import { Event } from '@prisma/client';
 import { parseDate } from '../../event/periodParser.js';
+import eventCreatorCommand from './EventCreatorCommand.js';
 
-class EventAdminCreateCommand extends SubcommandInteraction {
+class EventCreatorCreateCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
     .setName('create')
     .setDescription('過去のイベントを再利用してイベントを登録します')
@@ -158,4 +158,4 @@ class EventAdminCreateCommand extends SubcommandInteraction {
   }
 }
 
-export default new EventAdminCreateCommand(eventAdminCommand);
+export default new EventCreatorCreateCommand(eventCreatorCommand);

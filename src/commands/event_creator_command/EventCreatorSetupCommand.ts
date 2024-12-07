@@ -11,12 +11,12 @@ import {
   UserSelectMenuBuilder,
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
-import eventAdminCommand from './EventAdminCommand.js';
 import { config } from '../../utils/config.js';
 import setupUserSelectAction from '../action/event_setup_command/SetupUserSelectAction.js';
 import setupEventSelectAction from '../action/event_setup_command/SetupEventSelectAction.js';
 import { prisma } from '../../index.js';
 import { Event } from '@prisma/client';
+import eventCreatorCommand from './EventCreatorCommand.js';
 
 /**
  * イベント情報
@@ -40,7 +40,7 @@ interface EditData {
   selectedEvent: string;
 }
 
-class EventAdminSetupCommand extends SubcommandInteraction {
+class EventCreatorSetupCommand extends SubcommandInteraction {
   setupPanels: Record<string, EditData> = {};
 
   command = new SlashCommandSubcommandBuilder()
@@ -163,4 +163,4 @@ class EventAdminSetupCommand extends SubcommandInteraction {
   }
 }
 
-export default new EventAdminSetupCommand(eventAdminCommand);
+export default new EventCreatorSetupCommand(eventCreatorCommand);

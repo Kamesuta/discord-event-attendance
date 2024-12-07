@@ -5,14 +5,14 @@ import {
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
-import eventAdminCommand from './EventAdminCommand.js';
 import getWebhook from '../../event/getWebhook.js';
 import showEvent from '../../event/showEvent.js';
 import eventManager from '../../event/EventManager.js';
 import { Event } from '@prisma/client';
 import { logger } from '../../utils/log.js';
+import eventOpCommand from './EventOpCommand.js';
 
-class EventAdminUpdateMessageCommand extends SubcommandInteraction {
+class EventOpUpdateMessageCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
     .setName('update_message')
     .setDescription('イベント情報を更新')
@@ -150,4 +150,4 @@ class EventAdminUpdateMessageCommand extends SubcommandInteraction {
   }
 }
 
-export default new EventAdminUpdateMessageCommand(eventAdminCommand);
+export default new EventOpUpdateMessageCommand(eventOpCommand);

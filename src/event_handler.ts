@@ -11,8 +11,8 @@ import { logger } from './utils/log.js';
 import eventManager from './event/EventManager.js';
 import { client } from './index.js';
 import { Job, scheduleJob } from 'node-schedule';
-import eventAdminPanelCommand from './commands/event_admin_command/EventAdminPanelCommand.js';
 import log4js from 'log4js';
+import eventOpPanelCommand from './commands/event_op_command/EventOpPanelCommand.js';
 
 const prisma = new PrismaClient();
 
@@ -455,7 +455,7 @@ export async function updateSchedules(): Promise<void> {
 
               // パネルを出す
               await channel.send(
-                eventAdminPanelCommand.createPanel(scheduledEvent, event),
+                eventOpPanelCommand.createPanel(scheduledEvent, event),
               );
             } catch (error) {
               loggerSchedule.error('操作パネルの表示に失敗しました:', error);

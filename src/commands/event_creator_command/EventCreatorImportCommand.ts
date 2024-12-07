@@ -4,9 +4,9 @@ import {
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
 import { onCreateScheduledEvent } from '../../event_handler.js';
-import eventAdminCommand from './EventAdminCommand.js';
+import eventCreatorCommand from './EventCreatorCommand.js';
 
-class EventAdminImportCommand extends SubcommandInteraction {
+class EventCreatorImportCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
     .setName('import')
     .setDescription('手動でDiscordイベントをインポートして作成します')
@@ -54,4 +54,4 @@ class EventAdminImportCommand extends SubcommandInteraction {
   }
 }
 
-export default new EventAdminImportCommand(eventAdminCommand);
+export default new EventCreatorImportCommand(eventCreatorCommand);

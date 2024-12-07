@@ -3,7 +3,7 @@ import { CommandGroupInteraction } from '../base/command_base.js';
 
 class EventAdminCommand extends CommandGroupInteraction {
   command = new SlashCommandBuilder()
-    .setDescription('出欠確認コマンド (管理者用)')
+    .setDescription('イベント管理者用コマンド')
     .setName('event_admin')
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageEvents);
 }

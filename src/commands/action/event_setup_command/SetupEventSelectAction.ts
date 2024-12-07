@@ -4,9 +4,9 @@ import {
   StringSelectMenuInteraction,
 } from 'discord.js';
 import { MessageComponentActionInteraction } from '../../base/action_base.js';
-import eventAdminSetupCommand, {
+import eventCreatorSetupCommand, {
   EventSpec,
-} from '../../event_admin_command/EventAdminSetupCommand.js';
+} from '../../event_creator_command/EventCreatorSetupCommand.js';
 
 class SetupEventSelectAction extends MessageComponentActionInteraction<ComponentType.StringSelect> {
   /**
@@ -51,8 +51,8 @@ class SetupEventSelectAction extends MessageComponentActionInteraction<Component
 
     // パネルを取得
     const editData =
-      eventAdminSetupCommand.setupPanels[
-        eventAdminSetupCommand.key(interaction)
+      eventCreatorSetupCommand.setupPanels[
+        eventCreatorSetupCommand.key(interaction)
       ];
     if (!editData) {
       await interaction.editReply({
@@ -65,7 +65,7 @@ class SetupEventSelectAction extends MessageComponentActionInteraction<Component
     editData.selectedEvent = eventId;
 
     // パネルを表示
-    const reply = await eventAdminSetupCommand.createSetupPanel(interaction);
+    const reply = await eventCreatorSetupCommand.createSetupPanel(interaction);
     if (!reply) return;
 
     // パネルを更新

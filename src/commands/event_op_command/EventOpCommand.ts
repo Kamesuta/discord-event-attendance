@@ -1,11 +1,11 @@
 import { PermissionFlagsBits, SlashCommandBuilder } from 'discord.js';
 import { CommandGroupInteraction } from '../base/command_base.js';
 
-class EventCommand extends CommandGroupInteraction {
+class EventOpCommand extends CommandGroupInteraction {
   command = new SlashCommandBuilder()
-    .setDescription('イベント主催者用コマンド')
-    .setName('event')
+    .setDescription('イベント対応員用コマンド')
+    .setName('event_op')
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageEvents);
 }
 
-export default new EventCommand();
+export default new EventOpCommand();

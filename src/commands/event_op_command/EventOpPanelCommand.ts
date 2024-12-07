@@ -7,7 +7,6 @@ import {
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
-import eventAdminCommand from './EventAdminCommand.js';
 import eventManager from '../../event/EventManager.js';
 import { onUpdateScheduledEvent } from '../../event_handler.js';
 import { prisma } from '../../index.js';
@@ -16,8 +15,9 @@ import panelReviewButtonAction from '../action/event_panel_command/PanelReviewBu
 import panelStopConfirmButtonAction from '../action/event_panel_command/PanelStopConfirmButtonAction.js';
 import { config } from '../../utils/config.js';
 import { Event } from '@prisma/client';
+import eventOpCommand from './EventOpCommand.js';
 
-class EventAdminPanelCommand extends SubcommandInteraction {
+class EventOpPanelCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
     .setName('panel')
     .setDescription('イベントを作成するパネルを表示します')
@@ -114,4 +114,4 @@ class EventAdminPanelCommand extends SubcommandInteraction {
   }
 }
 
-export default new EventAdminPanelCommand(eventAdminCommand);
+export default new EventOpPanelCommand(eventOpCommand);

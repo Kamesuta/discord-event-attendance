@@ -6,13 +6,13 @@ import {
 import eventManager from '../../../event/EventManager.js';
 import { MessageComponentActionInteraction } from '../../base/action_base.js';
 import { prisma } from '../../../index.js';
-import eventAdminSetupCommand, {
-  EventSpec,
-} from '../../event_admin_command/EventAdminSetupCommand.js';
 import {
   onCreateScheduledEvent,
   updateSchedules,
 } from '../../../event_handler.js';
+import eventCreatorSetupCommand, {
+  EventSpec,
+} from '../../event_creator_command/EventCreatorSetupCommand.js';
 
 class SetupUserSelectAction extends MessageComponentActionInteraction<ComponentType.UserSelect> {
   /**
@@ -52,8 +52,8 @@ class SetupUserSelectAction extends MessageComponentActionInteraction<ComponentT
 
     // パネルを取得
     const editData =
-      eventAdminSetupCommand.setupPanels[
-        eventAdminSetupCommand.key(interaction)
+      eventCreatorSetupCommand.setupPanels[
+        eventCreatorSetupCommand.key(interaction)
       ];
     if (!editData) {
       await interaction.editReply({
@@ -101,7 +101,7 @@ class SetupUserSelectAction extends MessageComponentActionInteraction<ComponentT
     });
 
     // パネルを表示
-    const reply = await eventAdminSetupCommand.createSetupPanel(interaction);
+    const reply = await eventCreatorSetupCommand.createSetupPanel(interaction);
     if (!reply) return;
 
     // パネルを更新

@@ -16,7 +16,7 @@ import { logger } from '../../../utils/log.js';
 import { onEndEvent } from '../../../event_handler.js';
 import getWebhook from '../../../event/getWebhook.js';
 import { checkCommandPermission } from '../../../event/checkCommandPermission.js';
-import eventAdminUpdateMessageCommand from '../../event_admin_command/EventAdminUpdateMessageCommand.js';
+import eventAdminUpdateMessageCommand from '../../event_op_command/EventOpUpdateMessageCommand.js';
 import { syncRoleByCondition } from '../../../event/roleManager.js';
 import { client, prisma } from '../../../index.js';
 import { makeGameResultEmbed } from '../../../event/game.js';

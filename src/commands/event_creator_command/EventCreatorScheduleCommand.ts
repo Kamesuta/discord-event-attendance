@@ -5,12 +5,12 @@ import {
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
-import eventAdminCommand from './EventAdminCommand.js';
 import { config } from '../../utils/config.js';
 import { prisma } from '../../index.js';
 import { Event } from '@prisma/client';
+import eventCreatorCommand from './EventCreatorCommand.js';
 
-class EventAdminScheduleCommand extends SubcommandInteraction {
+class EventCreatorScheduleCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
     .setName('schedule')
     .setDescription('1週間分のスケジュールメッセージを作成します');
@@ -119,4 +119,4 @@ ${eventMessages.join('')}
   }
 }
 
-export default new EventAdminScheduleCommand(eventAdminCommand);
+export default new EventCreatorScheduleCommand(eventCreatorCommand);

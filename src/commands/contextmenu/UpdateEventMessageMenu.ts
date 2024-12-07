@@ -4,7 +4,7 @@ import {
   PermissionFlagsBits,
 } from 'discord.js';
 import { MessageContextMenuInteraction } from '../base/contextmenu_base.js';
-import eventAdminUpdateMessageCommand from '../event_admin_command/EventAdminUpdateMessageCommand.js';
+import eventOpUpdateMessageCommand from '../event_op_command/EventOpUpdateMessageCommand.js';
 
 class UpdateEventMessageMenu extends MessageContextMenuInteraction {
   command = new ContextMenuCommandBuilder()
@@ -17,7 +17,7 @@ class UpdateEventMessageMenu extends MessageContextMenuInteraction {
     await interaction.deferReply({ ephemeral: true });
 
     try {
-      const event = await eventAdminUpdateMessageCommand.updateMessage(
+      const event = await eventOpUpdateMessageCommand.updateMessage(
         interaction,
         interaction.targetMessage,
       );

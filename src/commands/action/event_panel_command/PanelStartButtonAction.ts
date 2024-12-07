@@ -9,7 +9,7 @@ import eventManager from '../../../event/EventManager.js';
 import { MessageComponentActionInteraction } from '../../base/action_base.js';
 import { logger } from '../../../utils/log.js';
 import { checkCommandPermission } from '../../../event/checkCommandPermission.js';
-import eventAdminAnnounceCommand from '../../event_admin_command/EventAdminAnnounceCommand.js';
+import eventOpAnnounceCommand from '../../event_op_command/EventOpAnnounceCommand.js';
 
 class PanelStartButtonAction extends MessageComponentActionInteraction<ComponentType.Button> {
   /**
@@ -93,7 +93,7 @@ class PanelStartButtonAction extends MessageComponentActionInteraction<Component
     });
 
     // イベントをアナウンス
-    await eventAdminAnnounceCommand.showAnnounceMessage(interaction, event);
+    await eventOpAnnounceCommand.showAnnounceMessage(interaction, event);
 
     // ログに残す
     logger.info(

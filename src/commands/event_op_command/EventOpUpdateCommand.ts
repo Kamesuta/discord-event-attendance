@@ -5,9 +5,9 @@ import {
 import { SubcommandInteraction } from '../base/command_base.js';
 import eventManager from '../../event/EventManager.js';
 import { onUpdateScheduledEvent } from '../../event_handler.js';
-import eventAdminCommand from './EventAdminCommand.js';
+import eventOpCommand from './EventOpCommand.js';
 
-class EventAdminUpdateCommand extends SubcommandInteraction {
+class EventOpUpdateCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
     .setName('update')
     .setDescription('手動でイベント情報を更新します');
@@ -33,4 +33,4 @@ class EventAdminUpdateCommand extends SubcommandInteraction {
   }
 }
 
-export default new EventAdminUpdateCommand(eventAdminCommand);
+export default new EventOpUpdateCommand(eventOpCommand);

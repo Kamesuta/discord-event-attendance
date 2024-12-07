@@ -6,11 +6,11 @@ import {
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
 import eventManager from '../../event/EventManager.js';
-import eventAdminCommand from './EventAdminCommand.js';
 import EventManager from '../../event/EventManager.js';
 import statusEventListCommand from '../status_command/StatusEventListCommand.js';
+import eventOpCommand from './EventOpCommand.js';
 
-class EventAdminSelectCommand extends SubcommandInteraction {
+class EventOpSelectCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
     .setName('select')
     .setDescription(
@@ -138,4 +138,4 @@ class EventAdminSelectCommand extends SubcommandInteraction {
   }
 }
 
-export default new EventAdminSelectCommand(eventAdminCommand);
+export default new EventOpSelectCommand(eventOpCommand);

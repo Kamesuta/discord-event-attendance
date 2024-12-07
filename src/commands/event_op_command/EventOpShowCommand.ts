@@ -3,11 +3,11 @@ import {
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
-import eventCommand from './EventCommand.js';
 import eventManager from '../../event/EventManager.js';
 import showEvent from '../../event/showEvent.js';
+import eventOpCommand from './EventOpCommand.js';
 
-class EventShowCommand extends SubcommandInteraction {
+class EventOpShowCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
     .setName('show')
     .setDescription('イベントの出欠状況を表示します')
@@ -52,4 +52,4 @@ class EventShowCommand extends SubcommandInteraction {
   }
 }
 
-export default new EventShowCommand(eventCommand);
+export default new EventOpShowCommand(eventOpCommand);

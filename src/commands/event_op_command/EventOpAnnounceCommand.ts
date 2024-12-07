@@ -5,13 +5,13 @@ import {
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
-import eventAdminCommand from './EventAdminCommand.js';
 import { config } from '../../utils/config.js';
 import { Event } from '@prisma/client';
 import showEvent from '../../event/showEvent.js';
 import eventManager from '../../event/EventManager.js';
+import eventOpCommand from './EventOpCommand.js';
 
-class EventAdminAnnounceCommand extends SubcommandInteraction {
+class EventOpAnnounceCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
     .setName('announce')
     .setDescription('イベントをアナウンスチャンネルで告知します');
@@ -78,4 +78,4 @@ class EventAdminAnnounceCommand extends SubcommandInteraction {
   }
 }
 
-export default new EventAdminAnnounceCommand(eventAdminCommand);
+export default new EventOpAnnounceCommand(eventOpCommand);
