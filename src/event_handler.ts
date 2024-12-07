@@ -12,6 +12,7 @@ import eventManager from './event/EventManager.js';
 import { client } from './index.js';
 import { Job, scheduleJob } from 'node-schedule';
 import eventAdminPanelCommand from './commands/event_admin_command/EventAdminPanelCommand.js';
+import log4js from 'log4js';
 
 const prisma = new PrismaClient();
 
@@ -383,6 +384,9 @@ export async function onGuildScheduledEventDelete(
   }
 }
 
+/** スケジュール用ロガー */
+export const loggerSchedule = log4js.getLogger('schedule');
+
 // スケジュールを格納する
 let schedules: Record<string, Job[]> = {};
 
@@ -390,86 +394,118 @@ let schedules: Record<string, Job[]> = {};
  * node-scheduleを使ってパネルを出すスケジュールを更新する
  */
 export async function updateSchedules(): Promise<void> {
-  // まず、すべてのDiscordに登録されているスケジュールを取得
-  // そして、それをnode-scheduleに登録する
-  // schedulesには、DiscordのイベントIDをキーにして、node-scheduleのJobを格納する
-  // schedulesに登録されていて、Discordに登録されていないスケジュールはキャンセルする
+  try {
+    // ログを出力
+    loggerSchedule.info('↓スケジュールを更新します');
 
-  // Discordに登録されているスケジュールを取得
-  const guild = await client.guilds.fetch(config.guild_id);
-  const scheduledEvents = await guild.scheduledEvents.fetch();
+    // まず、すべてのDiscordに登録されているスケジュールを取得
+    // そして、それをnode-scheduleに登録する
+    // schedulesには、DiscordのイベントIDをキーにして、node-scheduleのJobを格納する
+    // schedulesに登録されていて、Discordに登録されていないスケジュールはキャンセルする
 
-  // イベントを取得
-  const eventList: [GuildScheduledEvent, Event | undefined][] =
-    await Promise.all(
-      scheduledEvents.map(async (discordEvent) => {
-        const event = await eventManager.getEventFromDiscordId(discordEvent.id);
-        return [discordEvent, event ?? undefined];
-      }),
-    );
+    // Discordに登録されているスケジュールを取得
+    const guild = await client.guilds.fetch(config.guild_id);
+    const scheduledEvents = await guild.scheduledEvents.fetch();
 
-  // すべてのスケジュールはキャンセル
-  for (const [_eventId, jobs] of Object.entries(schedules)) {
-    jobs.forEach((job) => job?.cancel());
-  }
-  schedules = {};
-
-  // Discordに登録されているスケジュールを登録
-  for (const [scheduledEvent, event] of eventList) {
-    if (
-      // !schedules[scheduledEvent.id] &&
-      event?.hostId &&
-      scheduledEvent.scheduledStartAt
-    ) {
-      const jobs: Job[] = [];
-
-      // パネルを出す時間 = イベント開始時間 - 3時間
-      const panelDate = new Date(scheduledEvent.scheduledStartAt);
-      panelDate.setHours(panelDate.getHours() - 3);
-      jobs.push(
-        scheduleJob(panelDate, async () => {
-          // パネルを出すチャンネルを取得
-          const channel = await guild.channels.fetch(
-            config.event_panel_channel_id,
+    // イベントを取得
+    const eventList: [GuildScheduledEvent, Event | undefined][] =
+      await Promise.all(
+        scheduledEvents.map(async (discordEvent) => {
+          const event = await eventManager.getEventFromDiscordId(
+            discordEvent.id,
           );
-          if (!channel?.isTextBased()) {
-            logger.warn('パネルを出すチャンネルが見つかりません');
-            return;
-          }
-
-          // パネルを出す
-          await channel.send(
-            eventAdminPanelCommand.createPanel(scheduledEvent, event),
-          );
+          return [discordEvent, event ?? undefined];
         }),
       );
 
-      // リマインドを出す時間 = イベント開始時間 - 1時間
-      const remindDate = new Date(scheduledEvent.scheduledStartAt);
-      remindDate.setHours(remindDate.getHours() - 1);
-      jobs.push(
-        scheduleJob(remindDate, async () => {
-          // リマインドを出すチャンネルを取得
-          const channel = await guild.channels.fetch(
-            config.event_contact_channel_id,
-          );
-          if (!channel?.isTextBased()) {
-            logger.warn('リマインドを出すチャンネルが見つかりません');
-            return;
-          }
-
-          // リマインドを出す
-          await channel.send(
-            `<@${event.hostId}> 今日の <t:${(scheduledEvent.scheduledStartTimestamp ?? 0) / 1000}:R> にイベント「${scheduledEvent.name}」があるんだけど、主催できそう？\nやり方は https://discord.com/channels/${config.guild_id}/${config.event_panel_channel_id} の上の方に書いてある～`,
-          );
-        }),
-      );
-
-      // ログを出力
-      logger.info(
-        `スケジュールを登録しました: ID=${event.id}, PanelDate=${panelDate.toLocaleString()}, RemindDate=${remindDate.toLocaleString()}`,
-      );
-      schedules[scheduledEvent.id] = jobs;
+    // すべてのスケジュールはキャンセル
+    for (const [_eventId, jobs] of Object.entries(schedules)) {
+      jobs.forEach((job) => job?.cancel());
     }
+    schedules = {};
+
+    // Discordに登録されているスケジュールを登録
+    for (const [scheduledEvent, event] of eventList) {
+      if (
+        // !schedules[scheduledEvent.id] &&
+        event?.hostId &&
+        scheduledEvent.scheduledStartAt
+      ) {
+        const jobs: Job[] = [];
+
+        // パネルを出す時間 = イベント開始時間 - 3時間
+        const panelDate = new Date(scheduledEvent.scheduledStartAt);
+        panelDate.setHours(panelDate.getHours() - 3);
+        jobs.push(
+          scheduleJob(panelDate, async () => {
+            try {
+              // ログを出力
+              loggerSchedule.info(
+                `操作パネルを表示します: ID=${event.id}, PanelDate=${panelDate.toLocaleString()}, Name=${scheduledEvent.name}`,
+              );
+
+              // パネルを出すチャンネルを取得
+              const channel = await guild.channels.fetch(
+                config.event_panel_channel_id,
+              );
+              if (!channel?.isTextBased()) {
+                loggerSchedule.warn('パネルを出すチャンネルが見つかりません');
+                return;
+              }
+
+              // パネルを出す
+              await channel.send(
+                eventAdminPanelCommand.createPanel(scheduledEvent, event),
+              );
+            } catch (error) {
+              loggerSchedule.error('操作パネルの表示に失敗しました:', error);
+            }
+          }),
+        );
+
+        // リマインドを出す時間 = イベント開始時間 - 1時間
+        const remindDate = new Date(scheduledEvent.scheduledStartAt);
+        remindDate.setHours(remindDate.getHours() - 1);
+        jobs.push(
+          scheduleJob(remindDate, async () => {
+            try {
+              // ログを出力
+              loggerSchedule.info(
+                `リマインドを表示します: ID=${event.id}, RemindDate=${remindDate.toLocaleString()}, Name=${scheduledEvent.name}`,
+              );
+
+              // リマインドを出すチャンネルを取得
+              const channel = await guild.channels.fetch(
+                config.event_contact_channel_id,
+              );
+              if (!channel?.isTextBased()) {
+                loggerSchedule.warn(
+                  'リマインドを出すチャンネルが見つかりません',
+                );
+                return;
+              }
+
+              // リマインドを出す
+              await channel.send(
+                `<@${event.hostId}> 今日の <t:${(scheduledEvent.scheduledStartTimestamp ?? 0) / 1000}:R> にイベント「${scheduledEvent.name}」があるんだけど、主催できそう？\nやり方は https://discord.com/channels/${config.guild_id}/${config.event_panel_channel_id} の上の方に書いてある～`,
+              );
+            } catch (error) {
+              loggerSchedule.error('リマインドの送信に失敗しました:', error);
+            }
+          }),
+        );
+
+        // ログを出力
+        loggerSchedule.info(
+          `スケジュールを登録しました: ID=${event.id}, PanelDate=${panelDate.toLocaleString()}, RemindDate=${remindDate.toLocaleString()}, Name=${scheduledEvent.name}`,
+        );
+        schedules[scheduledEvent.id] = jobs;
+      }
+    }
+
+    // ログを出力
+    loggerSchedule.info('↑スケジュールを更新しました');
+  } catch (error) {
+    loggerSchedule.error('スケジュールの更新に失敗しました:', error);
   }
 }
