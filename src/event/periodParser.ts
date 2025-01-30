@@ -157,12 +157,19 @@ export function parseDate(dateText: string): Date {
     // スラッシュを含む場合は日付指定
     const dateSplit = part.split('/');
     if (dateSplit.length === 2) {
-      result.setMonth(Number(dateSplit[0]) - 1);
-      result.setDate(Number(dateSplit[1]));
+      // setMonthしてからsetDateすると下記バグを踏むため、setFullYearを使用して一気に設定する
+      // 1/30日に2/7日を登録すると、1/30→[月設定]→2/30→2月は28日まで→3/2→[日設定]→3/7になる
+      result.setFullYear(
+        result.getFullYear(),
+        Number(dateSplit[0]) - 1,
+        Number(dateSplit[1]),
+      );
     } else if (dateSplit.length === 3) {
-      result.setFullYear(Number(dateSplit[0]));
-      result.setMonth(Number(dateSplit[1]) - 1);
-      result.setDate(Number(dateSplit[2]));
+      result.setFullYear(
+        Number(dateSplit[0]),
+        Number(dateSplit[1]) - 1,
+        Number(dateSplit[2]),
+      );
     }
 
     // コロンを含む場合は時間指定
