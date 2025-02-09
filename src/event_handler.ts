@@ -14,7 +14,6 @@ import { Job, scheduleJob } from 'node-schedule';
 import log4js from 'log4js';
 import eventOpPanelCommand from './commands/event_op_command/EventOpPanelCommand.js';
 import groupBy from 'lodash/groupBy.js';
-import { getEventMessage } from './event/showEvent.js';
 
 const prisma = new PrismaClient();
 
@@ -550,12 +549,6 @@ export async function updateSchedules(): Promise<void> {
               date,
           );
 
-          // イベント表示を生成
-          const messages = await Promise.all(
-            events.map(async ([_scheduledEvent, event]) =>
-              getEventMessage(event, undefined, undefined, false),
-            ),
-          );
           // アナウンスチャンネルでイベントを表示
           const mmdd = remindDate.toLocaleDateString('ja-JP', {
             month: '2-digit',
@@ -571,7 +564,6 @@ ${events.map(([scheduledEvent, _event]) => `- [${scheduledEvent.name}](${schedul
           // メッセージを送信
           await channel.send({
             content: messageText,
-            embeds: messages.flatMap((message) => message.embeds ?? []),
           });
         }),
       );
