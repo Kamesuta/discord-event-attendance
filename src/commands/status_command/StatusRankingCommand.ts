@@ -300,16 +300,30 @@ class StatusRankingCommand extends SubcommandInteraction {
       return Math.max(max, event.stats.length);
     }, 0);
 
+    // 中央値を求める関数
+    const median = (arr: number[]): number => {
+      if (arr.length === 0) return 0;
+      const sorted = [...arr].sort((a, b) => a - b);
+      const mid = Math.floor(sorted.length / 2);
+      return sorted.length % 2 !== 0
+        ? sorted[mid]
+        : (sorted[mid - 1] + sorted[mid]) / 2;
+    };
+
     // 主催者ごとに、平均のイベント参加率を計算
     const hostJoin = Object.entries(rankingByHost).map(([hostId, events]) => {
-      const joinTotalCount = events.reduce((sum, event) => {
-        return sum + event.stats.length;
-      }, 0);
-      const eventCount = events.length;
-      const average = joinTotalCount / eventCount;
-      // 分布
       const joinCountArray = events.map((event) => event.stats.length);
-      return { hostId, average, eventCount, joinCountArray };
+      const average =
+        joinCountArray.reduce((sum, count) => sum + count, 0) /
+        joinCountArray.length;
+      const med = median(joinCountArray);
+      return {
+        hostId,
+        average,
+        median: med,
+        eventCount: events.length,
+        joinCountArray,
+      };
     });
 
     // バーの長さ
@@ -322,20 +336,22 @@ class StatusRankingCommand extends SubcommandInteraction {
 
     return hostJoin
       .sort((a, b) => valuation(b) - valuation(a))
-      .map(({ hostId, average, eventCount, joinCountArray }) => {
+      .map(({ hostId, average, median, eventCount, joinCountArray }) => {
         // 0～maxJoinCount の範囲をbarLength個の範囲に分割し、配列に格納
-        const splitVolume = Array.from({ length: barLength }, (_, i) => {
-          return joinCountArray.filter((count) => {
-            return Math.floor((count / maxJoinCount) * barLength) === i;
-          }).length;
-        });
+        const splitVolume = Array.from(
+          { length: barLength },
+          (_, i) =>
+            joinCountArray.filter(
+              (count) => Math.floor((count / maxJoinCount) * barLength) === i,
+            ).length,
+        );
 
         // 分布図を作成 (イベント回数の割合を ▁▂▃▄▅▆▇█ を使って分布図にする)
         const volumeType = ['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
         const volume = splitVolume
-          .map((count) => volumeType[Math.min(count, barLength)])
+          .map((count) => volumeType[Math.min(count, volumeType.length - 1)])
           .join('');
-        return `<@${hostId}>: 平均${average.toFixed(2)}人 ${eventCount}回開催\n${volume}`;
+        return `${eventCount}回開催, 中央値${median}人, 平均${average.toFixed(2)}人 <@${hostId}>\n${volume}`;
       });
   }
 }
