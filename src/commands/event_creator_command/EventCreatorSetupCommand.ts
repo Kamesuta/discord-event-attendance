@@ -50,6 +50,9 @@ class EventCreatorSetupCommand extends SubcommandInteraction {
   async onCommand(interaction: ChatInputCommandInteraction): Promise<void> {
     await interaction.deferReply({ ephemeral: true });
 
+    // イベントを取得
+    await interaction.guild?.scheduledEvents.fetch();
+
     // パネルを作成
     const reply = await this.createSetupPanel(interaction);
     if (!reply) return;
@@ -76,7 +79,7 @@ class EventCreatorSetupCommand extends SubcommandInteraction {
   async createSetupPanel(
     interaction: RepliableInteraction,
   ): Promise<InteractionEditReplyOptions | undefined> {
-    const scheduledEvents = await interaction.guild?.scheduledEvents.fetch();
+    const scheduledEvents = interaction.guild?.scheduledEvents.cache;
     if (!scheduledEvents || scheduledEvents.size === 0) {
       await interaction.editReply({
         content: 'イベントが見つかりませんでした',
