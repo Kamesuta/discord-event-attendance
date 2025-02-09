@@ -64,7 +64,11 @@ class StatusUserCommand extends SubcommandInteraction {
         hostId: userId,
       },
       include: {
-        stats: true,
+        stats: {
+          where: {
+            show: true,
+          },
+        },
         games: true,
       },
       orderBy: {
@@ -84,7 +88,11 @@ class StatusUserCommand extends SubcommandInteraction {
         },
       },
       include: {
-        stats: true,
+        stats: {
+          where: {
+            show: true,
+          },
+        },
         games: true,
       },
       orderBy: {
