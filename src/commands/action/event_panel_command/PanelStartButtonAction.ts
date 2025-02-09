@@ -4,12 +4,14 @@ import {
   ButtonStyle,
   ComponentType,
   GuildScheduledEventStatus,
+  Routes,
 } from 'discord.js';
 import eventManager from '../../../event/EventManager.js';
 import { MessageComponentActionInteraction } from '../../base/action_base.js';
 import { logger } from '../../../utils/log.js';
 import { checkCommandPermission } from '../../../event/checkCommandPermission.js';
 import eventOpAnnounceCommand from '../../event_op_command/EventOpAnnounceCommand.js';
+import { client } from '../../../index.js';
 
 class PanelStartButtonAction extends MessageComponentActionInteraction<ComponentType.Button> {
   /**
@@ -94,6 +96,13 @@ class PanelStartButtonAction extends MessageComponentActionInteraction<Component
 
     // イベントをアナウンス
     await eventOpAnnounceCommand.showAnnounceMessage(interaction, event);
+
+    // チャンネルのステータスを削除
+    await client.rest.put(`${Routes.channel(event.channelId)}/voice-status`, {
+      body: {
+        status: '',
+      },
+    });
 
     // ログに残す
     logger.info(
