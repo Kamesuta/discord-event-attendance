@@ -13,6 +13,8 @@ import { client } from './index.js';
 import { Job, scheduleJob } from 'node-schedule';
 import log4js from 'log4js';
 import eventOpPanelCommand from './commands/event_op_command/EventOpPanelCommand.js';
+import groupBy from 'lodash/groupBy.js';
+import { getEventMessage } from './event/showEvent.js';
 
 const prisma = new PrismaClient();
 
@@ -501,6 +503,84 @@ export async function updateSchedules(): Promise<void> {
         );
         schedules[scheduledEvent.id] = jobs;
       }
+    }
+
+    // 未登録イベント以外を取得
+    const registeredEventList = eventList.filter(
+      ([_scheduledEvent, event]) => event,
+    ) as [GuildScheduledEvent, Event][]; // 未登録イベントは除外
+    // 日付ずつに分ける
+    const groupByDate = groupBy(registeredEventList, ([scheduledEvent]) =>
+      scheduledEvent.scheduledStartAt?.toLocaleDateString('ja-JP'),
+    );
+    // 日付ごとにスケジュールを登録
+    for (const [date] of Object.entries(groupByDate)) {
+      const jobs: Job[] = [];
+      // その日の9時
+      const remindDate = new Date(date);
+      remindDate.setHours(9, 0, 0, 0);
+      // アナウンスチャンネルに1日分のイベントを表示
+      jobs.push(
+        scheduleJob(remindDate, async () => {
+          // アナウンスチャンネルを取得
+          const channel = await guild.channels.fetch(
+            config.announcement_channel_id,
+          );
+          if (!channel?.isTextBased()) {
+            loggerSchedule.warn('アナウンスチャンネルが見つかりません');
+            return;
+          }
+
+          // 前回のアナウンスメッセージを削除
+          const prevMessages = await channel.messages.fetch({ limit: 5 }); // 直近5件取得
+          const targetMessages = prevMessages.filter((msg) =>
+            msg.content.startsWith('# 📆 本日'),
+          );
+          for (const [_id, message] of targetMessages) {
+            await message.delete();
+            logger.info(
+              `前回の本日のイベント予定メッセージを削除しました: ${message.id}`,
+            );
+          }
+
+          // その日のイベントを取得
+          const events = registeredEventList.filter(
+            ([scheduledEvent]) =>
+              scheduledEvent.scheduledStartAt?.toLocaleDateString('ja-JP') ===
+              date,
+          );
+
+          // イベント表示を生成
+          const messages = await Promise.all(
+            events.map(async ([_scheduledEvent, event]) =>
+              getEventMessage(event, undefined, undefined, false),
+            ),
+          );
+          // アナウンスチャンネルでイベントを表示
+          const mmdd = remindDate.toLocaleDateString('ja-JP', {
+            month: '2-digit',
+            day: '2-digit',
+            weekday: 'short',
+          });
+          // メッセージを生成
+          const messageText = `# 📆 本日 ${mmdd} のイベント予定！
+${events.map(([scheduledEvent, _event]) => `- [${scheduledEvent.name}](${scheduledEvent.url})`).join('\n')}
+かめぱわぁ～るどでは毎日夜9時にボイスチャンネルにてイベントを開催しています！ 🏁
+新規の方も大歓迎です！だれでも参加できるので、ぜひ遊びに来てください！ ✨
+`;
+          // メッセージを送信
+          await channel.send({
+            content: messageText,
+            embeds: messages.flatMap((message) => message.embeds ?? []),
+          });
+        }),
+      );
+
+      // ログを出力
+      loggerSchedule.info(
+        `本日のイベント予定スケジュールを登録しました: RemindDate=${remindDate.toLocaleString()}`,
+      );
+      schedules[date] = jobs;
     }
 
     // ログを出力
