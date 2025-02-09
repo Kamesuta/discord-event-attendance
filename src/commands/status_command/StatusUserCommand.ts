@@ -153,6 +153,12 @@ class StatusUserCommand extends SubcommandInteraction {
       .addFields({
         name: '参加イベント数',
         value: `${events.length} / ${eventCount} 回`,
+        inline: true,
+      })
+      .addFields({
+        name: '主催イベント数',
+        value: `${hostEvents.length} 回`,
+        inline: true,
       })
       .addFields({
         name: '参加率ランキング (直近30日間)',
