@@ -110,7 +110,9 @@ class StatusUserCommand extends SubcommandInteraction {
     });
 
     // ユーザーを取得
-    const user = await interaction.guild?.members.fetch(userId);
+    const user = await interaction.guild?.members
+      .fetch(userId)
+      .catch(() => null);
 
     // 参加率ランキング順位 (直近30日間)
     const ranking = await prisma.userStat.groupBy({
