@@ -1,5 +1,7 @@
 import { Event, PrismaClient } from '@prisma/client';
 import {
+  ActionRowBuilder,
+  ButtonBuilder,
   GuildScheduledEvent,
   GuildScheduledEventStatus,
   PartialGuildScheduledEvent,
@@ -14,6 +16,7 @@ import { Job, scheduleJob } from 'node-schedule';
 import log4js from 'log4js';
 import eventOpPanelCommand from './commands/event_op_command/EventOpPanelCommand.js';
 import groupBy from 'lodash/groupBy.js';
+import addRoleButtonAction from './commands/action/AddRoleButtonAction.js';
 
 const prisma = new PrismaClient();
 
@@ -556,14 +559,38 @@ export async function updateSchedules(): Promise<void> {
             weekday: 'short',
           });
           // メッセージを生成
+          const eventListText = events
+            .map(
+              ([scheduledEvent, _event]) =>
+                `- ${scheduledEvent.scheduledStartAt?.toLocaleTimeString(
+                  'ja-JP',
+                  {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  },
+                )} [${scheduledEvent.name}](${scheduledEvent.url})`,
+            )
+            .join('\n');
           const messageText = `# 📆 本日 ${mmdd} のイベント予定！
-${events.map(([scheduledEvent, _event]) => `- [${scheduledEvent.name}](${scheduledEvent.url})`).join('\n')}
+${eventListText}
 かめぱわぁ～るどでは毎日夜9時にボイスチャンネルにてイベントを開催しています！ 🏁
 新規の方も大歓迎です！だれでも参加できるので、ぜひ遊びに来てください！ ✨
 `;
+
           // メッセージを送信
-          await channel.send({
+          const sentMessage = await channel.send({
             content: messageText,
+            components: [
+              new ActionRowBuilder<ButtonBuilder>().addComponents(
+                addRoleButtonAction.create(),
+              ),
+            ],
+          });
+
+          // メッセージを公開
+          await sentMessage?.crosspost().catch((e) => {
+            // エラーが発生した場合はログを出力して続行
+            logger.error('メッセージの公開に失敗しました。', e);
           });
         }),
       );

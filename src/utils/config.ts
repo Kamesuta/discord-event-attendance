@@ -28,6 +28,9 @@ export interface Config {
   /** お知らせ招待リンクメッセージ */
   announcement_invite_link_message: string;
 
+  /** お知らせロールID */
+  announcement_role_id: string;
+
   /** イベント参加済ロールのID */
   event_join_role_id: string;
 
@@ -86,6 +89,12 @@ assert(
   config.announcement_invite_link_message &&
     typeof config.announcement_invite_link_message === 'string',
   'announcement_invite_link_message is required and must be a string.',
+);
+
+assert(
+  config.announcement_role_id &&
+    typeof config.announcement_role_id === 'string',
+  'announcement_role_id is required and must be a string.',
 );
 
 assert(

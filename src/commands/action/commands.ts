@@ -5,10 +5,12 @@ import eventReviewCommands from './event_review_command/commands.js';
 import statusGameMenuAction from './StatusGameMenuAction.js';
 import eventPanelCommands from './event_panel_command/commands.js';
 import eventSetupCommands from './event_setup_command/commands.js';
+import addRoleButtonAction from './AddRoleButtonAction.js';
 
 const commands: InteractionBase[] = [
   setMemoAction,
   statusGameMenuAction,
+  addRoleButtonAction,
   ...eventGameCommands,
   ...eventReviewCommands,
   ...eventPanelCommands,
