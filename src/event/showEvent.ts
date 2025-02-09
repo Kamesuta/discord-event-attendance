@@ -1,5 +1,6 @@
 import {
   ActionRowBuilder,
+  BaseMessageOptions,
   ChannelType,
   EmbedBuilder,
   GuildMember,
@@ -20,36 +21,19 @@ import statusGameMenuAction from '../commands/action/StatusGameMenuAction.js';
 import { logger } from '../utils/log.js';
 
 /**
- * イベント情報を表示します
- * @param interaction インタラクション
+ * イベント情報のメッセージを生成します
  * @param event イベント
- * @param webhookChannel Webhookのチャンネル
- * @param message Webhookで送信するメッセージ
+ * @param message メッセージ
  * @param eventLinkMessage イベントリンクに表示するメッセージ
- * @param editMessage 編集するメッセージ
- * @returns 送信したメッセージ
+ * @param hasResult 参加者/戦績を表示するか
+ * @returns 送信内容
  */
-export default async function showEvent(
-  interaction: RepliableInteraction,
+export async function getEventMessage(
   event: Event,
-  webhookChannel?: TextBasedChannel,
   message?: string,
   eventLinkMessage?: string,
-  editMessage?: Message,
-): Promise<Message | undefined> {
-  // 集計
-  if (event.active === (GuildScheduledEventStatus.Active as number)) {
-    await updateAttendanceTime(event, new Date());
-  }
-
-  // Webhookを取得
-  const webhook = !webhookChannel
-    ? undefined
-    : await getWebhook(interaction, webhookChannel);
-  if (webhookChannel && !webhook) {
-    return;
-  }
-
+  hasResult = true,
+): Promise<BaseMessageOptions> {
   // イベントの出欠状況を表示
   const stats = await prisma.userStat.findMany({
     where: {
@@ -91,37 +75,6 @@ export default async function showEvent(
         )}分)`
       : '';
 
-  // ユーザーごとのXP合計を取得
-  const userXp = (
-    await Promise.all(
-      stats.map(async (stat) => {
-        const xp = await prisma.userGameResult.aggregate({
-          where: {
-            eventId: event.id,
-            userId: stat.userId,
-          },
-          // eslint-disable-next-line @typescript-eslint/naming-convention
-          _sum: {
-            xp: true,
-          },
-        });
-        return [stat.userId, xp._sum.xp ?? 0] as const;
-      }),
-    )
-  )
-    .filter(([, xp]) => xp > 0)
-    .sort(([, a], [, b]) => b - a);
-
-  // 試合結果
-  const gameResults = await prisma.gameResult.findMany({
-    where: {
-      eventId: event.id,
-    },
-    include: {
-      users: true,
-    },
-  });
-
   const dateToMention = (date: Date | null): string | null =>
     date ? `<t:${Math.floor(date.getTime() / 1000)}:F>` : null;
 
@@ -143,13 +96,6 @@ export default async function showEvent(
     .setDescription(event.description ? event.description : '説明なし')
     .setImage(event.coverImage)
     .setColor('#ff8c00')
-    .setFooter({
-      text: `「/status user <名前>」でユーザーの過去イベントの参加状況を確認できます${
-        gameResults.length === 0
-          ? ''
-          : '\n下記プルダウンから各試合結果を確認できます'
-      }\nイベントID: ${event.id}`,
-    })
     .addFields({
       name: '開催日時',
       value: schedule,
@@ -158,7 +104,8 @@ export default async function showEvent(
   // 主催者を表示
   let hostMember: GuildMember | undefined = undefined;
   if (event.hostId) {
-    hostMember = await interaction.guild?.members.fetch(event.hostId);
+    const guild = await client.guilds.fetch(config.guild_id);
+    hostMember = await guild?.members.fetch(event.hostId);
     if (hostMember) {
       embeds.setAuthor({
         name: `主催者: ${hostMember.displayName}`,
@@ -175,61 +122,156 @@ export default async function showEvent(
     });
   }
 
-  if (event.endTime) {
-    // ゲームに参加したユーザーを表示
-    const gameUsers = userXp.map(([userId, xp], i) => {
-      const count = userCount[userId];
-      const memo = stats.find((stat) => stat.userId === userId)?.memo ?? '';
-      const countText = count === 1 ? '(🆕 初参加！)' : ` (${count}回目)`;
-      return `${i + 1}位: <@${userId}> (${xp}XP)${countText}${memo}`;
+  const footer: string[] = [];
+  const components: ActionRowBuilder<StringSelectMenuBuilder>[] = [];
+  if (hasResult) {
+    // ユーザーごとのXP合計を取得
+    const userXp = (
+      await Promise.all(
+        stats.map(async (stat) => {
+          const xp = await prisma.userGameResult.aggregate({
+            where: {
+              eventId: event.id,
+              userId: stat.userId,
+            },
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            _sum: {
+              xp: true,
+            },
+          });
+          return [stat.userId, xp._sum.xp ?? 0] as const;
+        }),
+      )
+    )
+      .filter(([, xp]) => xp > 0)
+      .sort(([, a], [, b]) => b - a);
+
+    // 試合結果
+    const gameResults = await prisma.gameResult.findMany({
+      where: {
+        eventId: event.id,
+      },
+      include: {
+        users: true,
+      },
     });
-    // ゲームに参加していないユーザーを表示
-    const nonGameUsers = stats
-      .filter((stat) => !userXp.some(([userId]) => userId === stat.userId))
-      .map((stat) => {
-        const count = userCount[stat.userId];
-        const memo = stat.memo ? ` ${stat.memo}` : '';
+
+    if (event.endTime) {
+      // ゲームに参加したユーザーを表示
+      const gameUsers = userXp.map(([userId, xp], i) => {
+        const count = userCount[userId];
+        const memo = stats.find((stat) => stat.userId === userId)?.memo ?? '';
         const countText = count === 1 ? '(🆕 初参加！)' : ` (${count}回目)`;
-        return `<@${stat.userId}> ${countText}${memo}`;
+        return `${i + 1}位: <@${userId}> (${xp}XP)${countText}${memo}`;
+      });
+      // ゲームに参加していないユーザーを表示
+      const nonGameUsers = stats
+        .filter((stat) => !userXp.some(([userId]) => userId === stat.userId))
+        .map((stat) => {
+          const count = userCount[stat.userId];
+          const memo = stat.memo ? ` ${stat.memo}` : '';
+          const countText = count === 1 ? '(🆕 初参加！)' : ` (${count}回目)`;
+          return `<@${stat.userId}> ${countText}${memo}`;
+        });
+
+      splitStrings([...gameUsers, ...nonGameUsers], 1024).forEach((line, i) => {
+        embeds.addFields({
+          name:
+            i === 0
+              ? `参加者 (${stats.length}人, 計${gameResults.length}試合)`
+              : '\u200b',
+          value: line,
+        });
       });
 
-    splitStrings([...gameUsers, ...nonGameUsers], 1024).forEach((line, i) => {
+      // ツールチップを追加
+      footer.push(
+        '「/status user <名前>」でユーザーの過去イベントの参加状況を確認できます',
+      );
+    } else {
+      // イベントが終了していない場合は、イベント終了後に参加者が表示される旨を記載
       embeds.addFields({
-        name:
-          i === 0
-            ? `参加者 (${stats.length}人, 計${gameResults.length}試合)`
-            : '\u200b',
-        value: line,
+        name: '参加者/戦績',
+        value: `イベント終了後、ここに参加者が表示されます\n参加したい人は[「興味あり」](https://discord.com/events/${config.guild_id}/${event.eventId})を押すと特殊な通知を受け取れます！`,
       });
-    });
-  } else {
-    // イベントが終了していない場合は、イベント終了後に参加者が表示される旨を記載
-    embeds.addFields({
-      name: '参加者/戦績',
-      value: `イベント終了後、ここに参加者が表示されます\n参加したい人は[「興味あり」](https://discord.com/events/${config.guild_id}/${event.eventId})を押すと特殊な通知を受け取れます！`,
-    });
 
-    // メッセージにもリンクを乗せる
-    if (message && eventLinkMessage) {
-      message += `\n\n[${eventLinkMessage}](https://discord.com/events/${config.guild_id}/${event.eventId})`;
+      // メッセージにもリンクを乗せる
+      if (message && eventLinkMessage) {
+        message += `\n\n[${eventLinkMessage}](https://discord.com/events/${config.guild_id}/${event.eventId})`;
+      }
+    }
+
+    // 試合結果のプルダウンを追加
+    if (gameResults.length > 0) {
+      components.push(
+        new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+          statusGameMenuAction.create(event, gameResults),
+        ),
+      );
+
+      // ツールチップを追加
+      footer.push('下記プルダウンから各試合結果を確認できます');
     }
   }
 
-  // 試合結果のプルダウンを追加
-  const components =
-    new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
-      statusGameMenuAction.create(event, gameResults),
-    );
+  // ツールチップを追加
+  footer.push(`イベントID: ${event.id}`);
+
+  // フッター
+  embeds.setFooter({
+    text: footer.join('\n'),
+  });
 
   // 送信内容
-  const contents = {
+  return {
     content: message,
     embeds: [embeds],
-    components: gameResults.length === 0 ? [] : [components],
+    components,
   };
+}
+
+/**
+ * イベント情報を表示します
+ * @param interaction インタラクション
+ * @param event イベント
+ * @param webhookChannel Webhookのチャンネル
+ * @param message Webhookで送信するメッセージ
+ * @param eventLinkMessage イベントリンクに表示するメッセージ
+ * @param editMessage 編集するメッセージ
+ * @returns 送信したメッセージ
+ */
+export default async function showEvent(
+  interaction: RepliableInteraction,
+  event: Event,
+  webhookChannel?: TextBasedChannel,
+  message?: string,
+  eventLinkMessage?: string,
+  editMessage?: Message,
+): Promise<Message | undefined> {
+  // 集計
+  if (event.active === (GuildScheduledEventStatus.Active as number)) {
+    await updateAttendanceTime(event, new Date());
+  }
+
+  // Webhookを取得
+  const webhook = !webhookChannel
+    ? undefined
+    : await getWebhook(interaction, webhookChannel);
+  if (webhookChannel && !webhook) {
+    return;
+  }
+
+  // 送信内容
+  const contents = await getEventMessage(event, message, eventLinkMessage);
 
   let sentMessage: Message | undefined;
   if (webhook) {
+    // 主催者を取得
+    const guild = await client.guilds.fetch(config.guild_id);
+    const hostMember = event.hostId
+      ? await guild?.members.fetch(event.hostId)
+      : undefined;
+
     // Webhookで送信 (コマンド送信者の名前とアイコンを表示)
     const interactionMember =
       hostMember ?? // 主催者がいる場合は主催者の情報を優先
