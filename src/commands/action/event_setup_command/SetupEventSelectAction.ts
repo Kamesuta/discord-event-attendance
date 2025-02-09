@@ -29,11 +29,17 @@ class SetupEventSelectAction extends MessageComponentActionInteraction<Component
       .setMinValues(1)
       .setMaxValues(1)
       .addOptions(
-        events.map(({ scheduledEvent, event }) => ({
-          label: `${event?.name ?? scheduledEvent.name} (ID: ${event?.id ?? '未生成'})`,
-          value: scheduledEvent.id,
-          default: scheduledEvent.id === selectedEvent?.scheduledEvent.id,
-        })),
+        events.map(({ scheduledEvent, event }) => {
+          const date = scheduledEvent.scheduledStartAt?.toLocaleDateString(
+            'ja-JP',
+            { month: '2-digit', day: '2-digit', weekday: 'short' },
+          );
+          return {
+            label: `${date} ${event?.name ?? scheduledEvent.name} (ID: ${event?.id ?? '未生成'})`,
+            value: scheduledEvent.id,
+            default: scheduledEvent.id === selectedEvent?.scheduledEvent.id,
+          };
+        }),
       );
 
     return eventSelect;
