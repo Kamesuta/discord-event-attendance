@@ -526,7 +526,7 @@ export async function updateSchedules(): Promise<void> {
         scheduleJob(remindDate, async () => {
           // アナウンスチャンネルを取得
           const channel = await guild.channels.fetch(
-            config.announcement_channel_id,
+            config.schedule_channel_id,
           );
           if (!channel?.isTextBased()) {
             loggerSchedule.warn('アナウンスチャンネルが見つかりません');

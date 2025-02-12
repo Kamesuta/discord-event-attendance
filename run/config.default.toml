@@ -16,6 +16,9 @@ announcement_invite_link_message = "{vc} へいらっしゃい～"
 # アナウンスロールID
 announcement_role_id = "0000000000000000000"
 
+# イベント予定チャンネルID
+schedule_channel_id = "0000000000000000000"
+
 # イベント参加済ロールのID
 event_join_role_id = "0000000000000000000"
 

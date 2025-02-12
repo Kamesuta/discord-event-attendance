@@ -28,6 +28,9 @@ export interface Config {
   /** お知らせ招待リンクメッセージ */
   announcement_invite_link_message: string;
 
+  /** イベント予定チャンネルID */
+  schedule_channel_id: string;
+
   /** お知らせロールID */
   announcement_role_id: string;
 
@@ -95,6 +98,11 @@ assert(
   config.announcement_role_id &&
     typeof config.announcement_role_id === 'string',
   'announcement_role_id is required and must be a string.',
+);
+
+assert(
+  config.schedule_channel_id && typeof config.schedule_channel_id === 'string',
+  'schedule_channel_id is required and must be a string.',
 );
 
 assert(
