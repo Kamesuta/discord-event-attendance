@@ -1,6 +1,7 @@
 import {
   ActionRowBuilder,
   ChatInputCommandInteraction,
+  Collection,
   EmbedBuilder,
   GuildScheduledEvent,
   GuildScheduledEventStatus,
@@ -42,6 +43,9 @@ interface EditData {
 
 class EventCreatorSetupCommand extends SubcommandInteraction {
   setupPanels: Record<string, EditData> = {};
+  scheduledEvents:
+    | Collection<string, GuildScheduledEvent<GuildScheduledEventStatus>>
+    | undefined;
 
   command = new SlashCommandSubcommandBuilder()
     .setName('setup')
@@ -50,8 +54,8 @@ class EventCreatorSetupCommand extends SubcommandInteraction {
   async onCommand(interaction: ChatInputCommandInteraction): Promise<void> {
     await interaction.deferReply({ ephemeral: true });
 
-    // イベントを取得
-    await interaction.guild?.scheduledEvents.fetch();
+    // イベントを取得してキャッシュしておく。プルダウンメニューを選んだときなどは取得する代わりにキャッシュを使う
+    this.scheduledEvents = await interaction.guild?.scheduledEvents.fetch();
 
     // パネルを作成
     const reply = await this.createSetupPanel(interaction);
@@ -79,7 +83,7 @@ class EventCreatorSetupCommand extends SubcommandInteraction {
   async createSetupPanel(
     interaction: RepliableInteraction,
   ): Promise<InteractionEditReplyOptions | undefined> {
-    const scheduledEvents = interaction.guild?.scheduledEvents.cache;
+    const scheduledEvents = this.scheduledEvents;
     if (!scheduledEvents || scheduledEvents.size === 0) {
       await interaction.editReply({
         content: 'イベントが見つかりませんでした',
