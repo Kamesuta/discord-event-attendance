@@ -26,7 +26,9 @@ export async function checkCommandPermission(
   }
 
   // 権限を取得
-  const permissions = await command.permissions.fetch({}).catch(() => null);
+  const permissions = await command.permissions
+    .fetch({})
+    .catch(() => undefined);
   if (!permissions) return false;
 
   // コマンドの権限から許可がある権限設定を探す

@@ -105,7 +105,9 @@ export async function getEventMessage(
   let hostMember: GuildMember | undefined = undefined;
   if (event.hostId) {
     const guild = await client.guilds.fetch(config.guild_id);
-    hostMember = await guild?.members.fetch(event.hostId);
+    hostMember = await guild?.members
+      .fetch(event.hostId)
+      .catch(() => undefined);
     if (hostMember) {
       embeds.setAuthor({
         name: `主催者: ${hostMember.displayName}`,
@@ -269,13 +271,15 @@ export default async function showEvent(
     // 主催者を取得
     const guild = await client.guilds.fetch(config.guild_id);
     const hostMember = event.hostId
-      ? await guild?.members.fetch(event.hostId)
+      ? await guild?.members.fetch(event.hostId).catch(() => undefined)
       : undefined;
 
     // Webhookで送信 (コマンド送信者の名前とアイコンを表示)
     const interactionMember =
       hostMember ?? // 主催者がいる場合は主催者の情報を優先
-      (await interaction.guild?.members.fetch(interaction.user.id));
+      (await interaction.guild?.members
+        .fetch(interaction.user.id)
+        .catch(() => undefined));
     const memberDisplayName =
       interactionMember?.displayName ?? interaction.user.username;
     const memberAvatar =

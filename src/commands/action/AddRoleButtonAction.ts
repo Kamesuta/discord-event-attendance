@@ -32,7 +32,9 @@ class AddRoleButtonAction extends MessageComponentActionInteraction<ComponentTyp
     await interaction.deferReply({ ephemeral: true });
 
     // メンバーを取得
-    const member = await interaction.guild?.members.fetch(interaction.user.id);
+    const member = await interaction.guild?.members
+      .fetch(interaction.user.id)
+      .catch(() => undefined);
     if (!member) {
       await interaction.editReply({
         content: 'メンバー情報が取得できませんでした',

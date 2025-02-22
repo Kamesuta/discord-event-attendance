@@ -46,10 +46,12 @@ class EventUserListCommand extends SubcommandInteraction {
     ).map((stat) => stat.userId);
 
     // メンバーの名前とIDを取得する
-    const memberList = await members.fetch({ user: attendance });
+    const memberList = await members
+      .fetch({ user: attendance })
+      .catch(() => undefined);
     const memberTextList = attendance
       .map((userId) => {
-        const memberName = memberList.get(userId)?.displayName ?? '取得失敗';
+        const memberName = memberList?.get(userId)?.displayName ?? '取得失敗';
         return memberName ? `${memberName},${userId}` : '';
       })
       .join('\n');

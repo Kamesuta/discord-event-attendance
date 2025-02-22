@@ -68,7 +68,9 @@ class PanelStopConfirmButtonAction extends MessageComponentActionInteraction<Com
     }
 
     // メンバー情報を取得
-    const member = await interaction.guild?.members.fetch(interaction.user.id);
+    const member = await interaction.guild?.members
+      .fetch(interaction.user.id)
+      .catch(() => undefined);
     if (!interaction.guild || !member) {
       await interaction.editReply({
         content: 'メンバー情報の取得に失敗しました',

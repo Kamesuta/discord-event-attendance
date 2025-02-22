@@ -64,7 +64,9 @@ class SetupUserSelectAction extends MessageComponentActionInteraction<ComponentT
 
     // ホストユーザーを取得
     const hostUserId = interaction.values[0];
-    const hostUser = await interaction.guild?.members.fetch(hostUserId);
+    const hostUser = await interaction.guild?.members
+      .fetch(hostUserId)
+      .catch(() => undefined);
     if (!hostUser) {
       await interaction.editReply({
         content: 'ユーザーが見つかりませんでした',
