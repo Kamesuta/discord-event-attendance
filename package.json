@@ -12,7 +12,8 @@
     "lint": "tsc --noEmit && eslint --cache --fix",
     "prettier": "prettier --write",
     "lint-staged": "lint-staged",
-    "prepare": "husky"
+    "prepare": "husky",
+    "heroku-postbuild": "prisma generate && prisma migrate deploy"
   },
   "author": "Kamesuta",
   "license": "MIT",
@@ -28,10 +29,8 @@
     "lint-staged": "^15.2.5",
     "npm-run-all": "^4.1.5",
     "prettier": "^3.3.0",
-    "prisma": "^5.14.0",
     "rimraf": "^5.0.7",
     "tsconfig-paths": "^4.2.0",
-    "tsx": "^4.11.2",
     "typescript": "^5.4.5",
     "typescript-eslint": "^8.0.0-alpha.13"
   },
@@ -43,6 +42,8 @@
     "lodash": "^4.17.21",
     "log4js": "^6.9.1",
     "node-schedule": "^2.1.1",
-    "toml": "^3.0.0"
+    "prisma": "^5.14.0",
+    "toml": "^3.0.0",
+    "tsx": "^4.11.2"
   }
 }
