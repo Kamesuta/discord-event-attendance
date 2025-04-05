@@ -12,11 +12,14 @@
     "lint": "tsc --noEmit && eslint --cache --fix",
     "prettier": "prettier --write",
     "lint-staged": "lint-staged",
-    "prepare": "husky",
+    "prepare": "test \"$NODE_ENV\" != \"production\" && husky install || echo 'Skipping husky in production'",
     "heroku-postbuild": "prisma generate && prisma migrate deploy"
   },
   "author": "Kamesuta",
   "license": "MIT",
+  "engines": {
+    "node": "22.x"
+  },
   "devDependencies": {
     "@eslint/js": "^9.24.0",
     "@types/lodash": "^4.17.16",
