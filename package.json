@@ -12,7 +12,7 @@
     "lint": "tsc --noEmit && eslint --cache --fix",
     "prettier": "prettier --write",
     "lint-staged": "lint-staged",
-    "prepare": "test \"$NODE_ENV\" != \"production\" && husky install || echo 'Skipping husky in production'",
+    "prepare": "npx if-env NODE_ENV=production && echo 'Skipping husky in production' || husky",
     "heroku-postbuild": "prisma generate && prisma migrate deploy"
   },
   "author": "Kamesuta",
@@ -42,6 +42,7 @@
     "csv-parse": "^5.6.0",
     "discord.js": "^14.18.0",
     "dotenv": "^16.4.7",
+    "if-env": "^1.0.4",
     "lodash": "^4.17.21",
     "log4js": "^6.9.1",
     "node-schedule": "^2.1.1",
