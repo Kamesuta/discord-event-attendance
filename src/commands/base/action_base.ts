@@ -1,6 +1,6 @@
 import {
   Interaction,
-  MappedComponentBuilderTypes,
+  MappedComponentTypes,
   MappedInteractionTypes,
   ModalBuilder,
   ModalSubmitInteraction,
@@ -99,9 +99,7 @@ export abstract class MessageComponentActionInteraction<
    * ビルダーの作成を行う
    * @returns 作成したビルダー
    */
-  abstract create(
-    ...args: unknown[]
-  ): MappedComponentBuilderTypes[MenuComponentType];
+  abstract create(...args: unknown[]): MappedComponentTypes[MenuComponentType];
 
   /** @inheritdoc */
   protected override createCustomId(data?: Record<string, string>): string {
