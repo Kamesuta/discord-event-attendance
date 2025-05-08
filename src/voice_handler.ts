@@ -1,4 +1,5 @@
 import {
+  GuildMember,
   GuildScheduledEventStatus,
   VoiceBasedChannel,
   VoiceState,
@@ -75,6 +76,71 @@ async function createVoiceLog(
 }
 
 /**
+ * ミュート状態を制御します
+ * @param channel ボイスチャンネル
+ * @param member メンバー
+ * @param join 参加したかどうか
+ */
+async function handleMuteState(
+  channel: VoiceBasedChannel,
+  member: GuildMember,
+  join: boolean,
+): Promise<void> {
+  try {
+    // 指定のサーバー以外無視
+    if (channel.guild.id !== config.guild_id) {
+      return;
+    }
+
+    // イベント開催中のボイスチャンネルを取得
+    const activeEvent = await prisma.event.findFirst({
+      where: {
+        channelId: channel.id,
+        active: GuildScheduledEventStatus.Active,
+      },
+      orderBy: {
+        startTime: 'desc',
+      },
+      take: 1,
+    });
+
+    if (!activeEvent) return;
+
+    // ユーザーのミュート状態を取得
+    const userStat = await prisma.userStat.findUnique({
+      where: {
+        id: {
+          eventId: activeEvent.id,
+          userId: member.id,
+        },
+      },
+    });
+
+    if (userStat?.muted) {
+      // イベントVCから他のVCに移動した場合
+      if (!join && channel.id === activeEvent.channelId) {
+        // ミュートを解除
+        await member.voice.setMute(false, 'イベントVCから退出したため');
+        logger.info(
+          `ユーザー(${member.id})のミュートを解除しました (イベントVCから退出)`,
+        );
+      }
+
+      // 他のVCからイベントVCに移動した場合
+      else if (join && channel.id === activeEvent.channelId) {
+        // ミュートを再適用
+        await member.voice.setMute(true, 'イベントVCに再参加したため');
+        logger.info(
+          `ユーザー(${member.id})を再度ミュートしました (イベントVCに再参加)`,
+        );
+      }
+    }
+  } catch (error) {
+    logger.error('ミュート状態の制御に失敗しました。', error);
+  }
+}
+
+/**
  * 入退室時のイベントハンドラー
  * @param oldState 前の状態
  * @param newState 新しい状態
@@ -87,18 +153,20 @@ export async function onVoiceStateUpdate(
     if (oldState.channel === newState.channel) return;
 
     if (newState.channel && !newState.member?.user.bot) {
-      // ユーザーがボイスチャンネルに参加たとき
-      const userId = newState.member?.id;
-      if (userId) {
-        await createVoiceLog(newState.channel, userId, true);
+      // ユーザーがボイスチャンネルに参加したとき
+      const member = newState.member;
+      if (member?.id) {
+        await createVoiceLog(newState.channel, member.id, true);
+        await handleMuteState(newState.channel, member, true);
       }
     }
 
     if (oldState.channel && !oldState.member?.user.bot) {
       // ユーザーがボイスチャンネルから退出したとき
-      const userId = oldState.member?.id;
-      if (userId) {
-        await createVoiceLog(oldState.channel, userId, false);
+      const member = oldState.member;
+      if (member?.id) {
+        await createVoiceLog(oldState.channel, member.id, false);
+        await handleMuteState(oldState.channel, member, false);
       }
     }
   } catch (error) {

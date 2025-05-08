@@ -5,6 +5,7 @@ import markHideUserMenu from './MarkHideUserMenu.js';
 import markClearUserMenu from './MarkClearUserMenu.js';
 import setMemoUserMenu from './SetMemoUserMenu.js';
 import updateEventMessageMenu from './UpdateEventMessageMenu.js';
+import muteUserMenu from './MuteUserMenu.js';
 
 const commands: InteractionBase[] = [
   statusUserMenu,
@@ -13,6 +14,7 @@ const commands: InteractionBase[] = [
   markClearUserMenu,
   setMemoUserMenu,
   updateEventMessageMenu,
+  muteUserMenu,
 ];
 
 export default commands;
