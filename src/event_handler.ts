@@ -123,6 +123,14 @@ export async function onStartScheduledEvent(
       `イベントを開始しました: ID=${event.id}, Name=${scheduledEvent.name}`,
     );
 
+    // 主催者にロールを付与
+    if (event.hostId) {
+      const guild = await client.guilds.fetch(config.guild_id);
+      const member = await guild.members.fetch(event.hostId);
+      await member.roles.add(config.host_role_id);
+      logger.info(`主催者(${event.hostId})にロールを付与しました`);
+    }
+
     // VCに既に参加しているユーザーに対してもログを記録する (Botは無視)
     const members = Array.from(scheduledEvent.channel.members.values()).filter(
       (member) => !member.user.bot,
@@ -238,6 +246,21 @@ export async function onEndEvent(
       endTime: new Date(),
     },
   });
+
+  // 全員から主催者ロールを削除
+  try {
+    const guild = await client.guilds.fetch(config.guild_id);
+    const role = await guild.roles.fetch(config.host_role_id);
+    if (role) {
+      const members = role.members;
+      for (const [_, member] of members) {
+        await member.roles.remove(config.host_role_id);
+        logger.info(`ユーザー(${member.id})から主催者ロールを削除しました`);
+      }
+    }
+  } catch (error) {
+    logger.error('主催者ロールの削除に失敗しました:', error);
+  }
 
   if (channel) {
     // VCに参加しているユーザーに対してもログを記録する (Botは無視)

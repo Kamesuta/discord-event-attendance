@@ -28,6 +28,9 @@ event_panel_channel_id = "0000000000000000000"
 # イベント連絡チャンネルID
 event_contact_channel_id = "0000000000000000000"
 
+# 本日の主催者ロールID
+host_role_id = "0000000000000000000"
+
 # 最近イベントに参加したロールのID { ロールID = 必要回数 }
 [recent_event_join_role_ids]
 "0000000000000000000" = 1

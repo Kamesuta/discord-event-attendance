@@ -46,6 +46,9 @@ export interface Config {
   /** イベント連絡チャンネル */
   event_contact_channel_id: string;
 
+  /** 本日の主催者ロールID */
+  host_role_id: string;
+
   /** 絵文字リスト */
   emojis: Record<string, string>;
 
@@ -126,6 +129,11 @@ assert(
   config.event_contact_channel_id &&
     typeof config.event_contact_channel_id === 'string',
   'event_contact_channel_id is required and must be a string.',
+);
+
+assert(
+  config.host_role_id && typeof config.host_role_id === 'string',
+  'host_role_id is required and must be a string.',
 );
 
 assert(
