@@ -77,14 +77,12 @@ async function createVoiceLog(
 
 /**
  * ミュート状態を制御します
- * @param channel ボイスチャンネル
+ * @param channel 新しいボイスチャンネル
  * @param member メンバー
- * @param join 参加したかどうか
  */
 async function handleMuteState(
   channel: VoiceBasedChannel,
   member: GuildMember,
-  join: boolean,
 ): Promise<void> {
   try {
     // 指定のサーバー以外無視
@@ -92,56 +90,64 @@ async function handleMuteState(
       return;
     }
 
-    // イベント開催中のボイスチャンネルを取得
-    const activeEvent = await prisma.event.findFirst({
-      where: {
-        channelId: channel.id,
-        active: GuildScheduledEventStatus.Active,
-      },
-      orderBy: {
-        startTime: 'desc',
-      },
-      take: 1,
-    });
-
-    if (!activeEvent) return;
+    // VC切断した場合(=現在VCにいない場合)、ミュート状態がいじれないので無視
+    if (!channel) {
+      return;
+    }
 
     // ユーザーの最新のミュート状態を取得
     const latestMute = await prisma.userMute.findFirst({
       where: {
         userId: member.id,
       },
+      include: {
+        event: true,
+      },
       orderBy: {
         time: 'desc',
       },
     });
 
-    if (latestMute?.muted) {
-      // イベントVCから他のVCに移動した場合
-      if (!join && channel.id === activeEvent.channelId) {
-        // ミュートを解除
-        await member.voice.setMute(false, 'イベントVCから退出したため');
-        // ミュート解除を記録
+    // ミュートフラグがない人は無視
+    if (!latestMute?.muted) {
+      return;
+    }
+
+    // イベントが終了している場合はミュートを解除して記録する
+    if (
+      latestMute.event?.active !== (GuildScheduledEventStatus.Active as number)
+    ) {
+      // 現在ミュートされている場合のみ解除
+      if (member.voice.mute) {
+        await member.voice.setMute(false, 'イベントが終了したためミュート解除');
         await prisma.userMute.create({
           data: {
             userId: member.id,
-            eventId: activeEvent.id,
+            eventId: latestMute.eventId,
             muted: false,
           },
         });
         logger.info(
-          `ユーザー(${member.id})のミュートを解除しました (イベントVCから退出)`,
+          `ユーザー(${member.id})のミュートを解除しました (イベント終了後の参加)`,
         );
       }
+      return;
+    }
 
-      // 他のVCからイベントVCに移動した場合
-      else if (join && channel.id === activeEvent.channelId) {
-        // ミュートを再適用
-        await member.voice.setMute(true, 'イベントVCに再参加したため');
-        logger.info(
-          `ユーザー(${member.id})を再度ミュートしました (イベントVCに再参加)`,
-        );
-      }
+    // イベントVCにいる場合はミュート、それ以外は解除
+    const isEventVC = channel.id === latestMute.event?.channelId;
+    if (member.voice.mute !== isEventVC) {
+      await member.voice.setMute(
+        isEventVC,
+        isEventVC
+          ? 'イベントVCに再参加したためミュート'
+          : 'イベントVCから退出したためミュート解除',
+      );
+      logger.info(
+        `ユーザー(${member.id})を${isEventVC ? 'ミュート' : 'ミュート解除'}しました (${
+          isEventVC ? 'イベントVCに再参加' : 'イベントVCから退出'
+        })`,
+      );
     }
   } catch (error) {
     logger.error('ミュート状態の制御に失敗しました。', error);
@@ -165,7 +171,7 @@ export async function onVoiceStateUpdate(
       const member = newState.member;
       if (member?.id) {
         await createVoiceLog(newState.channel, member.id, true);
-        await handleMuteState(newState.channel, member, true);
+        await handleMuteState(newState.channel, member);
       }
     }
 
@@ -174,7 +180,6 @@ export async function onVoiceStateUpdate(
       const member = oldState.member;
       if (member?.id) {
         await createVoiceLog(oldState.channel, member.id, false);
-        await handleMuteState(oldState.channel, member, false);
       }
     }
   } catch (error) {

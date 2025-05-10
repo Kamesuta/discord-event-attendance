@@ -12,7 +12,7 @@ import { checkCommandPermission } from '../../event/checkCommandPermission.js';
 
 class MuteUserMenu extends UserContextMenuInteraction {
   command = new ContextMenuCommandBuilder()
-    .setName('🔇参加者をサーバーミュート')
+    .setName('参加者をサーバーミュート')
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageEvents);
 
   async onCommand(
@@ -77,25 +77,45 @@ class MuteUserMenu extends UserContextMenuInteraction {
     }
 
     try {
-      // ユーザーをサーバーミュート
-      await targetMember.voice.setMute(true, 'イベント主催者によるミュート');
+      // ユーザーの最新のミュート状態を取得
+      const latestMute = await prisma.userMute.findFirst({
+        where: {
+          userId: targetUser.id,
+        },
+        orderBy: {
+          time: 'desc',
+        },
+      });
+
+      const isMuted = latestMute?.muted ?? false;
+      const newMuteState = !isMuted;
+
+      // ユーザーのミュート状態を切り替え
+      await targetMember.voice.setMute(
+        newMuteState,
+        newMuteState
+          ? 'イベント主催者によるミュート'
+          : 'イベント主催者によるミュート解除',
+      );
 
       // UserMuteに記録
       await prisma.userMute.create({
         data: {
           userId: targetUser.id,
           eventId: event.id,
-          muted: true,
+          muted: newMuteState,
         },
       });
 
       // VCのチャットにメッセージを送信
       await eventVC.send({
-        content: `<@${targetUser.id}> あなたはイベント主催を妨げたためこのイベント中はミュートされます。他のVCへ移動するとサーバーミュートは解除されます。`,
+        content: newMuteState
+          ? `<@${targetUser.id}> イベント主催を妨げたためこのイベント中はミュートされます。他のVCへ移動するとサーバーミュートは解除されます。`
+          : `<@${targetUser.id}> ミュートが解除されました。`,
       });
 
       await interaction.editReply({
-        content: `${targetUser.username}をミュートしました`,
+        content: `${targetUser.username}を${newMuteState ? 'ミュート' : 'ミュート解除'}しました`,
       });
     } catch (error) {
       logger.error(

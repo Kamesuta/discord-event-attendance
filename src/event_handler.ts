@@ -171,7 +171,7 @@ export async function onUpdateScheduledEvent(
     // イベント情報を取得
     const event = await eventManager.getEventFromDiscordId(scheduledEvent.id);
     if (!event) {
-      throw `イベントが見つかりません: Name=${scheduledEvent.name}`;
+      throw new Error(`イベントが見つかりません: Name=${scheduledEvent.name}`);
     }
 
     await prisma.event.update({
@@ -270,6 +270,31 @@ export async function onEndEvent(
       });
       // 参加時間を集計する
       await tallyAttendanceTime(event.id, member.id, new Date());
+
+      // 最新のミュート状態を取得
+      const latestMute = await prisma.userMute.findFirst({
+        where: {
+          userId: member.id,
+        },
+        orderBy: {
+          time: 'desc',
+        },
+      });
+
+      // ミュートフラグが立っている場合は解除して記録
+      if (latestMute?.muted) {
+        await member.voice.setMute(false, 'イベント終了のためミュート解除');
+        await prisma.userMute.create({
+          data: {
+            userId: member.id,
+            eventId: event.id,
+            muted: false,
+          },
+        });
+        logger.info(
+          `ユーザー(${member.id})のミュートを解除しました (イベント終了)`,
+        );
+      }
     }
   }
 
