@@ -1,5 +1,6 @@
 import {
   ContextMenuCommandBuilder,
+  GuildScheduledEventStatus,
   PermissionFlagsBits,
   UserContextMenuCommandInteraction,
   VoiceChannel,
@@ -26,6 +27,12 @@ class MuteUserMenu extends UserContextMenuInteraction {
       });
       return;
     }
+    if (event.active !== (GuildScheduledEventStatus.Active as number)) {
+      await interaction.editReply({
+        content: 'イベントが開催中ではありません',
+      });
+      return;
+    }
 
     // メンバー情報を取得
     const member = await interaction.guild?.members
@@ -46,7 +53,7 @@ class MuteUserMenu extends UserContextMenuInteraction {
       !(await checkCommandPermission('event_admin', member))
     ) {
       await interaction.editReply({
-        content: 'イベント主催者のみがイベントを停止できます',
+        content: 'イベント主催者のみがサーバーミュートできます',
       });
       return;
     }
