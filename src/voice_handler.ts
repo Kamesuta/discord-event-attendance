@@ -106,21 +106,29 @@ async function handleMuteState(
 
     if (!activeEvent) return;
 
-    // ユーザーのミュート状態を取得
-    const userStat = await prisma.userStat.findUnique({
+    // ユーザーの最新のミュート状態を取得
+    const latestMute = await prisma.userMute.findFirst({
       where: {
-        id: {
-          eventId: activeEvent.id,
-          userId: member.id,
-        },
+        userId: member.id,
+      },
+      orderBy: {
+        time: 'desc',
       },
     });
 
-    if (userStat?.muted) {
+    if (latestMute?.muted) {
       // イベントVCから他のVCに移動した場合
       if (!join && channel.id === activeEvent.channelId) {
         // ミュートを解除
         await member.voice.setMute(false, 'イベントVCから退出したため');
+        // ミュート解除を記録
+        await prisma.userMute.create({
+          data: {
+            userId: member.id,
+            eventId: activeEvent.id,
+            muted: false,
+          },
+        });
         logger.info(
           `ユーザー(${member.id})のミュートを解除しました (イベントVCから退出)`,
         );

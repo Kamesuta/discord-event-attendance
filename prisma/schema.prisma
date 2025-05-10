@@ -31,6 +31,7 @@ model Event {
   stats          UserStat[]
   games          GameResult[]
   UserGameResult UserGameResult[]
+  userMutes      UserMute[]
 }
 
 model VoiceLog {
@@ -52,12 +53,21 @@ model UserStat {
   duration Int
   show     Boolean?
   memo     String?  @db.VarChar(512)
-  muted    Boolean  @default(false)
 
   VoiceLog VoiceLog[]
   event    Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
   @@id([eventId, userId], name: "id")
+}
+
+model UserMute {
+  id      Int      @id @default(autoincrement())
+  userId  String
+  eventId Int?
+  muted   Boolean
+  time    DateTime @default(now())
+
+  event Event? @relation(fields: [eventId], references: [id], onDelete: SetNull)
 }
 
 model GameResult {

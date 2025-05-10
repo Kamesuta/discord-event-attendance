@@ -8,6 +8,7 @@ import { UserContextMenuInteraction } from '../base/contextmenu_base.js';
 import eventManager from '../../event/EventManager.js';
 import { logger } from '../../utils/log.js';
 import { prisma } from '../../index.js';
+import { checkCommandPermission } from '../../event/checkCommandPermission.js';
 
 class MuteUserMenu extends UserContextMenuInteraction {
   command = new ContextMenuCommandBuilder()
@@ -26,14 +27,31 @@ class MuteUserMenu extends UserContextMenuInteraction {
       return;
     }
 
-    // イベント主催者のみ実行可能
-    if (event.hostId !== interaction.user.id) {
+    // メンバー情報を取得
+    const member = await interaction.guild?.members
+      .fetch(interaction.user.id)
+      .catch(() => undefined);
+    if (!member) {
       await interaction.editReply({
-        content: 'このコマンドはイベント主催者のみが実行できます',
+        content: 'メンバー情報の取得に失敗しました',
       });
       return;
     }
 
+    // 権限をチェック
+    if (
+      // イベントの主催者か
+      event.hostId !== interaction.user.id &&
+      // /event_admin で権限を持っているか
+      !(await checkCommandPermission('event_admin', member))
+    ) {
+      await interaction.editReply({
+        content: 'イベント主催者のみがイベントを停止できます',
+      });
+      return;
+    }
+
+    // 対象ユーザーを取得
     const targetUser = interaction.targetUser;
     const targetMember = await interaction.guild?.members.fetch(targetUser.id);
 
@@ -62,21 +80,11 @@ class MuteUserMenu extends UserContextMenuInteraction {
       // ユーザーをサーバーミュート
       await targetMember.voice.setMute(true, 'イベント主催者によるミュート');
 
-      // UserStatのmutedフラグを設定
-      await prisma.userStat.upsert({
-        where: {
-          id: {
-            eventId: event.id,
-            userId: targetUser.id,
-          },
-        },
-        update: {
-          muted: true,
-        },
-        create: {
-          eventId: event.id,
+      // UserMuteに記録
+      await prisma.userMute.create({
+        data: {
           userId: targetUser.id,
-          duration: 0,
+          eventId: event.id,
           muted: true,
         },
       });
