@@ -583,8 +583,10 @@ export async function updateSchedules(): Promise<void> {
 
           // 前回のアナウンスメッセージを削除
           const prevMessages = await channel.messages.fetch({ limit: 5 }); // 直近5件取得
-          const targetMessages = prevMessages.filter((msg) =>
-            msg.content.startsWith('# 📆 本日'),
+          const targetMessages = prevMessages.filter(
+            (msg) =>
+              msg.content.startsWith('# 📆 本日') &&
+              msg.author.id === client.user?.id,
           );
           for (const [_id, message] of targetMessages) {
             await message.delete();
