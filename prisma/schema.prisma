@@ -19,7 +19,7 @@ model Event {
   channelId   String
   description String? @db.VarChar(4096)
   coverImage  String? @db.VarChar(512)
-  hostId      String?
+  hostId      Int?
   messageId   String?
 
   active       Int       @default(1)
@@ -32,23 +32,43 @@ model Event {
   games          GameResult[]
   UserGameResult UserGameResult[]
   userMutes      UserMute[]
+  host           User?    @relation(fields: [hostId], references: [id])
+}
+
+model User {
+  id          Int      @id @default(autoincrement())
+  userId      String   @unique
+  username    String?
+  displayName String?
+  memberName  String?
+  avatarURL   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // 関連
+  voiceLogs      VoiceLog[]
+  stats          UserStat[]
+  userGameResult UserGameResult[]
+  userMutes      UserMute[]
+  hostedEvents   Event[]
 }
 
 model VoiceLog {
   id Int @id @default(autoincrement())
 
   eventId   Int
-  userId    String
+  userId    Int
   timestamp DateTime @default(now())
   join      Boolean
 
   event Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
   stat  UserStat @relation(fields: [eventId, userId], references: [eventId, userId], onDelete: Cascade)
+  user  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model UserStat {
   eventId Int
-  userId  String
+  userId  Int
 
   duration Int
   show     Boolean?
@@ -56,18 +76,20 @@ model UserStat {
 
   VoiceLog VoiceLog[]
   event    Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user     User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([eventId, userId], name: "id")
 }
 
 model UserMute {
   id      Int      @id @default(autoincrement())
-  userId  String
+  userId  Int
   eventId Int?
   muted   Boolean
   time    DateTime @default(now())
 
   event Event? @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model GameResult {
@@ -86,7 +108,7 @@ model UserGameResult {
   id Int @id @default(autoincrement())
 
   eventId Int
-  userId  String
+  userId  Int
   gameId  Int
   rank    Int
   xp      Float
@@ -94,6 +116,7 @@ model UserGameResult {
 
   event Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
   game  GameResult @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([gameId, userId])
 }
