@@ -16,6 +16,7 @@ import eventManager from '../../event/EventManager.js';
 import { Event } from '@prisma/client';
 import { parseDate } from '../../event/periodParser.js';
 import eventCreatorCommand from './EventCreatorCommand.js';
+import userManager from '../../event/UserManager.js';
 
 class EventCreatorCreateCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
@@ -47,7 +48,9 @@ class EventCreatorCreateCommand extends SubcommandInteraction {
         .setRequired(false),
     );
 
-  async onCommand(interaction: ChatInputCommandInteraction): Promise<void> {
+  async onCommand(
+    interaction: ChatInputCommandInteraction<'cached'>,
+  ): Promise<void> {
     // イベントを開始
     const show = interaction.options.getBoolean('show') ?? false;
     await interaction.deferReply({ ephemeral: !show });
@@ -90,7 +93,10 @@ class EventCreatorCreateCommand extends SubcommandInteraction {
     const date = parseDate(dateText);
 
     // 主催者を取得
-    const host = interaction.options.getUser('host');
+    const hostDiscordMember = interaction.options.getMember('host');
+    const host = hostDiscordMember
+      ? await userManager.getOrCreateUser(hostDiscordMember)
+      : undefined;
     if (!host) {
       await interaction.editReply({
         content: '主催者を指定してください',
@@ -114,7 +120,7 @@ class EventCreatorCreateCommand extends SubcommandInteraction {
       lines.pop();
     }
     // 主催者の文言を追加
-    lines.push(`${host.displayName} さんが主催してくれます～`);
+    lines.push(`${userManager.getUserName(host)} さんが主催してくれます～`);
     const description = lines.join('\n');
 
     // Discordイベントを作成
@@ -142,7 +148,7 @@ class EventCreatorCreateCommand extends SubcommandInteraction {
     // イベントを作成
     const createdEvent = await onCreateScheduledEvent(
       createdScheduledEvent,
-      host.id,
+      host,
     );
     if (!createdEvent) {
       await interaction.editReply({

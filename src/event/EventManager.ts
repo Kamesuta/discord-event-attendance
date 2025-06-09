@@ -9,6 +9,20 @@ import { prisma } from '../index.js';
 import { Event, Prisma } from '@prisma/client';
 
 /**
+ * イベントの取得条件
+ */
+export const eventIncludeHost = {
+  include: {
+    host: true,
+  },
+};
+
+/**
+ * イベントにホストを含む型
+ */
+export type EventWithHost = Prisma.EventGetPayload<typeof eventIncludeHost>;
+
+/**
  * イベント情報を取得します
  */
 class EventManager {
@@ -37,7 +51,7 @@ class EventManager {
    */
   async getEventFromDiscordId(
     scheduledEventId: string | undefined,
-  ): Promise<Event | null> {
+  ): Promise<EventWithHost | null> {
     // 開催中のものを優先して取得
     {
       const event = await prisma.event.findFirst({
@@ -49,6 +63,7 @@ class EventManager {
           startTime: 'desc', // 開催中のものは開始時間の新しいものを取得
         },
         take: 1,
+        ...eventIncludeHost,
       });
       if (event) return event;
     }
@@ -62,6 +77,7 @@ class EventManager {
           scheduleTime: 'desc', // 開催前のものはスケジュール時間の新しいものを取得
         },
         take: 1,
+        ...eventIncludeHost,
       });
       if (event) return event;
     }
@@ -73,12 +89,15 @@ class EventManager {
    * @param eventId イベントID
    * @returns イベント
    */
-  async getEventFromId(eventId: number | undefined): Promise<Event | null> {
+  async getEventFromId(
+    eventId: number | undefined,
+  ): Promise<EventWithHost | null> {
     if (eventId !== undefined) {
       return await prisma.event.findUnique({
         where: {
           id: eventId,
         },
+        ...eventIncludeHost,
       });
     } else {
       return await prisma.event.findFirst({
@@ -86,6 +105,7 @@ class EventManager {
           startTime: 'desc',
         },
         take: 1,
+        ...eventIncludeHost,
       });
     }
   }
@@ -101,7 +121,7 @@ class EventManager {
     commandChannel?: TextBasedChannel,
     voiceChannel?: VoiceBasedChannel,
     active = GuildScheduledEventStatus.Active,
-  ): Promise<Event | null> {
+  ): Promise<EventWithHost | null> {
     // 前後3時間以内のイベントを取得
     const timeMargin = 3 * 60 * 60 * 1000;
     // activeに応じた条件
@@ -173,6 +193,7 @@ class EventManager {
         },
         orderBy,
         take: 1,
+        ...eventIncludeHost,
       });
       if (event) {
         return event;
@@ -188,6 +209,7 @@ class EventManager {
         },
         orderBy,
         take: 1,
+        ...eventIncludeHost,
       });
       if (event) {
         return event;
@@ -200,6 +222,7 @@ class EventManager {
         where,
         orderBy,
         take: 1,
+        ...eventIncludeHost,
       });
       if (event) {
         return event;
@@ -219,7 +242,7 @@ class EventManager {
   async getEvent(
     interaction: Interaction,
     active = GuildScheduledEventStatus.Active,
-  ): Promise<Event | null> {
+  ): Promise<EventWithHost | null> {
     // 選択されている場合は選択中のイベントを取得
     const selectedEventId = this._selectedEvents[interaction.user.id];
     if (selectedEventId) {
@@ -227,6 +250,7 @@ class EventManager {
         where: {
           id: selectedEventId,
         },
+        ...eventIncludeHost,
       });
     }
 

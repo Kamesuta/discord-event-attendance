@@ -7,6 +7,7 @@ import { SubcommandInteraction } from '../base/command_base.js';
 import eventCommand from './EventCommand.js';
 import eventManager from '../../event/EventManager.js';
 import { prisma } from '../../index.js';
+import userManager from '../../event/UserManager.js';
 
 class EventUserListCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
@@ -42,17 +43,17 @@ class EventUserListCommand extends SubcommandInteraction {
           eventId: event.id,
           show: true,
         },
+        include: {
+          user: true,
+        },
       })
-    ).map((stat) => stat.userId);
+    ).map((stat) => stat.user);
 
     // メンバーの名前とIDを取得する
-    const memberList = await members
-      .fetch({ user: attendance })
-      .catch(() => undefined);
     const memberTextList = attendance
-      .map((userId) => {
-        const memberName = memberList?.get(userId)?.displayName ?? '取得失敗';
-        return memberName ? `${memberName},${userId}` : '';
+      .map((user) => {
+        const memberName = userManager.getUserName(user);
+        return memberName ? `${memberName},${user.userId}` : '';
       })
       .join('\n');
 

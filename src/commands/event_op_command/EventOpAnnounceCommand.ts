@@ -6,9 +6,8 @@ import {
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
 import { config } from '../../utils/config.js';
-import { Event } from '@prisma/client';
 import showEvent from '../../event/showEvent.js';
-import eventManager from '../../event/EventManager.js';
+import eventManager, { EventWithHost } from '../../event/EventManager.js';
 import eventOpCommand from './EventOpCommand.js';
 
 class EventOpAnnounceCommand extends SubcommandInteraction {
@@ -44,7 +43,7 @@ class EventOpAnnounceCommand extends SubcommandInteraction {
    */
   async showAnnounceMessage(
     interaction: RepliableInteraction,
-    event: Event,
+    event: EventWithHost,
   ): Promise<Message | undefined> {
     // アナウンスチャンネルを取得
     const announcementChannel = interaction.guild?.channels.cache.get(

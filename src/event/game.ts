@@ -1,6 +1,6 @@
 import { EmbedBuilder, RepliableInteraction } from 'discord.js';
 import { prisma } from '../index.js';
-import { Prisma, UserGameResult } from '@prisma/client';
+import { Prisma, User, UserGameResult } from '@prisma/client';
 import { config } from '../utils/config.js';
 
 /**
@@ -8,7 +8,7 @@ import { config } from '../utils/config.js';
  */
 export interface Award {
   /** ユーザー */
-  userId: string;
+  user: User;
   /** ランク */
   rank: number;
   /** 経験値（XP） */

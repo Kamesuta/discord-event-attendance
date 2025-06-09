@@ -10,6 +10,7 @@ import eventManager from '../../event/EventManager.js';
 import { ModalActionInteraction } from '../base/action_base.js';
 import { Event } from '@prisma/client';
 import { prisma } from '../../index.js';
+import userManager from '../../event/UserManager.js';
 
 class SetMemoModalAction extends ModalActionInteraction {
   /**
@@ -68,13 +69,23 @@ class SetMemoModalAction extends ModalActionInteraction {
       return;
     }
 
+    // ユーザーを作成 or 取得
+    const member = await interaction.guild?.members.fetch(userId);
+    if (!member) {
+      await interaction.editReply({
+        content: 'ユーザーが見つかりませんでした',
+      });
+      return;
+    }
+    const user = await userManager.getOrCreateUser(member);
+
     const memo = interaction.components[0]?.components[0]?.value;
     if (memo === undefined || memo === '' || memo === '!') {
       await prisma.userStat.update({
         where: {
           id: {
             eventId: event.id,
-            userId,
+            userId: user.id,
           },
         },
         data: {
@@ -89,7 +100,7 @@ class SetMemoModalAction extends ModalActionInteraction {
         where: {
           id: {
             eventId: event.id,
-            userId,
+            userId: user.id,
           },
         },
         data: {

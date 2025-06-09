@@ -8,11 +8,12 @@ import { prisma } from './index.js';
 import { config } from './utils/config.js';
 import { tallyAttendanceTime } from './event/attendance_time.js';
 import { logger } from './utils/log.js';
+import userManager from './event/UserManager.js';
 
 // 入退室ログを記録します
 async function createVoiceLog(
   channel: VoiceBasedChannel,
-  userId: string,
+  member: GuildMember,
   join: boolean,
 ): Promise<void> {
   // ログを記録する
@@ -37,18 +38,21 @@ async function createVoiceLog(
       return;
     }
 
+    // ユーザーを取得
+    const user = await userManager.getOrCreateUser(member);
+
     // ユーザー情報を初期化
     await prisma.userStat.upsert({
       where: {
         id: {
           eventId: event.id,
-          userId,
+          userId: user.id,
         },
       },
       update: {},
       create: {
         eventId: event.id,
-        userId,
+        userId: user.id,
         duration: 0,
       },
     });
@@ -57,18 +61,18 @@ async function createVoiceLog(
     await prisma.voiceLog.create({
       data: {
         eventId: event.id,
-        userId,
+        userId: user.id,
         join,
       },
     });
     logger.info(
-      `ユーザー(${userId})がイベント(ID:${event.id},Name:${event.name})に${
+      `ユーザー(${user.id})がイベント(ID:${event.id},Name:${event.name})に${
         join ? '参加' : '退出'
       }しました。`,
     );
     if (!join) {
       // 参加時間を集計する
-      await tallyAttendanceTime(event.id, userId, new Date());
+      await tallyAttendanceTime(event.id, user, new Date());
     }
   } catch (error) {
     logger.error('ログの記録に失敗しました。', error);
@@ -95,10 +99,13 @@ async function handleMuteState(
       return;
     }
 
+    // ユーザーを取得
+    const user = await userManager.getOrCreateUser(member);
+
     // ユーザーの最新のミュート状態を取得
     const latestMute = await prisma.userMute.findFirst({
       where: {
-        userId: member.id,
+        userId: user.id,
       },
       include: {
         event: true,
@@ -122,13 +129,13 @@ async function handleMuteState(
         await member.voice.setMute(false, 'イベントが終了したためミュート解除');
         await prisma.userMute.create({
           data: {
-            userId: member.id,
+            userId: user.id,
             eventId: latestMute.eventId,
             muted: false,
           },
         });
         logger.info(
-          `ユーザー(${member.id})のミュートを解除しました (イベント終了後の参加)`,
+          `ユーザー(${user.userId})のミュートを解除しました (イベント終了後の参加)`,
         );
       }
       return;
@@ -144,7 +151,7 @@ async function handleMuteState(
           : 'イベントVCから退出したためミュート解除',
       );
       logger.info(
-        `ユーザー(${member.id})を${isEventVC ? 'ミュート' : 'ミュート解除'}しました (${
+        `ユーザー(${user.userId})を${isEventVC ? 'ミュート' : 'ミュート解除'}しました (${
           isEventVC ? 'イベントVCに再参加' : 'イベントVCから退出'
         })`,
       );
@@ -170,7 +177,7 @@ export async function onVoiceStateUpdate(
       // ユーザーがボイスチャンネルに参加したとき
       const member = newState.member;
       if (member?.id) {
-        await createVoiceLog(newState.channel, member.id, true);
+        await createVoiceLog(newState.channel, member, true);
         await handleMuteState(newState.channel, member);
       }
     }
@@ -179,7 +186,7 @@ export async function onVoiceStateUpdate(
       // ユーザーがボイスチャンネルから退出したとき
       const member = oldState.member;
       if (member?.id) {
-        await createVoiceLog(oldState.channel, member.id, false);
+        await createVoiceLog(oldState.channel, member, false);
       }
     }
   } catch (error) {

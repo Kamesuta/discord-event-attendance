@@ -7,7 +7,7 @@ import {
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
-import eventManager from '../../event/EventManager.js';
+import eventManager, { eventIncludeHost } from '../../event/EventManager.js';
 import { onUpdateScheduledEvent } from '../../event_handler.js';
 import { prisma } from '../../index.js';
 import panelStartButtonAction from '../action/event_panel_command/PanelStartButtonAction.js';
@@ -16,6 +16,7 @@ import panelStopConfirmButtonAction from '../action/event_panel_command/PanelSto
 import { config } from '../../utils/config.js';
 import { Event } from '@prisma/client';
 import eventOpCommand from './EventOpCommand.js';
+import userManager from '../../event/UserManager.js';
 
 class EventOpPanelCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
@@ -39,7 +40,9 @@ class EventOpPanelCommand extends SubcommandInteraction {
         .setRequired(false),
     );
 
-  async onCommand(interaction: ChatInputCommandInteraction): Promise<void> {
+  async onCommand(
+    interaction: ChatInputCommandInteraction<'cached'>,
+  ): Promise<void> {
     // イベントを開始
     const show = interaction.options.getBoolean('show') ?? true;
     await interaction.deferReply({ ephemeral: !show });
@@ -65,9 +68,10 @@ class EventOpPanelCommand extends SubcommandInteraction {
     }
     await onUpdateScheduledEvent(scheduledEvent);
 
-    // ホストユーザーを取得
-    const hostUser = interaction.options.getUser('host_user');
-    if (hostUser) {
+    // ユーザーを取得 or 作成
+    const hostDiscordMember = interaction.options.getMember('host_user');
+    if (hostDiscordMember) {
+      const hostUser = await userManager.getOrCreateUser(hostDiscordMember);
       // イベントのホストを更新
       event = await prisma.event.update({
         where: {
@@ -76,6 +80,7 @@ class EventOpPanelCommand extends SubcommandInteraction {
         data: {
           hostId: hostUser.id,
         },
+        ...eventIncludeHost,
       });
     }
 

@@ -7,10 +7,11 @@ import { SubcommandInteraction } from '../base/command_base.js';
 import eventCommand from './EventCommand.js';
 import eventManager from '../../event/EventManager.js';
 import { parse } from 'csv-parse';
-import { Event } from '@prisma/client';
+import { Event, User } from '@prisma/client';
 import eventGameCommand, { AddGameData } from './EventGameCommand.js';
 import { getGameResultNumbering, makeEmbed, xpMap } from '../../event/game.js';
 import { logger } from '../../utils/log.js';
+import userManager from '../../event/UserManager.js';
 
 // 参加者の型定義
 interface Participant {
@@ -20,7 +21,7 @@ interface Participant {
 
 // ランキング
 interface Ranking {
-  participantId: string;
+  participant: User;
   rank: number;
   group?: string;
 }
@@ -128,8 +129,18 @@ class EventGameCsvCommand extends SubcommandInteraction {
         // 順位またはIDが空の場合はスキップ
         if (!records[i][1] || !records[i][j]) continue;
 
+        // 参加者を取得
+        const member = await interaction.guild?.members.fetch(records[i][1]);
+        const participant = member
+          ? await userManager.getOrCreateUser(member)
+          : await userManager.createUser({
+              userId: records[i][1],
+              memberName: records[i][0],
+            });
+
+        // 順位を取得
         rankings.push({
-          participantId: records[i][1],
+          participant,
           rank: parseInt(records[i][j]),
         });
       }
@@ -184,13 +195,13 @@ class EventGameCsvCommand extends SubcommandInteraction {
         },
         users: game.rankings.map((ranking) => ({
           eventId: event.id,
-          userId: ranking.participantId,
+          userId: ranking.participant.id,
           rank: ranking.rank,
           group: ranking.group,
           xp:
             ranking.rank === 0
               ? 0.1 // 参加者のXPは0.1
-              : xpMap[ranking.rank] ?? 0,
+              : (xpMap[ranking.rank] ?? 0),
         })),
         updateUsers: true,
         gameNumber,

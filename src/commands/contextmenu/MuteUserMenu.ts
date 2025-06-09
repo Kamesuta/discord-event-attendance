@@ -10,6 +10,7 @@ import eventManager from '../../event/EventManager.js';
 import { logger } from '../../utils/log.js';
 import { prisma } from '../../index.js';
 import { checkCommandPermission } from '../../event/checkCommandPermission.js';
+import userManager from '../../event/UserManager.js';
 
 class MuteUserMenu extends UserContextMenuInteraction {
   command = new ContextMenuCommandBuilder()
@@ -48,7 +49,7 @@ class MuteUserMenu extends UserContextMenuInteraction {
     // 権限をチェック
     if (
       // イベントの主催者か
-      event.hostId !== interaction.user.id &&
+      event.host?.userId !== interaction.user.id &&
       // /event_admin で権限を持っているか
       !(await checkCommandPermission('event_admin', member))
     ) {
@@ -59,9 +60,12 @@ class MuteUserMenu extends UserContextMenuInteraction {
     }
 
     // 対象ユーザーを取得
-    const targetUser = interaction.targetUser;
-    const targetMember = await interaction.guild?.members.fetch(targetUser.id);
-
+    const targetUser = await userManager.getOrCreateUser(
+      interaction.targetMember ?? interaction.targetUser,
+    );
+    const targetMember = await interaction.guild?.members.fetch(
+      targetUser.userId,
+    );
     if (!targetMember) {
       await interaction.editReply({
         content: '対象ユーザーが見つかりませんでした',
@@ -117,8 +121,8 @@ class MuteUserMenu extends UserContextMenuInteraction {
       // VCのチャットにメッセージを送信
       await eventVC.send({
         content: newMuteState
-          ? `<@${targetUser.id}> イベント主催を妨げたためこのイベント中はミュートされます。他のVCへ移動するとサーバーミュートは解除されます。`
-          : `<@${targetUser.id}> ミュートが解除されました。`,
+          ? `<@${targetUser.userId}> イベント主催を妨げたためこのイベント中はミュートされます。他のVCへ移動するとサーバーミュートは解除されます。`
+          : `<@${targetUser.userId}> ミュートが解除されました。`,
       });
 
       await interaction.editReply({

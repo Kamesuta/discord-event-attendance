@@ -81,7 +81,7 @@ class PanelStopConfirmButtonAction extends MessageComponentActionInteraction<Com
     // 権限をチェック
     if (
       // イベントの主催者か
-      event.hostId !== interaction.user.id &&
+      event.host?.userId !== interaction.user.id &&
       // /event_admin で権限を持っているか
       !(await checkCommandPermission('event_admin', member))
     ) {

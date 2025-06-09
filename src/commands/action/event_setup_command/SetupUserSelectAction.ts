@@ -13,6 +13,7 @@ import {
 import eventCreatorSetupCommand, {
   EventSpec,
 } from '../../event_creator_command/EventCreatorSetupCommand.js';
+import userManager from '../../../event/UserManager.js';
 
 class SetupUserSelectAction extends MessageComponentActionInteraction<ComponentType.UserSelect> {
   /**
@@ -33,8 +34,8 @@ class SetupUserSelectAction extends MessageComponentActionInteraction<ComponentT
       .setMinValues(1)
       .setMaxValues(1);
 
-    if (event?.event?.hostId) {
-      userSelect.setDefaultUsers([event.event.hostId]);
+    if (event?.event?.host?.userId) {
+      userSelect.setDefaultUsers([event.event.host.userId]);
     }
 
     return userSelect;
@@ -63,16 +64,14 @@ class SetupUserSelectAction extends MessageComponentActionInteraction<ComponentT
     }
 
     // ホストユーザーを取得
-    const hostUserId = interaction.values[0];
-    const hostUser = await interaction.guild?.members
-      .fetch(hostUserId)
-      .catch(() => undefined);
-    if (!hostUser) {
+    const hostUserMember = interaction.members.first();
+    if (!hostUserMember) {
       await interaction.editReply({
         content: 'ユーザーが見つかりませんでした',
       });
       return;
     }
+    const hostUser = await userManager.getOrCreateUser(hostUserMember);
 
     // イベントを取得
     let event =
@@ -99,7 +98,7 @@ class SetupUserSelectAction extends MessageComponentActionInteraction<ComponentT
     // イベントを更新
     await prisma.event.update({
       where: { id: event.id },
-      data: { hostId: hostUserId },
+      data: { hostId: hostUser.id },
     });
 
     // パネルを表示

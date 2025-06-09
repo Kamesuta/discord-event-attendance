@@ -7,6 +7,7 @@ import { UserContextMenuInteraction } from '../base/contextmenu_base.js';
 import eventManager from '../../event/EventManager.js';
 import { prisma } from '../../index.js';
 import setMemoAction from '../action/SetMemoAction.js';
+import userManager from '../../event/UserManager.js';
 
 class SetMemoUserMenu extends UserContextMenuInteraction {
   command = new ContextMenuCommandBuilder()
@@ -25,11 +26,16 @@ class SetMemoUserMenu extends UserContextMenuInteraction {
       return;
     }
 
+    // ユーザーを作成 or 取得
+    const user = await userManager.getOrCreateUser(
+      interaction.targetMember ?? interaction.targetUser,
+    );
+
     // 現在のメモを取得
     const userStat = await prisma.userStat.findFirst({
       where: {
         eventId: event.id,
-        userId: interaction.targetUser.id,
+        userId: user.id,
       },
     });
 

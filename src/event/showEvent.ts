@@ -3,7 +3,6 @@ import {
   BaseMessageOptions,
   ChannelType,
   EmbedBuilder,
-  GuildMember,
   GuildScheduledEventStatus,
   Message,
   RepliableInteraction,
@@ -13,12 +12,13 @@ import {
 } from 'discord.js';
 import { client, prisma } from '../index.js';
 import { config } from '../utils/config.js';
-import { Event } from '@prisma/client';
 import { updateAttendanceTime } from './attendance_time.js';
 import getWebhook from './getWebhook.js';
 import splitStrings from './splitStrings.js';
 import statusGameMenuAction from '../commands/action/StatusGameMenuAction.js';
 import { logger } from '../utils/log.js';
+import { EventWithHost } from './EventManager.js';
+import userManager from './UserManager.js';
 
 /**
  * イベント情報のメッセージを生成します
@@ -29,7 +29,7 @@ import { logger } from '../utils/log.js';
  * @returns 送信内容
  */
 export async function getEventMessage(
-  event: Event,
+  event: EventWithHost,
   message?: string,
   eventLinkMessage?: string,
   hasResult = true,
@@ -83,7 +83,7 @@ export async function getEventMessage(
     ? `${dateToMention(event.startTime)} 〜 ${
         dateToMention(event.endTime) ?? '未定'
       } ${duration}`
-    : dateToMention(event.scheduleTime) ?? '未定';
+    : (dateToMention(event.scheduleTime) ?? '未定');
 
   // Embedを作成
   const embeds = new EmbedBuilder()
@@ -102,16 +102,11 @@ export async function getEventMessage(
     });
 
   // 主催者を表示
-  let hostMember: GuildMember | undefined = undefined;
-  if (event.hostId) {
-    const guild = await client.guilds.fetch(config.guild_id);
-    hostMember = await guild?.members
-      .fetch(event.hostId)
-      .catch(() => undefined);
-    if (hostMember) {
+  if (event.host) {
+    if (event.host) {
       embeds.setAuthor({
-        name: `主催者: ${hostMember.displayName}`,
-        iconURL: hostMember?.displayAvatarURL(),
+        name: `主催者: ${userManager.getUserName(event.host)}`,
+        iconURL: userManager.getUserAvatar(event.host),
       });
     }
   }
@@ -244,7 +239,7 @@ export async function getEventMessage(
  */
 export default async function showEvent(
   interaction: RepliableInteraction,
-  event: Event,
+  event: EventWithHost,
   webhookChannel?: TextBasedChannel,
   message?: string,
   eventLinkMessage?: string,
@@ -268,23 +263,15 @@ export default async function showEvent(
 
   let sentMessage: Message | undefined;
   if (webhook) {
-    // 主催者を取得
-    const guild = await client.guilds.fetch(config.guild_id);
-    const hostMember = event.hostId
-      ? await guild?.members.fetch(event.hostId).catch(() => undefined)
-      : undefined;
-
     // Webhookで送信 (コマンド送信者の名前とアイコンを表示)
-    const interactionMember =
-      hostMember ?? // 主催者がいる場合は主催者の情報を優先
-      (await interaction.guild?.members
-        .fetch(interaction.user.id)
-        .catch(() => undefined));
-    const memberDisplayName =
-      interactionMember?.displayName ?? interaction.user.username;
-    const memberAvatar =
-      interactionMember?.displayAvatarURL() ??
-      interaction.user.displayAvatarURL();
+    // 主催者がいる場合は主催者の情報を優先
+    const member =
+      event.host ??
+      (await userManager.getOrCreateUser(
+        interaction.member ?? interaction.user,
+      ));
+    const memberDisplayName = userManager.getUserName(member);
+    const memberAvatar = userManager.getUserAvatar(member);
     if (editMessage) {
       // 既存メッセージを編集
       sentMessage = await webhook.webhook.editMessage(editMessage, contents);

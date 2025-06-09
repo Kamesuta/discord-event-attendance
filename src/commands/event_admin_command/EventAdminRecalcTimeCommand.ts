@@ -37,7 +37,7 @@ class EventAdminRecalcTimeCommand extends SubcommandInteraction {
       where: {
         eventId: event.id,
         AND: {
-          VoiceLog: {
+          voiceLogs: {
             none: {},
           },
           show: null,

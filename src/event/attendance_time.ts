@@ -1,4 +1,4 @@
-import { Event } from '@prisma/client';
+import { Event, User } from '@prisma/client';
 import { prisma } from '../index.js';
 
 /**
@@ -10,7 +10,7 @@ import { prisma } from '../index.js';
  */
 export async function calculateAttendanceTime(
   eventId: number,
-  userId: string,
+  userId: number,
   endTime: Date,
 ): Promise<number> {
   const logs = await prisma.voiceLog.findMany({
@@ -53,22 +53,22 @@ function calculateTime(
 /**
  * 参加時間を集計し、DBに保存する
  * @param eventId イベントのDB ID
- * @param userId ユーザーのID
+ * @param user ユーザー
  * @param endTime イベントの終了時間
  */
 export async function tallyAttendanceTime(
   eventId: number,
-  userId: string,
+  user: User,
   endTime: Date,
 ): Promise<void> {
-  const totalTime = await calculateAttendanceTime(eventId, userId, endTime);
+  const totalTime = await calculateAttendanceTime(eventId, user.id, endTime);
 
   // 集計結果をDBに保存する
   await prisma.userStat.upsert({
     where: {
       id: {
         eventId,
-        userId,
+        userId: user.id,
       },
     },
     update: {
@@ -76,7 +76,7 @@ export async function tallyAttendanceTime(
     },
     create: {
       eventId,
-      userId,
+      userId: user.id,
       duration: totalTime,
     },
   });
@@ -92,14 +92,16 @@ export async function updateAttendanceTime(
   endTime: Date,
 ): Promise<void> {
   // アクティブなイベントに参加しているユーザーを取得する
-  const userStats = await prisma.voiceLog.findMany({
+  const userStats = await prisma.userStat.findMany({
     where: {
       eventId: event.id,
     },
+    include: {
+      user: true,
+    },
   });
-  const participants = new Set(userStats.map((user) => user.userId));
 
-  for (const userId of participants) {
-    await tallyAttendanceTime(event.id, userId, endTime);
+  for (const userStat of userStats) {
+    await tallyAttendanceTime(event.id, userStat.user, endTime);
   }
 }

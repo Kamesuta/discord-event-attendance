@@ -30,8 +30,8 @@ export interface ReviewEditData {
   interaction: EditableInteraction;
   /** 参加者のリストの履歴 */
   history: {
-    show: string[];
-    hide: string[];
+    show: number[];
+    hide: number[];
   }[];
 }
 
@@ -151,6 +151,9 @@ class EventReviewCommand extends SubcommandInteraction {
           },
         ],
       },
+      include: {
+        user: true,
+      },
     });
 
     const embed = new EmbedBuilder()
@@ -184,7 +187,7 @@ class EventReviewCommand extends SubcommandInteraction {
     // マークされていないされていないユーザーIDを取得 → プルダウンのデフォルト値に設定
     const selectedUserIds = stats
       .filter((stat) => stat.show === null)
-      .map((stat) => stat.userId);
+      .map((stat) => stat.user.userId);
 
     const components = [
       // 出席プルダウン
@@ -267,7 +270,7 @@ class EventReviewCommand extends SubcommandInteraction {
    */
   async setShowStats(
     event: Event,
-    userIds: string[],
+    userIds: number[],
     isShow: boolean | null,
   ): Promise<void> {
     // ユーザーの出欠状況を更新

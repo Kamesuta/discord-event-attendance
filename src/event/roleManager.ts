@@ -114,25 +114,31 @@ export async function syncRoleByCondition(guild: Guild): Promise<string> {
   let resultText = '';
 
   // 2. 直近1ヶ月(30日)以内にn回イベントに参加した
-  const counts = await prisma.userStat.groupBy({
-    by: ['userId'],
-    where: {
-      show: true,
-      event: {
-        startTime: {
-          gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+  const counts = await prisma.user.findMany({
+    include: {
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      _count: {
+        select: {
+          stats: {
+            where: {
+              show: true,
+              event: {
+                startTime: {
+                  gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+                },
+              },
+            },
+          },
         },
       },
     },
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    _count: true,
   });
   for (const [roleId, count] of Object.entries(
     config.recent_event_join_role_ids,
   ).sort((a, b) => b[1] - a[1])) {
     const userIds = counts
       // n回以上参加した人をピックアップ
-      .filter((c) => c._count > Number(count))
+      .filter((c) => c._count.stats > Number(count))
       // すでに付与した人を除外
       .filter((c) => !alreadyGranted.has(c.userId))
       .map((c) => c.userId);
@@ -146,15 +152,20 @@ export async function syncRoleByCondition(guild: Guild): Promise<string> {
   }
 
   // 1. 1回以上イベントに参加した
-  const userStats = await prisma.userStat.findMany({
+  const users = await prisma.user.findMany({
     where: {
-      show: true,
+      stats: {
+        // 1回以上参加した人をピックアップ
+        some: {
+          show: true,
+        },
+      },
     },
   });
-  const userIds = userStats
+  const userIds = users
     // すでに付与した人を除外
-    .filter((stat) => !alreadyGranted.has(stat.userId))
-    .map((stat) => stat.userId);
+    .filter((user) => !alreadyGranted.has(user.userId))
+    .map((user) => user.userId);
   const result = await syncRole(guild, config.event_join_role_id, userIds);
   if (result) {
     resultText += `\`\`\`\n${result}\`\`\`\n`;

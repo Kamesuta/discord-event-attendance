@@ -1,4 +1,4 @@
-import { Event, PrismaClient } from '@prisma/client';
+import { Event, PrismaClient, User } from '@prisma/client';
 import {
   ActionRowBuilder,
   ButtonBuilder,
@@ -10,13 +10,17 @@ import {
 import { config } from './utils/config.js';
 import { tallyAttendanceTime } from './event/attendance_time.js';
 import { logger } from './utils/log.js';
-import eventManager from './event/EventManager.js';
+import eventManager, {
+  eventIncludeHost,
+  EventWithHost,
+} from './event/EventManager.js';
 import { client } from './index.js';
 import { Job, scheduleJob } from 'node-schedule';
 import log4js from 'log4js';
 import eventOpPanelCommand from './commands/event_op_command/EventOpPanelCommand.js';
 import groupBy from 'lodash/groupBy.js';
 import addRoleButtonAction from './commands/action/AddRoleButtonAction.js';
+import userManager from './event/UserManager.js';
 
 const prisma = new PrismaClient();
 
@@ -28,13 +32,13 @@ const coverImageSize = 2048;
 /**
  * スケジュールイベントが作成されたときのイベントハンドラー
  * @param scheduledEvent 作成されたイベント
- * @param hostId 主催者のID
+ * @param host 主催者
  * @returns 作成されたイベント
  */
 export async function onCreateScheduledEvent(
   scheduledEvent: GuildScheduledEvent,
-  hostId?: string,
-): Promise<Event | undefined> {
+  host?: User,
+): Promise<EventWithHost | undefined> {
   if (!scheduledEvent.channel?.isVoiceBased()) {
     logger.warn(
       `VCが指定されていないイベントは無視します: ${scheduledEvent.name}`,
@@ -54,8 +58,9 @@ export async function onCreateScheduledEvent(
         description: scheduledEvent.description,
         coverImage: scheduledEvent.coverImageURL({ size: coverImageSize }),
         scheduleTime: scheduledEvent.scheduledStartAt,
-        hostId,
+        hostId: host?.id,
       },
+      ...eventIncludeHost,
     });
     logger.info(
       `イベントを作成しました: ID=${event.id}, Name=${scheduledEvent.name}`,
@@ -101,6 +106,7 @@ export async function onStartScheduledEvent(
           coverImage: scheduledEvent.coverImageURL({ size: coverImageSize }),
           scheduleTime: scheduledEvent.scheduledStartAt,
         },
+        ...eventIncludeHost,
       });
     } else {
       event = await prisma.event.update({
@@ -117,6 +123,7 @@ export async function onStartScheduledEvent(
           coverImage: scheduledEvent.coverImageURL({ size: coverImageSize }),
           scheduleTime: scheduledEvent.scheduledStartAt,
         },
+        ...eventIncludeHost,
       });
     }
     logger.info(
@@ -124,30 +131,34 @@ export async function onStartScheduledEvent(
     );
 
     // 主催者にロールを付与
-    if (event.hostId) {
+    if (event.host) {
       const guild = await client.guilds.fetch(config.guild_id);
-      const member = await guild.members.fetch(event.hostId);
+      const member = await guild.members.fetch(event.host.userId);
       await member.roles.add(config.host_role_id);
-      logger.info(`主催者(${event.hostId})にロールを付与しました`);
+      logger.info(`主催者(${event.host.userId})にロールを付与しました`);
     }
 
     // VCに既に参加しているユーザーに対してもログを記録する (Botは無視)
     const members = Array.from(scheduledEvent.channel.members.values()).filter(
       (member) => !member.user.bot,
     );
-    // ユーザー情報を初期化
+    // ユーザーを作成
+    const users = await Promise.all(
+      members.map((member) => userManager.getOrCreateUser(member)),
+    );
+    // ユーザーStatを初期化
     await prisma.userStat.createMany({
-      data: members.map((member) => ({
+      data: users.map((user) => ({
         eventId: event.id,
-        userId: member.id,
+        userId: user.id,
         duration: 0,
       })),
     });
     // VC参加ログを記録する
     await prisma.voiceLog.createMany({
-      data: members.map((member) => ({
+      data: users.map((user) => ({
         eventId: event.id,
-        userId: member.id,
+        userId: user.id,
         join: true,
       })),
     });
@@ -268,17 +279,19 @@ export async function onEndEvent(
       (member) => !member.user.bot,
     );
     for (const member of members) {
+      // ユーザーを作成
+      const user = await userManager.getOrCreateUser(member);
       // ユーザー情報を初期化 (初期化されていない人がいる可能性があるためここで初期化)
       await prisma.userStat.upsert({
         where: {
           id: {
             eventId: event.id,
-            userId: member.id,
+            userId: user.id,
           },
         },
         create: {
           eventId: event.id,
-          userId: member.id,
+          userId: user.id,
           duration: 0,
         },
         update: {},
@@ -287,17 +300,17 @@ export async function onEndEvent(
       await prisma.voiceLog.create({
         data: {
           eventId: event.id,
-          userId: member.id,
+          userId: user.id,
           join: false,
         },
       });
       // 参加時間を集計する
-      await tallyAttendanceTime(event.id, member.id, new Date());
+      await tallyAttendanceTime(event.id, user, new Date());
 
       // 最新のミュート状態を取得
       const latestMute = await prisma.userMute.findFirst({
         where: {
-          userId: member.id,
+          userId: user.id,
         },
         orderBy: {
           time: 'desc',
@@ -309,13 +322,13 @@ export async function onEndEvent(
         await member.voice.setMute(false, 'イベント終了のためミュート解除');
         await prisma.userMute.create({
           data: {
-            userId: member.id,
+            userId: user.id,
             eventId: event.id,
             muted: false,
           },
         });
         logger.info(
-          `ユーザー(${member.id})のミュートを解除しました (イベント終了)`,
+          `ユーザー(${user.id})のミュートを解除しました (イベント終了)`,
         );
       }
     }

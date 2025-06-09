@@ -20,7 +20,7 @@ import {
 import eventManager from '../../event/EventManager.js';
 import { prisma } from '../../index.js';
 import splitStrings from '../../event/splitStrings.js';
-import { Event, GameResult, Prisma } from '@prisma/client';
+import { Event, GameResult, Prisma, User } from '@prisma/client';
 import omit from 'lodash/omit';
 import gameEditButtonAction from '../action/event_game_command/GameEditButtonAction.js';
 import gameClearButtonAction from '../action/event_game_command/GameClearButtonAction.js';
@@ -48,7 +48,7 @@ export interface EditData extends AddGameData {
   /** キー */
   key: string;
   /** 参加者のリスト */
-  candidates: string[];
+  candidates: User[];
   /** ランク指定子 */
   rank: string;
 }
@@ -250,10 +250,10 @@ class EventGameCommand extends SubcommandInteraction {
 
     // 候補のユーザーを列挙する
     splitStrings(
-      editData.candidates.map((userId, index) => {
+      editData.candidates.map((user, index) => {
         // [${A-Za-z0-9の連番}] <@${ユーザーID}>
         const countText = index < ALPHABET.length ? `${ALPHABET[index]}` : '?';
-        return `[${countText}] <@${userId}>`;
+        return `[${countText}] <@${user.userId}>`;
       }),
       1024,
     ).forEach((line, i) => {
@@ -326,8 +326,11 @@ class EventGameCommand extends SubcommandInteraction {
               eventId,
               show: true,
             },
+            include: {
+              user: true,
+            },
           })
-        ).map((stat) => stat.userId);
+        ).map((stat) => stat.user);
       }
 
       // 編集中かつ、イベントIDと異なったらエラー
@@ -346,10 +349,12 @@ class EventGameCommand extends SubcommandInteraction {
           },
         });
         if (!editGame) {
-          throw '試合が見つかりませんでした';
+          throw new Error('試合が見つかりませんでした');
         }
         if (editGame.eventId !== editData.game.eventId) {
-          throw `現在編集中のイベントの試合のみ編集できます\n(選択しようとしたイベントID: ${editGame.eventId}、現在編集中のイベントID: ${editData.game.eventId})`;
+          throw new Error(
+            `現在編集中のイベントの試合のみ編集できます\n(選択しようとしたイベントID: ${editGame.eventId}、現在編集中のイベントID: ${editData.game.eventId})`,
+          );
         }
 
         // 不要なデータを消したうえで、編集データに追加
@@ -386,7 +391,7 @@ class EventGameCommand extends SubcommandInteraction {
 
     // 指定されたチーム指定子
     let defaultSpecMode = false;
-    const teamSpec: (Omit<Award, 'userId'> & { users: string[] })[] = [];
+    const teamSpec: (Omit<Award, 'user'> & { users: User[] })[] = [];
     teamString.split(',').forEach((team, rank) => {
       if (team.length === 0) {
         defaultSpecMode = true;
@@ -432,10 +437,10 @@ class EventGameCommand extends SubcommandInteraction {
       // チーム指定子が1つの場合 → 個人戦
       const specAward = specAwards[0];
       // 順番にランクを割り当て
-      specAward.users.forEach((userId, rank) => {
+      specAward.users.forEach((user, rank) => {
         userAwards.push({
           ...omit(specAward, 'users'),
-          userId,
+          user,
           rank: rank + 1,
           xp: xpMap[rank],
         });
@@ -444,9 +449,9 @@ class EventGameCommand extends SubcommandInteraction {
       // チーム指定子が2つ以上の場合 → チーム戦
       // 1～n位までのユーザーに賞を割り当て
       specAwards.forEach((spec) => {
-        spec.users.forEach((userId) => {
+        spec.users.forEach((user) => {
           userAwards.push({
-            userId,
+            user,
             rank: spec.rank,
             xp: spec.xp ?? xpMap[spec.rank],
             group:
@@ -460,9 +465,9 @@ class EventGameCommand extends SubcommandInteraction {
     }
 
     // 残りのユーザーにデフォルトの賞を割り当て
-    defaultAward?.users.forEach((userId) => {
+    defaultAward?.users.forEach((user) => {
       userAwards.push({
-        userId,
+        user,
         rank: 0,
         xp: defaultAward?.xp ?? 0.1,
         group: defaultAward?.group ?? '参加',
@@ -473,13 +478,14 @@ class EventGameCommand extends SubcommandInteraction {
       userAwards
         // 重複を削除
         .filter((award, index, self) => {
-          const userIds = self.map((a) => a.userId);
-          return userIds.indexOf(award.userId) === index;
+          const userIds = self.map((a) => a.user.id);
+          return userIds.indexOf(award.user.id) === index;
         })
         // データを登録用に変換
         .map((award, _i) => ({
           ...award,
           eventId: editData.game.eventId,
+          userId: award.user.id,
           xp: award.xp ?? 0,
         }))
     );

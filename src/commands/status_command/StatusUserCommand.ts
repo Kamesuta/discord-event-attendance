@@ -10,6 +10,7 @@ import { SubcommandInteraction } from '../base/command_base.js';
 import statusCommand from './StatusCommand.js';
 import splitStrings from '../../event/splitStrings.js';
 import { prisma } from '../../index.js';
+import userManager from '../../event/UserManager.js';
 
 class StatusUserCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
@@ -57,48 +58,62 @@ class StatusUserCommand extends SubcommandInteraction {
     userId: string,
     page: number = 1,
   ): Promise<void> {
-    // 主催イベント一覧を取得
-    const hostEvents = await prisma.event.findMany({
+    // ユーザーを取得
+    const user = await prisma.user.findUnique({
       where: {
-        active: GuildScheduledEventStatus.Completed,
-        hostId: userId,
+        userId,
       },
       include: {
+        hostedEvents: {
+          where: {
+            active: GuildScheduledEventStatus.Completed,
+          },
+          include: {
+            stats: {
+              where: {
+                show: true,
+              },
+            },
+            games: true,
+          },
+          orderBy: {
+            startTime: 'desc',
+          },
+        },
         stats: {
           where: {
             show: true,
+            event: {
+              active: GuildScheduledEventStatus.Completed,
+            },
+          },
+          include: {
+            event: {
+              include: {
+                stats: {
+                  where: {
+                    show: true,
+                  },
+                },
+                games: true,
+              },
+            },
+          },
+          orderBy: {
+            event: {
+              startTime: 'desc',
+            },
           },
         },
-        games: true,
-      },
-      orderBy: {
-        startTime: 'desc',
       },
     });
 
-    // ユーザーの過去のイベント参加状況を表示
-    const events = await prisma.event.findMany({
-      where: {
-        active: GuildScheduledEventStatus.Completed,
-        stats: {
-          some: {
-            userId,
-            show: true,
-          },
-        },
-      },
-      include: {
-        stats: {
-          where: {
-            show: true,
-          },
-        },
-        games: true,
-      },
-      orderBy: {
-        startTime: 'desc',
-      },
-    });
+    if (!user) {
+      await interaction.editReply({
+        content: 'ユーザーが見つかりませんでした',
+      });
+      return;
+    }
 
     // 全イベント数を取得
     const eventCount = await prisma.event.count({
@@ -108,11 +123,6 @@ class StatusUserCommand extends SubcommandInteraction {
         },
       },
     });
-
-    // ユーザーを取得
-    const user = await interaction.guild?.members
-      .fetch(userId)
-      .catch(() => null);
 
     // 参加率ランキング順位 (直近30日間)
     const ranking = await prisma.userStat.groupBy({
@@ -131,7 +141,7 @@ class StatusUserCommand extends SubcommandInteraction {
     const rank =
       ranking
         .sort((a, b) => b._count - a._count)
-        .findIndex((r) => r.userId === userId) + 1;
+        .findIndex((r) => r.userId === user.id) + 1;
     const rankSymbols = ['', '👑', '🥈', '🥉'];
     const rankText = rank
       ? `${rankSymbols[rank] ?? ''}${rank}位/${ranking.length}人`
@@ -140,24 +150,24 @@ class StatusUserCommand extends SubcommandInteraction {
     // 概要情報を表示
     const embeds = new EmbedBuilder()
       .setTitle('イベント参加状況')
-      .setDescription(`<@${userId}> さんの過去のイベント参加状況です`)
+      .setDescription(`<@${user.userId}> さんの過去のイベント参加状況です`)
       .setAuthor(
         !user
           ? null
           : {
-              name: user.displayName,
-              iconURL: user.displayAvatarURL() ?? undefined,
+              name: userManager.getUserName(user),
+              iconURL: userManager.getUserAvatar(user),
             },
       )
       .setColor('#ff8c00')
       .addFields({
         name: '参加イベント数',
-        value: `${events.length} / ${eventCount} 回`,
+        value: `${user.stats.length} / ${eventCount} 回`,
         inline: true,
       })
       .addFields({
         name: '主催イベント数',
-        value: `${hostEvents.length} 回`,
+        value: `${user.hostedEvents.length} 回`,
         inline: true,
       })
       .addFields({
@@ -171,7 +181,7 @@ class StatusUserCommand extends SubcommandInteraction {
 
     // 主催イベントリストを表示
     splitStrings(
-      hostEvents.map((event) => {
+      user.hostedEvents.map((event) => {
         if (!event) return '- 不明';
         const date = !event.startTime
           ? '未定'
@@ -188,7 +198,8 @@ class StatusUserCommand extends SubcommandInteraction {
 
     // 参加イベントリストを表示
     splitStrings(
-      events.map((event) => {
+      user.stats.map((stat) => {
+        const event = stat.event;
         if (!event) return '- 不明';
         const date = !event.startTime
           ? '未定'

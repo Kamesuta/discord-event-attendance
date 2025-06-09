@@ -16,8 +16,8 @@ import { config } from '../../utils/config.js';
 import setupUserSelectAction from '../action/event_setup_command/SetupUserSelectAction.js';
 import setupEventSelectAction from '../action/event_setup_command/SetupEventSelectAction.js';
 import { prisma } from '../../index.js';
-import { Event } from '@prisma/client';
 import eventCreatorCommand from './EventCreatorCommand.js';
+import { eventIncludeHost, EventWithHost } from '../../event/EventManager.js';
 
 /**
  * イベント情報
@@ -30,7 +30,7 @@ export interface EventSpec {
   /**
    * イベント
    */
-  event?: Event;
+  event?: EventWithHost;
 }
 
 /**
@@ -99,6 +99,7 @@ class EventCreatorSetupCommand extends SubcommandInteraction {
         },
         active: GuildScheduledEventStatus.Scheduled,
       },
+      ...eventIncludeHost,
     });
     const eventList: EventSpec[] = scheduledEvents
       .map((scheduledEvent) => {

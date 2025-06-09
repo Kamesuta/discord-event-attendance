@@ -8,6 +8,7 @@ import eventManager from '../../../event/EventManager.js';
 import { MessageComponentActionInteraction } from '../../base/action_base.js';
 import { Event } from '@prisma/client';
 import eventReviewCommand from '../../event_command/EventReviewCommand.js';
+import userManager from '../../../event/UserManager.js';
 
 class ReviewMarkUserSelectAction extends MessageComponentActionInteraction<ComponentType.UserSelect> {
   /** UUID -> ユーザーIDのリスト */
@@ -81,35 +82,45 @@ class ReviewMarkUserSelectAction extends MessageComponentActionInteraction<Compo
       return;
     }
 
+    // 選択されたユーザーのIDを取得
+    const selectedUsers = await Promise.all(
+      interaction.members.map((member) => userManager.getOrCreateUser(member)),
+    );
+
     // 削除したユーザーを抽出
-    const removeUserIds = selectedUserIds.filter(
-      (userId) => !interaction.values.includes(userId),
+    const removeUsers = await Promise.all(
+      selectedUserIds
+        .filter(
+          (userId) => !selectedUsers.some((user) => user.userId === userId),
+        )
+        .map((userId) => userManager.getUser(userId)),
+    ).then((users) =>
+      users.filter(
+        (user): user is NonNullable<typeof user> => user !== undefined,
+      ),
     );
     // 逆に追加したユーザーを抽出
-    const addUserIds = interaction.values.filter(
-      (userId) => !selectedUserIds.includes(userId),
+    const addUsers = selectedUsers.filter(
+      (user) => !selectedUserIds.includes(user.userId),
     );
     // 出席としてマークするユーザー
-    const markUserIds = [...removeUserIds, ...addUserIds];
+    const markUsers = [...removeUsers, ...addUsers];
 
     // 出席としてマーク
     await eventReviewCommand.addToHistory(interaction, event);
-    await eventReviewCommand.setShowStats(event, markUserIds, true);
+    await eventReviewCommand.setShowStats(
+      event,
+      markUsers.map((user) => user.id),
+      true,
+    );
     await interaction.editReply({
-      content: `${markUserIds
-        .map((userId) => `<@${userId}>`)
+      content: `${markUsers
+        .map((user) => `<@${user.userId}>`)
         .join('')} を☑️出席としてマークしました`,
     });
 
     // インタラクションが保存されている場合は更新
-    const editData = eventReviewCommand.editDataHolder.get(interaction, event);
-    // イベントの出欠状況を表示するメッセージを作成
-    const messageOption = await eventReviewCommand.createReviewEventMessage(
-      interaction,
-      event,
-    );
-    // 編集 または送信
-    await editData.interaction.editReply(interaction, messageOption);
+    await eventReviewCommand.updateReviewEventMessage(interaction, event);
   }
 }
 

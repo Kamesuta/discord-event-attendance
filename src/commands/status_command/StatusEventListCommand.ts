@@ -15,7 +15,7 @@ import { parseSearch } from '../../event/searchParser.js';
 /**
  * イベントの取得条件
  */
-export const eventInclude = {
+export const eventIncludeDetail = {
   include: {
     stats: {
       where: {
@@ -28,7 +28,7 @@ export const eventInclude = {
 /**
  * イベントの取得結果
  */
-export type EventDetail = Prisma.EventGetPayload<typeof eventInclude>;
+export type EventDetail = Prisma.EventGetPayload<typeof eventIncludeDetail>;
 
 class StatusEventListCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
@@ -172,7 +172,7 @@ class StatusEventListCommand extends SubcommandInteraction {
           scheduleTime: 'desc',
         },
       ],
-      ...eventInclude,
+      ...eventIncludeDetail,
     });
 
     // ソート

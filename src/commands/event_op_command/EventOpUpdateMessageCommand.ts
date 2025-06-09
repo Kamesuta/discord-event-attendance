@@ -84,7 +84,7 @@ class EventOpUpdateMessageCommand extends SubcommandInteraction {
     // DiscordイベントIDを取得 (取得できない場合はエラーをthrow)
     const eventId = this.parseMessageEventId(message);
     if (!eventId) {
-      throw 'イベントが見つかりませんでした';
+      throw new Error('イベントが見つかりませんでした');
     }
 
     // イベント情報を編集
@@ -106,7 +106,7 @@ class EventOpUpdateMessageCommand extends SubcommandInteraction {
     // イベント情報を取得
     const event = await eventManager.getEventFromId(eventId);
     if (!event) {
-      throw 'イベントが見つかりませんでした';
+      throw new Error('イベントが見つかりませんでした');
     }
 
     // メッセージを抽出 (\n\n[～](https://discord.com/events/～) は削除)
@@ -144,7 +144,7 @@ class EventOpUpdateMessageCommand extends SubcommandInteraction {
         return match ? [parseInt(match[1])] : [];
       })[0];
     if (!footerText || isNaN(footerText)) {
-      throw 'イベントお知らせメッセージに対してのみ使用できます';
+      throw new Error('イベントお知らせメッセージに対してのみ使用できます');
     }
     return footerText;
   }
