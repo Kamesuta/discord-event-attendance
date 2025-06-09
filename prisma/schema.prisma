@@ -27,30 +27,31 @@ model Event {
   startTime    DateTime?
   endTime      DateTime?
 
-  voiceLogs      VoiceLog[]
-  stats          UserStat[]
-  games          GameResult[]
-  UserGameResult UserGameResult[]
-  userMutes      UserMute[]
-  host           User?    @relation(fields: [hostId], references: [id])
+  voiceLogs   VoiceLog[]
+  stats       UserStat[]
+  games       GameResult[]
+  gameResults UserGameResult[]
+  userMutes   UserMute[]
+  host        User?            @relation(fields: [hostId], references: [id])
 }
 
 model User {
-  id          Int      @id @default(autoincrement())
-  userId      String   @unique
-  username    String?
-  displayName String?
-  memberName  String?
-  avatarURL   String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id              Int      @id @default(autoincrement())
+  userId          String   @unique
+  username        String?
+  displayName     String?
+  memberName      String?
+  avatarURL       String?
+  memberAvatarURL String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   // 関連
-  voiceLogs      VoiceLog[]
-  stats          UserStat[]
-  userGameResult UserGameResult[]
-  userMutes      UserMute[]
-  hostedEvents   Event[]
+  voiceLogs    VoiceLog[]
+  stats        UserStat[]
+  gameResults  UserGameResult[]
+  userMutes    UserMute[]
+  hostedEvents Event[]
 }
 
 model VoiceLog {
@@ -74,9 +75,9 @@ model UserStat {
   show     Boolean?
   memo     String?  @db.VarChar(512)
 
-  VoiceLog VoiceLog[]
-  event    Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  user     User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  voiceLogs VoiceLog[]
+  event     Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([eventId, userId], name: "id")
 }

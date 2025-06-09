@@ -46,6 +46,7 @@ CREATE TABLE `User` (
     `displayName` VARCHAR(191) NULL,
     `memberName` VARCHAR(191) NULL,
     `avatarURL` VARCHAR(191) NULL,
+    `memberAvatarURL` VARCHAR(191) NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
     PRIMARY KEY (`id`),
