@@ -172,7 +172,7 @@ class EventReviewCommand extends SubcommandInteraction {
               const memo = stat.memo ? ` (**メモ**: ${stat.memo})` : '';
               const mark = stat.show === null ? '⬛' : stat.show ? '☑️' : '❌';
               const duration = Math.floor(stat.duration / 1000 / 60);
-              return `${mark} <@${stat.userId}>: ${duration}分${memo}`;
+              return `${mark} <@${stat.user.userId}>: ${duration}分${memo}`;
             })
             .join('\n') || 'なし',
       )

@@ -197,11 +197,24 @@ class StatusRankingCommand extends SubcommandInteraction {
       // eslint-disable-next-line @typescript-eslint/naming-convention
       _count: true,
     });
-    return ranking
+    // ユーザーIDを取得
+    const userIds = ranking.map((event) => event.userId);
+    const users = await prisma.user.findMany({
+      where: {
+        id: { in: userIds },
+      },
+    });
+    // ランキング+Userを結合
+    const rankingWithUser = ranking.map((stat) => {
+      const user = users.find((user) => user.id === stat.userId);
+      return { ...stat, user };
+    });
+    // ランキングを表示形式に変換
+    return rankingWithUser
       .sort((a, b) => b._count - a._count)
-      .map((event) => {
-        const userId = event.userId;
-        const count = event._count;
+      .map((stat) => {
+        const userId = stat.user?.userId;
+        const count = stat._count;
         return `<@${userId}>: ${count}回`;
       });
   }
@@ -216,22 +229,37 @@ class StatusRankingCommand extends SubcommandInteraction {
     period: Period,
     nameCondition: Prisma.EventWhereInput,
   ): Promise<string[]> {
-    // ランキングを集計
-    const ranking = await prisma.event.groupBy({
-      by: ['hostId'],
+    const events = await prisma.event.findMany({
       where: {
         active: GuildScheduledEventStatus.Completed,
         startTime: period.period,
         ...nameCondition,
       },
-      // eslint-disable-next-line @typescript-eslint/naming-convention
-      _count: true,
+      include: {
+        host: {
+          select: {
+            userId: true,
+          },
+        },
+      },
     });
-    return ranking
-      .filter((event) => event.hostId)
-      .sort((a, b) => b._count - a._count)
-      .map(({ hostId, _count }) => {
-        return `<@${hostId}>: ${_count}回主催`;
+
+    // ホストごとのイベント数を集計
+    const hostCounts = events.reduce(
+      (acc, event) => {
+        if (!event.hostId || !event.host) return acc;
+        const userId = event.host.userId;
+        acc[userId] = (acc[userId] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+
+    // ランキングを作成
+    return Object.entries(hostCounts)
+      .sort(([, a], [, b]) => b - a)
+      .map(([userId, count]) => {
+        return `<@${userId}>: ${count}回主催`;
       });
   }
 

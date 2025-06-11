@@ -19,6 +19,7 @@ import statusGameMenuAction from '../commands/action/StatusGameMenuAction.js';
 import { logger } from '../utils/log.js';
 import { EventWithHost } from './EventManager.js';
 import userManager from './UserManager.js';
+import { gameResultInclude } from './game.js';
 
 /**
  * イベント情報のメッセージを生成します
@@ -39,6 +40,9 @@ export async function getEventMessage(
     where: {
       eventId: event.id,
       show: true,
+    },
+    include: {
+      user: true,
     },
   });
 
@@ -136,39 +140,43 @@ export async function getEventMessage(
               xp: true,
             },
           });
-          return [stat.userId, xp._sum.xp ?? 0] as const;
+          return {
+            stat,
+            xp: xp._sum.xp ?? 0,
+          };
         }),
       )
     )
-      .filter(([, xp]) => xp > 0)
-      .sort(([, a], [, b]) => b - a);
+      .filter(({ xp }) => xp > 0)
+      .sort(({ xp: a }, { xp: b }) => b - a);
 
     // 試合結果
     const gameResults = await prisma.gameResult.findMany({
       where: {
         eventId: event.id,
       },
-      include: {
-        users: true,
-      },
+      ...gameResultInclude,
     });
 
     if (event.endTime) {
       // ゲームに参加したユーザーを表示
-      const gameUsers = userXp.map(([userId, xp], i) => {
-        const count = userCount[userId];
-        const memo = stats.find((stat) => stat.userId === userId)?.memo ?? '';
+      const gameUsers = userXp.map(({ stat, xp }, i) => {
+        const count = userCount[stat.userId];
+        const memo = stat.memo ?? '';
         const countText = count === 1 ? '(🆕 初参加！)' : ` (${count}回目)`;
-        return `${i + 1}位: <@${userId}> (${xp}XP)${countText}${memo}`;
+        return `${i + 1}位: <@${stat.user.userId}> (${xp}XP)${countText}${memo}`;
       });
       // ゲームに参加していないユーザーを表示
       const nonGameUsers = stats
-        .filter((stat) => !userXp.some(([userId]) => userId === stat.userId))
+        .filter(
+          (stat) =>
+            !userXp.some(({ stat: stat2 }) => stat2.userId === stat.userId),
+        )
         .map((stat) => {
           const count = userCount[stat.userId];
           const memo = stat.memo ? ` ${stat.memo}` : '';
           const countText = count === 1 ? '(🆕 初参加！)' : ` (${count}回目)`;
-          return `<@${stat.userId}> ${countText}${memo}`;
+          return `<@${stat.user.userId}> ${countText}${memo}`;
         });
 
       splitStrings([...gameUsers, ...nonGameUsers], 1024).forEach((line, i) => {

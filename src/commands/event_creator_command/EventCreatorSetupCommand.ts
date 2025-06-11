@@ -128,8 +128,8 @@ class EventCreatorSetupCommand extends SubcommandInteraction {
           : '未定';
         const eventInfo = `${dateStr} [「${event?.name ?? scheduledEvent?.name ?? '？'}」(ID: ${event?.id ?? '？'})](https://discord.com/events/${config.guild_id}/${scheduledEvent.id})`;
         const hostInfo = event
-          ? event.hostId
-            ? `<@${event.hostId}>`
+          ? event.host?.userId
+            ? `<@${event.host.userId}>`
             : '主催者なし'
           : 'イベント未生成';
         return `${eventInfo}: ${hostInfo}`;

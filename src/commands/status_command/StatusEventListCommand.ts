@@ -23,6 +23,7 @@ export const eventIncludeDetail = {
       },
     },
     games: true,
+    host: true,
   },
 };
 /**
@@ -207,7 +208,9 @@ class StatusEventListCommand extends SubcommandInteraction {
       const date = !event.startTime
         ? '未定'
         : `<t:${Math.floor(event.startTime.getTime() / 1000)}>`;
-      const host = event.hostId ? `<@${event.hostId}>主催` : '主催者未定';
+      const host = event.host?.userId
+        ? `<@${event.host.userId}>主催`
+        : '主催者未定';
       return `- [${event.id.toString().padStart(3, ' ')}]　${date}　${event.name}　(${event.stats.length}人, ${event.games.length}試合, ${host})`;
     });
 

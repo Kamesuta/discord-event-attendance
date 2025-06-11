@@ -1,6 +1,6 @@
 import { EmbedBuilder, RepliableInteraction } from 'discord.js';
 import { prisma } from '../index.js';
-import { Prisma, User, UserGameResult } from '@prisma/client';
+import { Prisma, User } from '@prisma/client';
 import { config } from '../utils/config.js';
 
 /**
@@ -24,17 +24,32 @@ export const ALPHABET =
 /** 順位&XP配分マップ */
 export const xpMap = [100, 75, 50, 40, 30, 20, 10, 5, 4, 3, 2, 1];
 
-/**
- * 試合の結果
- */
-export type GameResultData = Prisma.GameResultGetPayload<{
-  /**
-   *
-   */
+/** ユーザーの結果 */
+type UserGameResultWithUser = Prisma.UserGameResultGetPayload<{
   include: {
-    users: true;
+    user: true;
   };
 }>;
+
+/** 試合の結果のinclude */
+export const gameResultInclude = {
+  include: {
+    event: true,
+    users: {
+      include: {
+        user: true,
+      },
+      orderBy: {
+        rank: 'asc',
+      } as never, // 型情報にはorderByは必要ないのでneverを指定
+    },
+  },
+};
+
+/** 試合の結果 */
+export type GameResultData = Prisma.GameResultGetPayload<
+  typeof gameResultInclude
+>;
 
 /**
  * ユーザーの戦績を表示する
@@ -70,14 +85,7 @@ export async function makeGameResultEmbed(
     where: {
       id: gameId,
     },
-    include: {
-      event: true,
-      users: {
-        orderBy: {
-          rank: 'asc',
-        },
-      },
-    },
+    ...gameResultInclude,
   });
 
   // 戦績が見つからない場合
@@ -122,7 +130,7 @@ export function makeEmbed(
     .setColor('#ff8c00');
 
   // ユーザーをgroupごとに分ける
-  const groups: { group: string; users: UserGameResult[] }[] = [];
+  const groups: { group: string; users: UserGameResultWithUser[] }[] = [];
   for (const user of game.users) {
     const key = user.group ?? '順位';
     const groupIndex = groups.findIndex(({ group }) => group === key);
@@ -146,7 +154,7 @@ export function makeEmbed(
         game.users
           .map(
             (user) =>
-              `${user.rank}位: <@${user.userId}> (${user.xp.toLocaleString(
+              `${user.rank}位: <@${user.user.userId}> (${user.xp.toLocaleString(
                 undefined,
                 { maximumFractionDigits: 1 },
               )}XP)`,
@@ -161,7 +169,7 @@ export function makeEmbed(
           users
             .map(
               (user) =>
-                `${user.rank}位: <@${user.userId}> (${user.xp.toLocaleString(
+                `${user.rank}位: <@${user.user.userId}> (${user.xp.toLocaleString(
                   undefined,
                   { maximumFractionDigits: 1 },
                 )}XP)`,

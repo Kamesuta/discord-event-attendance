@@ -108,6 +108,9 @@ class PanelStopConfirmButtonAction extends MessageComponentActionInteraction<Com
           },
         ],
       },
+      include: {
+        user: true,
+      },
     });
 
     // 参加者記録がされていない場合は警告を表示
@@ -145,7 +148,7 @@ class PanelStopConfirmButtonAction extends MessageComponentActionInteraction<Com
             .map((stat) => {
               const mark = stat.show === null ? '⬛' : stat.show ? '☑️' : '❌';
               const duration = Math.floor(stat.duration / 1000 / 60);
-              return `${mark} <@${stat.userId}>: ${duration}分`;
+              return `${mark} <@${stat.user.userId}>: ${duration}分`;
             })
             .join('\n') || 'なし',
       })

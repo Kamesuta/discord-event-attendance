@@ -77,24 +77,29 @@ class ReviewFilterMarkModalAction extends ModalActionInteraction {
     }
 
     // マークが付けられていない◯分以上参加のユーザーを取得
-    const markUserIds = (
-      await prisma.userStat.findMany({
-        where: {
-          eventId: event.id,
-          duration: {
-            gte: minutes * 1000 * 60,
-          },
-          show: null,
+    const markUsers = await prisma.userStat.findMany({
+      where: {
+        eventId: event.id,
+        duration: {
+          gte: minutes * 1000 * 60,
         },
-      })
-    ).map((stat) => stat.userId);
+        show: null,
+      },
+      include: {
+        user: true,
+      },
+    });
 
     // マークをつける
     await eventReviewCommand.addToHistory(interaction, event);
-    await eventReviewCommand.setShowStats(event, markUserIds, true);
+    await eventReviewCommand.setShowStats(
+      event,
+      markUsers.map((stat) => stat.userId),
+      true,
+    );
     await interaction.editReply({
-      content: `${minutes} 分以上参加している ${markUserIds
-        .map((userId) => `<@${userId}>`)
+      content: `${minutes} 分以上参加している ${markUsers
+        .map((user) => `<@${user.user.userId}>`)
         .join('')} を☑️出席としてマークしました`,
     });
 

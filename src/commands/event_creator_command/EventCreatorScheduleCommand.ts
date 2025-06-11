@@ -9,6 +9,7 @@ import { config } from '../../utils/config.js';
 import { prisma } from '../../index.js';
 import { Event } from '@prisma/client';
 import eventCreatorCommand from './EventCreatorCommand.js';
+import { eventIncludeHost, EventWithHost } from '../../event/EventManager.js';
 
 class EventCreatorScheduleCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
@@ -33,7 +34,7 @@ class EventCreatorScheduleCommand extends SubcommandInteraction {
     end.setDate(end.getDate() + 7);
 
     // イベントを取得
-    const events: Event[] = await prisma.event.findMany({
+    const events: EventWithHost[] = await prisma.event.findMany({
       where: {
         active: {
           not: GuildScheduledEventStatus.Canceled,
@@ -48,6 +49,7 @@ class EventCreatorScheduleCommand extends SubcommandInteraction {
           scheduleTime: 'asc',
         },
       ],
+      ...eventIncludeHost,
     });
 
     // イベントごとのメッセージを作成
@@ -84,7 +86,7 @@ class EventCreatorScheduleCommand extends SubcommandInteraction {
         `
 ### ${dateText}${timeText}: ${emoji}[${event.name}](https://discord.com/events/${config.guild_id}/${event.eventId})
 ${lines.join('\n')}
-<@${event.hostId}> さんが主催してくれます～
+<@${event.host?.userId}> さんが主催してくれます～
 `,
       ];
     });

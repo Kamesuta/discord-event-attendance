@@ -473,7 +473,7 @@ export async function updateSchedules(): Promise<void> {
     const scheduledEvents = await guild.scheduledEvents.fetch();
 
     // イベントを取得
-    const eventList: [GuildScheduledEvent, Event | undefined][] =
+    const eventList: [GuildScheduledEvent, EventWithHost | undefined][] =
       await Promise.all(
         scheduledEvents.map(async (discordEvent) => {
           const event = await eventManager.getEventFromDiscordId(
@@ -552,7 +552,7 @@ export async function updateSchedules(): Promise<void> {
 
               // リマインドを出す
               await channel.send(
-                `<@${event.hostId}> 今日の <t:${(scheduledEvent.scheduledStartTimestamp ?? 0) / 1000}:R> にイベント「${scheduledEvent.name}」があるんだけど、主催できそう？\nやり方は https://discord.com/channels/${config.guild_id}/${config.event_panel_channel_id} の上の方に書いてある～`,
+                `<@${event.host?.userId}> 今日の <t:${(scheduledEvent.scheduledStartTimestamp ?? 0) / 1000}:R> にイベント「${scheduledEvent.name}」があるんだけど、主催できそう？\nやり方は https://discord.com/channels/${config.guild_id}/${config.event_panel_channel_id} の上の方に書いてある～`,
               );
             } catch (error) {
               loggerSchedule.error('リマインドの送信に失敗しました:', error);
