@@ -13,6 +13,7 @@ import {
   ALPHABET,
   Award,
   GameResultData,
+  gameResultInclude,
   getGameResultNumbering,
   makeEmbed,
   xpMap,
@@ -264,7 +265,7 @@ class EventGameCommand extends SubcommandInteraction {
     });
 
     // 表示用のプレビューを作成
-    const game = this._previewGetGameResult(editData);
+    const game = this._previewGetGameResult(event, editData);
     // 結果を表示
     makeEmbed(embeds, game);
     return embeds;
@@ -508,7 +509,7 @@ class EventGameCommand extends SubcommandInteraction {
           // IDがある = 編集モードの場合はユーザーは全削除
           deleteMany: addGameData.game.id ? {} : undefined,
           createMany: {
-            data: addGameData.users,
+            data: addGameData.users.map((user) => omit(user, 'user')),
           },
         };
 
@@ -530,13 +531,7 @@ class EventGameCommand extends SubcommandInteraction {
             name: gameName,
             users,
           },
-          include: {
-            users: {
-              orderBy: {
-                rank: 'asc',
-              },
-            },
-          },
+          ...gameResultInclude,
         })
       : await prisma.gameResult.create({
           data: {
@@ -544,13 +539,7 @@ class EventGameCommand extends SubcommandInteraction {
             name: gameName,
             users,
           },
-          include: {
-            users: {
-              orderBy: {
-                rank: 'asc',
-              },
-            },
-          },
+          ...gameResultInclude,
         });
 
     return game;
@@ -570,10 +559,14 @@ class EventGameCommand extends SubcommandInteraction {
 
   /**
    * ゲームの勝敗を取得する
+   * @param event イベント
    * @param editData 編集データ
    * @returns 仮に記録した場合の試合の結果
    */
-  private _previewGetGameResult(editData: EditData): GameResultData {
+  private _previewGetGameResult(
+    event: Event,
+    editData: EditData,
+  ): GameResultData {
     // すでに登録されているデータを取得
     return {
       ...editData.game,
@@ -581,9 +574,15 @@ class EventGameCommand extends SubcommandInteraction {
       users: editData.users.map((user, i) => ({
         ...user,
         id: i,
+        user:
+          editData.candidates.find((user) => user.userId === user.userId) ??
+          ((): never => {
+            throw new Error('試合プレビュー用のユーザーが見つかりませんでした');
+          })(),
         gameId: editData.game.id ?? 0,
         group: user.group ?? null,
       })),
+      event,
     };
   }
 }
