@@ -125,7 +125,7 @@ async function handleMuteState(
       latestMute.event?.active !== (GuildScheduledEventStatus.Active as number)
     ) {
       // 現在ミュートされている場合のみ解除
-      if (member.voice.mute) {
+      if (member.voice.serverMute) {
         await member.voice.setMute(false, 'イベントが終了したためミュート解除');
         await prisma.userMute.create({
           data: {
@@ -143,7 +143,7 @@ async function handleMuteState(
 
     // イベントVCにいる場合はミュート、それ以外は解除
     const isEventVC = channel.id === latestMute.event?.channelId;
-    if (member.voice.mute !== isEventVC) {
+    if (member.voice.serverMute !== isEventVC) {
       await member.voice.setMute(
         isEventVC,
         isEventVC

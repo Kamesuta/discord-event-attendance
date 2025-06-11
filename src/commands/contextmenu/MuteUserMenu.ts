@@ -126,7 +126,7 @@ class MuteUserMenu extends UserContextMenuInteraction {
       });
 
       await interaction.editReply({
-        content: `${targetUser.username}を${newMuteState ? 'ミュート' : 'ミュート解除'}しました`,
+        content: `<@${targetUser.userId}> を${newMuteState ? 'ミュート' : 'ミュート解除'}しました`,
       });
     } catch (error) {
       logger.error(
