@@ -292,7 +292,9 @@ class EventManager {
     if (!event) {
       return;
     }
-    return interaction.guild?.scheduledEvents.fetch(event.eventId);
+    return interaction.guild?.scheduledEvents
+      .fetch(event.eventId)
+      .catch(() => undefined);
   }
 }
 

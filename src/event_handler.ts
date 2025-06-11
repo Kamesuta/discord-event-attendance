@@ -510,9 +510,9 @@ export async function updateSchedules(): Promise<void> {
               );
 
               // パネルを出すチャンネルを取得
-              const channel = await guild.channels.fetch(
-                config.event_panel_channel_id,
-              );
+              const channel = await guild.channels
+                .fetch(config.event_panel_channel_id)
+                .catch(() => undefined);
               if (!channel?.isTextBased()) {
                 loggerSchedule.warn('パネルを出すチャンネルが見つかりません');
                 return;
@@ -540,9 +540,9 @@ export async function updateSchedules(): Promise<void> {
               );
 
               // リマインドを出すチャンネルを取得
-              const channel = await guild.channels.fetch(
-                config.event_contact_channel_id,
-              );
+              const channel = await guild.channels
+                .fetch(config.event_contact_channel_id)
+                .catch(() => undefined);
               if (!channel?.isTextBased()) {
                 loggerSchedule.warn(
                   'リマインドを出すチャンネルが見つかりません',
@@ -586,9 +586,9 @@ export async function updateSchedules(): Promise<void> {
       jobs.push(
         scheduleJob(remindDate, async () => {
           // アナウンスチャンネルを取得
-          const channel = await guild.channels.fetch(
-            config.schedule_channel_id,
-          );
+          const channel = await guild.channels
+            .fetch(config.schedule_channel_id)
+            .catch(() => undefined);
           if (!channel?.isTextBased()) {
             loggerSchedule.warn('アナウンスチャンネルが見つかりません');
             return;

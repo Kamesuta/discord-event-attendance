@@ -63,9 +63,9 @@ class MuteUserMenu extends UserContextMenuInteraction {
     const targetUser = await userManager.getOrCreateUser(
       interaction.targetMember ?? interaction.targetUser,
     );
-    const targetMember = await interaction.guild?.members.fetch(
-      targetUser.userId,
-    );
+    const targetMember = await interaction.guild?.members
+      .fetch(targetUser.userId)
+      .catch(() => undefined);
     if (!targetMember) {
       await interaction.editReply({
         content: '対象ユーザーが見つかりませんでした',
@@ -75,9 +75,9 @@ class MuteUserMenu extends UserContextMenuInteraction {
 
     // イベントのVCを取得
     const eventVC = event.channelId
-      ? ((await interaction.guild?.channels.fetch(
-          event.channelId,
-        )) as VoiceChannel)
+      ? ((await interaction.guild?.channels
+          .fetch(event.channelId)
+          .catch(() => undefined)) as VoiceChannel)
       : null;
 
     if (!eventVC) {

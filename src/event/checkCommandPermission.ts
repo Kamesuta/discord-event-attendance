@@ -11,7 +11,7 @@ export async function checkCommandPermission(
   member: GuildMember,
 ): Promise<boolean> {
   // コマンドを取得
-  const commands = await member.guild.commands.fetch();
+  const commands = await member.guild.commands.fetch().catch(() => undefined);
   if (!commands) return false;
   // コマンドを検索
   const command = commands.find((c) => c.name === commandName);

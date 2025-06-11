@@ -16,7 +16,7 @@ export async function syncRole(
   userIds: string[],
 ): Promise<string | undefined> {
   // 既存のロール付与状況を確認する
-  const role = await guild.roles.fetch(roleId);
+  const role = await guild.roles.fetch(roleId).catch(() => undefined);
   if (!role) {
     logger.warn(
       `ロール(ID: ${roleId})が見つからないため、ロールを同期できません。`,

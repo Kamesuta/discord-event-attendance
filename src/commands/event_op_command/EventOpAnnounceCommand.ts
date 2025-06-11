@@ -57,7 +57,9 @@ class EventOpAnnounceCommand extends SubcommandInteraction {
     }
 
     // VC名を取得
-    const vc = await interaction.guild?.channels.fetch(event.channelId);
+    const vc = await interaction.guild?.channels
+      .fetch(event.channelId)
+      .catch(() => undefined);
     const vcName = vc?.name ?? '不明';
 
     // アナウンスチャンネルでイベントを表示

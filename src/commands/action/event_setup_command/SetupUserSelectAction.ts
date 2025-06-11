@@ -78,8 +78,9 @@ class SetupUserSelectAction extends MessageComponentActionInteraction<ComponentT
       (await eventManager.getEventFromDiscordId(eventId)) ?? undefined;
     if (!event) {
       // イベントを作成
-      const scheduledEvent =
-        await interaction.guild?.scheduledEvents.fetch(eventId);
+      const scheduledEvent = await interaction.guild?.scheduledEvents
+        .fetch(eventId)
+        .catch(() => undefined);
       if (!scheduledEvent) {
         await interaction.editReply({
           content: 'Discordイベントが見つかりませんでした',

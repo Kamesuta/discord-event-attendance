@@ -130,7 +130,9 @@ class EventGameCsvCommand extends SubcommandInteraction {
         if (!records[i][1] || !records[i][j]) continue;
 
         // 参加者を取得
-        const member = await interaction.guild?.members.fetch(records[i][1]);
+        const member = await interaction.guild?.members
+          .fetch(records[i][1])
+          .catch(() => undefined);
         const participant = member
           ? await userManager.getOrCreateUser(member)
           : await userManager.createUser({

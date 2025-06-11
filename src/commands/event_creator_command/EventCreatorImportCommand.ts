@@ -30,8 +30,9 @@ class EventCreatorImportCommand extends SubcommandInteraction {
       return;
     }
 
-    const scheduledEvent =
-      await interaction.guild?.scheduledEvents.fetch(discordEventId);
+    const scheduledEvent = await interaction.guild?.scheduledEvents
+      .fetch(discordEventId)
+      .catch(() => undefined);
     if (!scheduledEvent) {
       await interaction.editReply({
         content: 'イベントが見つかりませんでした',

@@ -37,7 +37,9 @@ class EventOpUpdateMessageCommand extends SubcommandInteraction {
     if (!messageId) return;
     // Webhook経由でメッセージを取得
     const webhook = await getWebhook(interaction);
-    const message = await webhook?.webhook.fetchMessage(messageId);
+    const message = await webhook?.webhook
+      .fetchMessage(messageId)
+      .catch(() => undefined);
     if (!message) {
       await interaction.editReply({
         content: 'メッセージが見つかりませんでした',

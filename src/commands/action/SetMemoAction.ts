@@ -70,7 +70,9 @@ class SetMemoModalAction extends ModalActionInteraction {
     }
 
     // ユーザーを作成 or 取得
-    const member = await interaction.guild?.members.fetch(userId);
+    const member = await interaction.guild?.members
+      .fetch(userId)
+      .catch(() => undefined);
     if (!member) {
       await interaction.editReply({
         content: 'ユーザーが見つかりませんでした',

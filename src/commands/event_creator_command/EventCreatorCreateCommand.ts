@@ -105,7 +105,9 @@ class EventCreatorCreateCommand extends SubcommandInteraction {
     }
 
     // チャンネルを取得
-    const channel = await interaction.guild?.channels.fetch(event.channelId);
+    const channel = await interaction.guild?.channels
+      .fetch(event.channelId)
+      .catch(() => undefined);
     if (!channel?.isVoiceBased()) {
       await interaction.editReply({
         content: 'VCチャンネルが見つかりませんでした',
