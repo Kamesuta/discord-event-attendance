@@ -306,15 +306,24 @@ class EventManager {
    */
   formatEventDescription(description: string | null, host?: User): string {
     // 説明文を作成
-    // 最後の行に「主催」という文字があれば削除
     const lines = (description ?? '').split('\n');
-    if (lines[lines.length - 1].includes('主催')) {
+
+    // 後方互換性のため、最後の行に「主催」という文字があれば削除（2行以上の場合のみ）
+    if (lines.length > 1 && lines[lines.length - 1].includes('主催')) {
       lines.pop();
     }
-    // 主催者の文言を追加
+
+    // 主催者の文言を先頭の行に統合
     if (host) {
-      lines.push(`${userManager.getUserName(host)} さんが主催してくれます～`);
+      if (lines.length > 0) {
+        // 先頭の行から既存の主催者情報を削除
+        const firstLine = lines[0].replace(/^≪.*?主催≫\s*/, '');
+        lines[0] = `≪${userManager.getUserName(host)}主催≫ ${firstLine}`;
+      } else {
+        lines.push(`≪${userManager.getUserName(host)}主催≫`);
+      }
     }
+
     return lines.join('\n');
   }
 }
