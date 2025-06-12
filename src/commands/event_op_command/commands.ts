@@ -6,6 +6,7 @@ import eventOpSelectCommand from './EventOpSelectCommand.js';
 import eventOpShowCommand from './EventOpShowCommand.js';
 import eventOpUpdateCommand from './EventOpUpdateCommand.js';
 import eventOpUpdateMessageCommand from './EventOpUpdateMessageCommand.js';
+import eventOpTodayCommand from './EventOpTodayCommand.js';
 
 const commands: InteractionBase[] = [
   eventOpCommand,
@@ -15,6 +16,7 @@ const commands: InteractionBase[] = [
   eventOpShowCommand,
   eventOpUpdateCommand,
   eventOpUpdateMessageCommand,
+  eventOpTodayCommand,
 ];
 
 export default commands;

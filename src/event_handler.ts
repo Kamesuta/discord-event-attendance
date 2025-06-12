@@ -1,7 +1,5 @@
 import { Event, PrismaClient, User } from '@prisma/client';
 import {
-  ActionRowBuilder,
-  ButtonBuilder,
   GuildScheduledEvent,
   GuildScheduledEventStatus,
   PartialGuildScheduledEvent,
@@ -19,8 +17,8 @@ import { Job, scheduleJob } from 'node-schedule';
 import log4js from 'log4js';
 import eventOpPanelCommand from './commands/event_op_command/EventOpPanelCommand.js';
 import groupBy from 'lodash/groupBy.js';
-import addRoleButtonAction from './commands/action/AddRoleButtonAction.js';
 import userManager from './event/UserManager.js';
+import eventOpTodayCommand from './commands/event_op_command/EventOpTodayCommand.js';
 
 const prisma = new PrismaClient();
 
@@ -621,20 +619,6 @@ export async function updateSchedules(): Promise<void> {
             return;
           }
 
-          // 前回のアナウンスメッセージを削除
-          const prevMessages = await channel.messages.fetch({ limit: 5 }); // 直近5件取得
-          const targetMessages = prevMessages.filter(
-            (msg) =>
-              msg.content.startsWith('# 📆 本日') &&
-              msg.author.id === client.user?.id,
-          );
-          for (const [_id, message] of targetMessages) {
-            await message.delete();
-            logger.info(
-              `前回の本日のイベント予定メッセージを削除しました: ${message.id}`,
-            );
-          }
-
           // その日のイベントを取得
           const events = registeredEventList.filter(
             ([scheduledEvent]) =>
@@ -642,46 +626,14 @@ export async function updateSchedules(): Promise<void> {
               date,
           );
 
-          // アナウンスチャンネルでイベントを表示
-          const mmdd = remindDate.toLocaleDateString('ja-JP', {
-            month: '2-digit',
-            day: '2-digit',
-            weekday: 'short',
-          });
-          // メッセージを生成
-          const eventListText = events
-            .map(
-              ([scheduledEvent, event]) =>
-                `- ${scheduledEvent.scheduledStartAt?.toLocaleTimeString(
-                  'ja-JP',
-                  {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  },
-                )} [${scheduledEvent.name}](${scheduledEvent.url})${event.host ? ` (主催者: <@${event.host.userId}>)` : ''}`,
-            )
-            .join('\n');
-          const messageText = `# 📆 本日 ${mmdd} のイベント予定！
-${eventListText}
-かめぱわぁ～るどでは毎日夜9時にボイスチャンネルにてイベントを開催しています！ 🏁
-新規の方も大歓迎です！だれでも参加できるので、ぜひ遊びに来てください！ ✨
-`;
-
-          // メッセージを送信
-          const sentMessage = await channel.send({
-            content: messageText,
-            components: [
-              new ActionRowBuilder<ButtonBuilder>().addComponents(
-                addRoleButtonAction.create(),
-              ),
-            ],
-          });
-
-          // メッセージを公開
-          await sentMessage?.crosspost().catch((e) => {
-            // エラーが発生した場合はログを出力して続行
-            logger.error('メッセージの公開に失敗しました。', e);
-          });
+          // 各イベントに対して今日の予定を表示
+          for (const [scheduledEvent, event] of events) {
+            await eventOpTodayCommand.showTodayMessage(
+              channel,
+              scheduledEvent,
+              event,
+            );
+          }
         }),
       );
 
