@@ -84,6 +84,14 @@ class EventOpPanelCommand extends SubcommandInteraction {
         },
         ...eventIncludeHost,
       });
+
+      // Discordイベントの説明文を更新
+      const scheduledEvent = await interaction.guild?.scheduledEvents
+        .fetch(event.eventId)
+        .catch(() => undefined);
+      if (scheduledEvent) {
+        await eventManager.updateEventDescription(scheduledEvent, hostUser);
+      }
     }
 
     // パネルを表示

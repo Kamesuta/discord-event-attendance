@@ -66,16 +66,10 @@ export async function onCreateScheduledEvent(
     });
 
     // Discordイベントの説明文を更新
-    await scheduledEvent
-      .edit({
-        description: eventManager.formatEventDescription(
-          scheduledEvent.description,
-          event.host ?? undefined,
-        ),
-      })
-      .catch((error) => {
-        logger.error('イベントの説明文の更新に失敗しました:', error);
-      });
+    await eventManager.updateEventDescription(
+      scheduledEvent,
+      event.host ?? undefined,
+    );
 
     logger.info(
       `イベントを作成しました: ID=${event.id}, Name=${scheduledEvent.name}`,
@@ -146,16 +140,10 @@ export async function onStartScheduledEvent(
       });
 
       // Discordイベントの説明文を更新
-      await scheduledEvent
-        .edit({
-          description: eventManager.formatEventDescription(
-            scheduledEvent.description,
-            event.host ?? undefined,
-          ),
-        })
-        .catch((error) => {
-          logger.error('イベントの説明文の更新に失敗しました:', error);
-        });
+      await eventManager.updateEventDescription(
+        scheduledEvent,
+        event.host ?? undefined,
+      );
     }
     logger.info(
       `イベントを開始しました: ID=${event.id}, Name=${scheduledEvent.name}`,
@@ -225,16 +213,10 @@ export async function onUpdateScheduledEvent(
     }
 
     // Discordイベントを更新
-    await scheduledEvent
-      .edit({
-        description: eventManager.formatEventDescription(
-          scheduledEvent.description,
-          event.host ?? undefined,
-        ),
-      })
-      .catch((error) => {
-        logger.error('イベントの説明文の更新に失敗しました:', error);
-      });
+    await eventManager.updateEventDescription(
+      scheduledEvent,
+      event.host ?? undefined,
+    );
 
     await prisma.event.update({
       where: {

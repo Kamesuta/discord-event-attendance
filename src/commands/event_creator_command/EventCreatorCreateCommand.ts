@@ -115,17 +115,14 @@ class EventCreatorCreateCommand extends SubcommandInteraction {
       return;
     }
 
-    // 説明文を作成
-    const description = eventManager.formatEventDescription(
-      event.description,
-      host,
-    );
-
     // Discordイベントを作成
     const createdScheduledEvent =
       await interaction.guild?.scheduledEvents.create({
         name: event.name,
-        description,
+        description: eventManager.formatEventDescription(
+          event.description,
+          host,
+        ),
         scheduledStartTime: date,
         privacyLevel: GuildScheduledEventPrivacyLevel.GuildOnly,
         entityType:

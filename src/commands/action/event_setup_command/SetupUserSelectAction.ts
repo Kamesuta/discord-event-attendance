@@ -14,7 +14,6 @@ import eventCreatorSetupCommand, {
   EventSpec,
 } from '../../event_creator_command/EventCreatorSetupCommand.js';
 import userManager from '../../../event/UserManager.js';
-import { logger } from '../../../utils/log.js';
 
 class SetupUserSelectAction extends MessageComponentActionInteraction<ComponentType.UserSelect> {
   /**
@@ -108,16 +107,7 @@ class SetupUserSelectAction extends MessageComponentActionInteraction<ComponentT
       .fetch(eventId)
       .catch(() => undefined);
     if (scheduledEvent) {
-      await scheduledEvent
-        .edit({
-          description: eventManager.formatEventDescription(
-            scheduledEvent.description,
-            hostUser,
-          ),
-        })
-        .catch((error) => {
-          logger.error('イベントの説明文の更新に失敗しました:', error);
-        });
+      await eventManager.updateEventDescription(scheduledEvent, hostUser);
     }
 
     // パネルを表示

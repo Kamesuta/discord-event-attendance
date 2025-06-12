@@ -8,6 +8,7 @@ import {
 import { prisma } from '../index.js';
 import { Event, Prisma, User } from '@prisma/client';
 import userManager from './UserManager.js';
+import { logger } from '../utils/log.js';
 
 /**
  * イベントの取得条件
@@ -296,6 +297,35 @@ class EventManager {
     return interaction.guild?.scheduledEvents
       .fetch(event.eventId)
       .catch(() => undefined);
+  }
+
+  /**
+   * Discordイベントの説明文を更新します
+   * @param scheduledEvent Discordイベント
+   * @param host 主催者
+   * @returns 更新に成功したかどうか
+   */
+  async updateEventDescription(
+    scheduledEvent: GuildScheduledEvent,
+    host?: User,
+  ): Promise<void> {
+    try {
+      // 新しい説明文を生成
+      const newDescription = this.formatEventDescription(
+        scheduledEvent.description,
+        host,
+      );
+
+      // 説明文が同じ場合はスキップ
+      if (scheduledEvent.description !== newDescription) {
+        // 説明文を更新
+        await scheduledEvent.edit({
+          description: newDescription,
+        });
+      }
+    } catch (error) {
+      logger.error('イベントの説明文の更新に失敗しました:', error);
+    }
   }
 
   /**
