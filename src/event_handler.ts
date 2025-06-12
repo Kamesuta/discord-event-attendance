@@ -571,7 +571,7 @@ export async function updateSchedules(): Promise<void> {
     // 未登録イベント以外を取得
     const registeredEventList = eventList.filter(
       ([_scheduledEvent, event]) => event,
-    ) as [GuildScheduledEvent, Event][]; // 未登録イベントは除外
+    ) as [GuildScheduledEvent, EventWithHost][]; // 未登録イベントは除外
     // 日付ずつに分ける
     const groupByDate = groupBy(registeredEventList, ([scheduledEvent]) =>
       scheduledEvent.scheduledStartAt?.toLocaleDateString('ja-JP'),
@@ -624,14 +624,14 @@ export async function updateSchedules(): Promise<void> {
           // メッセージを生成
           const eventListText = events
             .map(
-              ([scheduledEvent, _event]) =>
+              ([scheduledEvent, event]) =>
                 `- ${scheduledEvent.scheduledStartAt?.toLocaleTimeString(
                   'ja-JP',
                   {
                     hour: '2-digit',
                     minute: '2-digit',
                   },
-                )} [${scheduledEvent.name}](${scheduledEvent.url})`,
+                )} [${scheduledEvent.name}](${scheduledEvent.url})${event.host ? ` (主催者: <@${event.host.userId}>)` : ''}`,
             )
             .join('\n');
           const messageText = `# 📆 本日 ${mmdd} のイベント予定！
