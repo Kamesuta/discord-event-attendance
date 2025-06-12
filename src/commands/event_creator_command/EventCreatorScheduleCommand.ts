@@ -7,9 +7,9 @@ import {
 import { SubcommandInteraction } from '../base/command_base.js';
 import { config } from '../../utils/config.js';
 import { prisma } from '../../index.js';
-import { Event } from '@prisma/client';
 import eventCreatorCommand from './EventCreatorCommand.js';
 import { eventIncludeHost, EventWithHost } from '../../event/EventManager.js';
+import eventManager from '../../event/EventManager.js';
 
 class EventCreatorScheduleCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
@@ -76,17 +76,15 @@ class EventCreatorScheduleCommand extends SubcommandInteraction {
         )?.[1] ?? '';
 
       // 説明文を作成
-      // 最後の行に「主催」という文字があれば削除
-      const lines = (event.description ?? '').split('\n');
-      if (lines[lines.length - 1].includes('主催')) {
-        lines.pop();
-      }
+      const formattedDescription = eventManager.formatEventDescription(
+        event.description,
+        event.host ?? undefined,
+      );
 
       return [
         `
 ### ${dateText}${timeText}: ${emoji}[${event.name}](https://discord.com/events/${config.guild_id}/${event.eventId})
-${lines.join('\n')}
-<@${event.host?.userId}> さんが主催してくれます～
+${formattedDescription}
 `,
       ];
     });

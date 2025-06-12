@@ -14,6 +14,7 @@ import eventCreatorSetupCommand, {
   EventSpec,
 } from '../../event_creator_command/EventCreatorSetupCommand.js';
 import userManager from '../../../event/UserManager.js';
+import { logger } from '../../../utils/log.js';
 
 class SetupUserSelectAction extends MessageComponentActionInteraction<ComponentType.UserSelect> {
   /**
@@ -101,6 +102,23 @@ class SetupUserSelectAction extends MessageComponentActionInteraction<ComponentT
       where: { id: event.id },
       data: { hostId: hostUser.id },
     });
+
+    // Discordイベントの説明文を更新
+    const scheduledEvent = await interaction.guild?.scheduledEvents
+      .fetch(eventId)
+      .catch(() => undefined);
+    if (scheduledEvent) {
+      await scheduledEvent
+        .edit({
+          description: eventManager.formatEventDescription(
+            scheduledEvent.description,
+            hostUser,
+          ),
+        })
+        .catch((error) => {
+          logger.error('イベントの説明文の更新に失敗しました:', error);
+        });
+    }
 
     // パネルを表示
     const reply = await eventCreatorSetupCommand.createSetupPanel(interaction);

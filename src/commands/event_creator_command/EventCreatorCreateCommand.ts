@@ -116,14 +116,10 @@ class EventCreatorCreateCommand extends SubcommandInteraction {
     }
 
     // 説明文を作成
-    // 最後の行に「主催」という文字があれば削除
-    const lines = (event.description ?? '').split('\n');
-    if (lines[lines.length - 1].includes('主催')) {
-      lines.pop();
-    }
-    // 主催者の文言を追加
-    lines.push(`${userManager.getUserName(host)} さんが主催してくれます～`);
-    const description = lines.join('\n');
+    const description = eventManager.formatEventDescription(
+      event.description,
+      host,
+    );
 
     // Discordイベントを作成
     const createdScheduledEvent =

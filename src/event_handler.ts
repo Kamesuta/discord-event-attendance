@@ -55,13 +55,28 @@ export async function onCreateScheduledEvent(
 
         name: scheduledEvent.name,
         channelId: scheduledEvent.channel.id,
-        description: scheduledEvent.description,
+        description: eventManager.formatEventDescription(
+          scheduledEvent.description,
+        ),
         coverImage: scheduledEvent.coverImageURL({ size: coverImageSize }),
         scheduleTime: scheduledEvent.scheduledStartAt,
         hostId: host?.id,
       },
       ...eventIncludeHost,
     });
+
+    // Discordイベントの説明文を更新
+    await scheduledEvent
+      .edit({
+        description: eventManager.formatEventDescription(
+          scheduledEvent.description,
+          event.host ?? undefined,
+        ),
+      })
+      .catch((error) => {
+        logger.error('イベントの説明文の更新に失敗しました:', error);
+      });
+
     logger.info(
       `イベントを作成しました: ID=${event.id}, Name=${scheduledEvent.name}`,
     );
@@ -102,7 +117,9 @@ export async function onStartScheduledEvent(
 
           name: scheduledEvent.name,
           channelId: scheduledEvent.channel.id,
-          description: scheduledEvent.description,
+          description: eventManager.formatEventDescription(
+            scheduledEvent.description,
+          ),
           coverImage: scheduledEvent.coverImageURL({ size: coverImageSize }),
           scheduleTime: scheduledEvent.scheduledStartAt,
         },
@@ -119,12 +136,26 @@ export async function onStartScheduledEvent(
 
           name: scheduledEvent.name,
           channelId: scheduledEvent.channel.id,
-          description: scheduledEvent.description,
+          description: eventManager.formatEventDescription(
+            scheduledEvent.description,
+          ),
           coverImage: scheduledEvent.coverImageURL({ size: coverImageSize }),
           scheduleTime: scheduledEvent.scheduledStartAt,
         },
         ...eventIncludeHost,
       });
+
+      // Discordイベントの説明文を更新
+      await scheduledEvent
+        .edit({
+          description: eventManager.formatEventDescription(
+            scheduledEvent.description,
+            event.host ?? undefined,
+          ),
+        })
+        .catch((error) => {
+          logger.error('イベントの説明文の更新に失敗しました:', error);
+        });
     }
     logger.info(
       `イベントを開始しました: ID=${event.id}, Name=${scheduledEvent.name}`,
@@ -193,6 +224,18 @@ export async function onUpdateScheduledEvent(
       throw new Error(`イベントが見つかりません: Name=${scheduledEvent.name}`);
     }
 
+    // Discordイベントを更新
+    await scheduledEvent
+      .edit({
+        description: eventManager.formatEventDescription(
+          scheduledEvent.description,
+          event.host ?? undefined,
+        ),
+      })
+      .catch((error) => {
+        logger.error('イベントの説明文の更新に失敗しました:', error);
+      });
+
     await prisma.event.update({
       where: {
         id: event.id,
@@ -202,7 +245,9 @@ export async function onUpdateScheduledEvent(
 
         name: scheduledEvent.name,
         channelId: scheduledEvent.channel.id,
-        description: scheduledEvent.description,
+        description: eventManager.formatEventDescription(
+          scheduledEvent.description,
+        ),
         coverImage: scheduledEvent.coverImageURL({ size: coverImageSize }),
         scheduleTime: scheduledEvent.scheduledStartAt,
       },

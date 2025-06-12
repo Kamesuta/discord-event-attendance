@@ -6,7 +6,8 @@ import {
   VoiceBasedChannel,
 } from 'discord.js';
 import { prisma } from '../index.js';
-import { Event, Prisma } from '@prisma/client';
+import { Event, Prisma, User } from '@prisma/client';
+import userManager from './UserManager.js';
 
 /**
  * イベントの取得条件
@@ -295,6 +296,26 @@ class EventManager {
     return interaction.guild?.scheduledEvents
       .fetch(event.eventId)
       .catch(() => undefined);
+  }
+
+  /**
+   * イベントの説明文を加工します
+   * @param description 元の説明文
+   * @param host 主催者
+   * @returns 加工後の説明文
+   */
+  formatEventDescription(description: string | null, host?: User): string {
+    // 説明文を作成
+    // 最後の行に「主催」という文字があれば削除
+    const lines = (description ?? '').split('\n');
+    if (lines[lines.length - 1].includes('主催')) {
+      lines.pop();
+    }
+    // 主催者の文言を追加
+    if (host) {
+      lines.push(`${userManager.getUserName(host)} さんが主催してくれます～`);
+    }
+    return lines.join('\n');
   }
 }
 
