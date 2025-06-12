@@ -343,12 +343,15 @@ class EventManager {
       lines.pop();
     }
 
+    // 先頭の行から既存の主催者情報を削除
+    if (lines.length > 0) {
+      lines[0] = lines[0].replace(/^≪.*?主催≫\s*/, '');
+    }
+
     // 主催者の文言を先頭の行に統合
     if (host) {
       if (lines.length > 0) {
-        // 先頭の行から既存の主催者情報を削除
-        const firstLine = lines[0].replace(/^≪.*?主催≫\s*/, '');
-        lines[0] = `≪${userManager.getUserName(host)}主催≫ ${firstLine}`;
+        lines[0] = `≪${userManager.getUserName(host)}主催≫ ${lines[0]}`;
       } else {
         lines.push(`≪${userManager.getUserName(host)}主催≫`);
       }
