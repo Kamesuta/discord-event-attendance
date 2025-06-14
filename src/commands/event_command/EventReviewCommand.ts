@@ -162,7 +162,7 @@ class EventReviewCommand extends SubcommandInteraction {
       )
       .setURL(`https://discord.com/events/${config.guild_id}/${event.eventId}`)
       .setFooter({
-        text: `イベントID: ${event.id}`,
+        text: `出席: ${stats.filter((stat) => stat.show === true).length}人, 合計: ${stats.length}人\nイベントID: ${event.id}`,
       })
       .setDescription(
         '出席、欠席のステータスです。\n下のプルダウンからステータスを変更できます。\n\n' +
