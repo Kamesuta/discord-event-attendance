@@ -1,6 +1,7 @@
 import {
   ChannelType,
   ChatInputCommandInteraction,
+  DiscordAPIError,
   GuildScheduledEventEntityType,
   GuildScheduledEventPrivacyLevel,
   GuildScheduledEventStatus,
@@ -116,8 +117,8 @@ class EventCreatorCreateCommand extends SubcommandInteraction {
     }
 
     // Discordイベントを作成
-    const createdScheduledEvent =
-      await interaction.guild?.scheduledEvents.create({
+    const createdScheduledEvent = await interaction.guild?.scheduledEvents
+      .create({
         name: event.name,
         description: eventManager.formatEventDescription(
           event.description,
@@ -132,11 +133,22 @@ class EventCreatorCreateCommand extends SubcommandInteraction {
         channel,
         image: event.coverImage,
         reason: 'イベントを再利用して作成',
+      })
+      .catch(async (error: DiscordAPIError) => {
+        if (error.code === 50035) {
+          // Invalid Form Body
+          await interaction.editReply({
+            content:
+              '過去の日付を指定することはできません。未来の日付を指定してください。',
+          });
+        } else {
+          await interaction.editReply({
+            content: 'Discord上でのイベントの作成に失敗しました',
+          });
+        }
+        return undefined;
       });
     if (!createdScheduledEvent) {
-      await interaction.editReply({
-        content: 'Discord上でのイベントの作成に失敗しました',
-      });
       return;
     }
 
