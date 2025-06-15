@@ -9,7 +9,7 @@ import {
 import eventManager from '../../../event/EventManager.js';
 import { MessageComponentActionInteraction } from '../../base/action_base.js';
 import { logger } from '../../../utils/log.js';
-import { checkCommandPermission } from '../../../event/checkCommandPermission.js';
+import { checkEventOperationPermission } from '../../../event/checkCommandPermission.js';
 import eventOpAnnounceCommand from '../../event_op_command/EventOpAnnounceCommand.js';
 import { client } from '../../../index.js';
 
@@ -67,26 +67,14 @@ class PanelStartButtonAction extends MessageComponentActionInteraction<Component
       return;
     }
 
-    // メンバー情報を取得
-    const member = await interaction.guild?.members
-      .fetch(interaction.user.id)
-      .catch(() => undefined);
-    if (!member) {
-      await interaction.editReply({
-        content: 'メンバー情報の取得に失敗しました',
-      });
-      return;
-    }
-
     // 権限をチェック
-    if (
-      // イベントの主催者か
-      event.host?.userId !== interaction.user.id &&
-      // /event_admin で権限を持っているか
-      !(await checkCommandPermission('event_admin', member))
-    ) {
+    const { member, hasPermission } = await checkEventOperationPermission(
+      interaction,
+      event.host?.userId,
+    );
+    if (!member || !hasPermission) {
       await interaction.editReply({
-        content: 'イベント主催者のみがイベントを停止できます',
+        content: 'イベント主催者のみがイベントを開始できます',
       });
       return;
     }

@@ -17,7 +17,7 @@ import { config } from '../../../utils/config.js';
 import { logger } from '../../../utils/log.js';
 import { onEndEvent } from '../../../event_handler.js';
 import getWebhook from '../../../event/getWebhook.js';
-import { checkCommandPermission } from '../../../event/checkCommandPermission.js';
+import { checkEventOperationPermission } from '../../../event/checkCommandPermission.js';
 import eventAdminUpdateMessageCommand from '../../event_op_command/EventOpUpdateMessageCommand.js';
 import { syncRoleByCondition } from '../../../event/roleManager.js';
 import { client, prisma } from '../../../index.js';
@@ -252,24 +252,12 @@ class PanelStopButtonAction extends MessageComponentActionInteraction<ComponentT
       return;
     }
 
-    // メンバー情報を取得
-    const member = await interaction.guild?.members
-      .fetch(interaction.user.id)
-      .catch(() => undefined);
-    if (!interaction.guild || !member) {
-      await interaction.reply({
-        content: 'メンバー情報の取得に失敗しました',
-      });
-      return;
-    }
-
     // 権限をチェック
-    if (
-      // イベントの主催者か
-      event.host?.userId !== interaction.user.id &&
-      // /event_admin で権限を持っているか
-      !(await checkCommandPermission('event_admin', member))
-    ) {
+    const { member, hasPermission } = await checkEventOperationPermission(
+      interaction,
+      event.host?.userId,
+    );
+    if (!member || !hasPermission) {
       await interaction.reply({
         content: 'イベント主催者のみがイベントを停止できます',
       });

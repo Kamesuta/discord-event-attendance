@@ -9,7 +9,7 @@ import { UserContextMenuInteraction } from '../base/contextmenu_base.js';
 import eventManager from '../../event/EventManager.js';
 import { logger } from '../../utils/log.js';
 import { prisma } from '../../index.js';
-import { checkCommandPermission } from '../../event/checkCommandPermission.js';
+import { checkEventOperationPermission } from '../../event/checkCommandPermission.js';
 import userManager from '../../event/UserManager.js';
 
 class MuteUserMenu extends UserContextMenuInteraction {
@@ -35,24 +35,12 @@ class MuteUserMenu extends UserContextMenuInteraction {
       return;
     }
 
-    // メンバー情報を取得
-    const member = await interaction.guild?.members
-      .fetch(interaction.user.id)
-      .catch(() => undefined);
-    if (!member) {
-      await interaction.editReply({
-        content: 'メンバー情報の取得に失敗しました',
-      });
-      return;
-    }
-
     // 権限をチェック
-    if (
-      // イベントの主催者か
-      event.host?.userId !== interaction.user.id &&
-      // /event_admin で権限を持っているか
-      !(await checkCommandPermission('event_admin', member))
-    ) {
+    const { member, hasPermission } = await checkEventOperationPermission(
+      interaction,
+      event.host?.userId,
+    );
+    if (!member || !hasPermission) {
       await interaction.editReply({
         content: 'イベント主催者のみがサーバーミュートできます',
       });

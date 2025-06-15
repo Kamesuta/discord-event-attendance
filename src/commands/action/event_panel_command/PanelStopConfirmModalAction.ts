@@ -9,7 +9,7 @@ import { ModalActionInteraction } from '../../base/action_base.js';
 import panelStopButtonAction from './PanelStopButtonAction.js';
 import eventManager from '../../../event/EventManager.js';
 import { GuildScheduledEventStatus } from 'discord.js';
-import { checkCommandPermission } from '../../../event/checkCommandPermission.js';
+import { checkEventOperationPermission } from '../../../event/checkCommandPermission.js';
 import { prisma } from '../../../index.js';
 import { config } from '../../../utils/config.js';
 import { Prisma } from '@prisma/client';
@@ -140,24 +140,12 @@ class PanelStopConfirmModalAction extends ModalActionInteraction {
       return;
     }
 
-    // メンバー情報を取得
-    const member = await interaction.guild?.members
-      .fetch(interaction.user.id)
-      .catch(() => undefined);
-    if (!interaction.guild || !member) {
-      await interaction.editReply({
-        content: 'メンバー情報の取得に失敗しました',
-      });
-      return;
-    }
-
     // 権限をチェック
-    if (
-      // イベントの主催者か
-      event.host?.userId !== interaction.user.id &&
-      // /event_admin で権限を持っているか
-      !(await checkCommandPermission('event_admin', member))
-    ) {
+    const { member, hasPermission } = await checkEventOperationPermission(
+      interaction,
+      event.host?.userId,
+    );
+    if (!member || !hasPermission) {
       await interaction.editReply({
         content: 'イベント主催者のみがイベントを停止できます',
       });
