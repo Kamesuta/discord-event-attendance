@@ -10,18 +10,80 @@ import panelStopButtonAction from './PanelStopButtonAction.js';
 import eventManager from '../../../event/EventManager.js';
 import { GuildScheduledEventStatus } from 'discord.js';
 import { checkCommandPermission } from '../../../event/checkCommandPermission.js';
+import { prisma } from '../../../index.js';
+import { config } from '../../../utils/config.js';
+import { Prisma } from '@prisma/client';
+import userManager from '../../../event/UserManager.js';
+
+const userStatIncludeUser = {
+  include: {
+    user: true,
+  },
+};
+
+/**
+ * ユーザー統計情報
+ * ユーザー情報を含む
+ */
+export type UserStatWithUser = Prisma.UserStatGetPayload<
+  typeof userStatIncludeUser
+>;
 
 class PanelStopConfirmModalAction extends ModalActionInteraction {
   /**
+   * イベントの参加者リストを取得
+   * @param eventId イベントID
+   * @returns 参加者リスト
+   */
+  async listupStats(eventId: number): Promise<UserStatWithUser[]> {
+    return await prisma.userStat.findMany({
+      where: {
+        eventId: eventId,
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        OR: [
+          {
+            show: true,
+          },
+          {
+            duration: {
+              // 必要接続分数を満たしているユーザーのみを抽出する (config.required_time分以上参加している)
+              gt: config.required_time * 60 * 1000,
+            },
+          },
+        ],
+      },
+      ...userStatIncludeUser,
+    });
+  }
+
+  /**
    * モーダルを作成
    * @param eventId イベントID
+   * @param stats 参加者リスト
    * @returns 作成したモーダル
    */
-  override create(eventId: number): ModalBuilder {
+  override create(eventId: number, stats: UserStatWithUser[]): ModalBuilder {
     // カスタムIDを生成
     const customId = this.createCustomId({
       evt: `${eventId}`,
     });
+
+    // 参加者記録がされていない場合は警告を表示
+    const isWarning = stats.filter((stat) => stat.show === true).length === 0;
+    const warningMessage = `
+★★★参加者が未記録です！！★★★
+イベント終了前に「②参加者記録」ボタンから参加者記録をしてください`;
+    const defaultMessage = '出席者記録が間違っていないか確認お願いします';
+
+    // 参加者リストを作成
+    const statsList =
+      stats
+        .map((stat) => {
+          const mark = stat.show === null ? '⬛' : stat.show ? '☑️' : '❌';
+          const duration = Math.floor(stat.duration / 1000 / 60);
+          return `${mark} ${userManager.getUserName(stat.user)}: ${duration}分`;
+        })
+        .join('\n') || '参加者なし';
 
     // モーダルを作成
     return new ModalBuilder()
@@ -31,9 +93,16 @@ class PanelStopConfirmModalAction extends ModalActionInteraction {
         new ActionRowBuilder<TextInputBuilder>().addComponents(
           new TextInputBuilder()
             .setCustomId('confirm')
-            .setLabel('イベントを終了するには「終了」と入力してください')
+            .setLabel(
+              isWarning
+                ? '⛔「キャンセル」を押して、まずは参加者記録を行ってください'
+                : '✅ 問題なければ「送信」を押して、イベントを終了してください',
+            )
             .setStyle(TextInputStyle.Paragraph)
-            .setRequired(true),
+            .setRequired(true)
+            .setValue(
+              `${isWarning ? warningMessage : `${defaultMessage}\n${statsList}`}`,
+            ),
         ),
       );
   }
@@ -91,15 +160,6 @@ class PanelStopConfirmModalAction extends ModalActionInteraction {
     ) {
       await interaction.editReply({
         content: 'イベント主催者のみがイベントを停止できます',
-      });
-      return;
-    }
-
-    // 確認テキストを取得
-    const confirmText = interaction.fields.getTextInputValue('confirm');
-    if (confirmText !== '終了') {
-      await interaction.editReply({
-        content: '確認テキストが正しくありません。「終了」と入力してください',
       });
       return;
     }

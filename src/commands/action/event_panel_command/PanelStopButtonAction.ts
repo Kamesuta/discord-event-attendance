@@ -277,7 +277,10 @@ class PanelStopButtonAction extends MessageComponentActionInteraction<ComponentT
     }
 
     // モーダルを表示
-    await interaction.showModal(panelStopConfirmModalAction.create(event.id));
+    const stats = await panelStopConfirmModalAction.listupStats(event.id);
+    await interaction.showModal(
+      panelStopConfirmModalAction.create(event.id, stats),
+    );
   }
 }
 
