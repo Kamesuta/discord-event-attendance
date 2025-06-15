@@ -6,8 +6,10 @@ import {
   ComponentType,
   DiscordAPIError,
   EmbedBuilder,
+  GuildScheduledEvent,
   GuildScheduledEventStatus,
   Message,
+  RepliableInteraction,
 } from 'discord.js';
 import eventManager from '../../../event/EventManager.js';
 import { MessageComponentActionInteraction } from '../../base/action_base.js';
@@ -20,7 +22,8 @@ import eventAdminUpdateMessageCommand from '../../event_op_command/EventOpUpdate
 import { syncRoleByCondition } from '../../../event/roleManager.js';
 import { client, prisma } from '../../../index.js';
 import { makeGameResultEmbed } from '../../../event/game.js';
-import { GameResult } from '@prisma/client';
+import { Event, GameResult } from '@prisma/client';
+import panelStopConfirmModalAction from './PanelStopConfirmModalAction.js';
 
 class PanelStopButtonAction extends MessageComponentActionInteraction<ComponentType.Button> {
   /**
@@ -38,67 +41,22 @@ class PanelStopButtonAction extends MessageComponentActionInteraction<ComponentT
     return new ButtonBuilder()
       .setCustomId(customId)
       .setEmoji('⏹️')
-      .setLabel('イベントを終了する')
+      .setLabel('③イベント終了')
       .setStyle(ButtonStyle.Danger);
   }
 
-  /** @inheritdoc */
-  async onCommand(
-    interaction: ButtonInteraction,
-    params: URLSearchParams,
+  /**
+   * イベントを停止する
+   * @param interaction インタラクション
+   * @param event イベント
+   * @param scheduledEvent Discordイベント
+   * @returns 停止したイベント
+   */
+  async stopEvent(
+    interaction: RepliableInteraction,
+    event: Event,
+    scheduledEvent: GuildScheduledEvent,
   ): Promise<void> {
-    const eventId = params.get('evt');
-    if (!eventId) return; // 必要なパラメータがない場合は旧形式の可能性があるため無視
-
-    await interaction.deferReply({ ephemeral: true });
-
-    // イベントを取得
-    const event = await eventManager.getEventFromId(
-      eventId ? parseInt(eventId) : undefined,
-    );
-    const scheduledEvent = await eventManager.getScheduleEvent(
-      interaction,
-      event,
-    );
-    if (!event || !scheduledEvent) {
-      await interaction.editReply({
-        content: 'イベントが見つかりませんでした',
-      });
-      return;
-    }
-
-    // 開始されているイベントのみ停止可能
-    if (event.active !== (GuildScheduledEventStatus.Active as number)) {
-      await interaction.editReply({
-        content: '開始されていないイベントは停止できません',
-      });
-      return;
-    }
-
-    // メンバー情報を取得
-    const member = await interaction.guild?.members
-      .fetch(interaction.user.id)
-      .catch(() => undefined);
-    if (!interaction.guild || !member) {
-      await interaction.editReply({
-        content: 'メンバー情報の取得に失敗しました',
-      });
-      return;
-    }
-
-    // 権限をチェック
-    if (
-      // イベントの主催者か
-      event.host?.userId !== interaction.user.id &&
-      // /event_admin で権限を持っているか
-      !(await checkCommandPermission('event_admin', member))
-    ) {
-      await interaction.editReply({
-        content: 'イベント主催者のみがイベントを停止できます',
-      });
-      return;
-    }
-
     // アナウンスチャンネルを取得
     const announcementChannel = interaction.guild?.channels.cache.get(
       config.announcement_channel_id,
@@ -123,9 +81,7 @@ class PanelStopButtonAction extends MessageComponentActionInteraction<ComponentT
       .catch((_) => {});
 
     // イベントがまだアクティブなら、イベントを終了する (Discordイベントが終了していない場合などのフォールバック)
-    const eventAfterStop = await eventManager.getEventFromId(
-      eventId ? parseInt(eventId) : undefined,
-    );
+    const eventAfterStop = await eventManager.getEventFromId(event.id);
     if (
       scheduledEvent.channel?.isVoiceBased() &&
       eventAfterStop?.active === (GuildScheduledEventStatus.Active as number)
@@ -235,27 +191,93 @@ class PanelStopButtonAction extends MessageComponentActionInteraction<ComponentT
       }
     }
 
+    // ロールを同期 (非同期で実行)
+    if (interaction.guild) {
+      void syncRoleByCondition(interaction.guild);
+    }
+
     // パネルのメッセージ削除
-    const panelMessage = await interaction.message // 確認メッセージの元のメッセージ=パネルを取得
-      .fetchReference()
-      .catch(() => undefined);
-    await panelMessage?.delete().catch((e) => {
-      // 権限エラーの場合警告を出す
-      if (e instanceof DiscordAPIError && e.code === 50013) {
-        logger.warn(
-          'パネルのメッセージ削除に失敗しました: 権限がありません。「メッセージの管理」権限の他に、「チャンネルを見る」権限も必要です。',
-        );
-      } else {
-        logger.error('パネルのメッセージ削除に失敗しました', e);
-      }
-    });
+    if (interaction.isMessageComponent()) {
+      const panelMessage = await interaction.message // 確認メッセージの元のメッセージ=パネルを取得
+        .fetchReference()
+        .catch(() => undefined);
+      await panelMessage?.delete().catch((e) => {
+        // 権限エラーの場合警告を出す
+        if (e instanceof DiscordAPIError && e.code === 50013) {
+          logger.warn(
+            'パネルのメッセージ削除に失敗しました: 権限がありません。「メッセージの管理」権限の他に、「チャンネルを見る」権限も必要です。',
+          );
+        } else {
+          logger.error('パネルのメッセージ削除に失敗しました', e);
+        }
+      });
+    }
 
     await interaction.editReply({
       content: `イベント「${event.name}」(ID: ${event.id})を終了しました。主催お疲れ様でした！`,
     });
+  }
 
-    // ロールを同期
-    await syncRoleByCondition(interaction.guild);
+  /** @inheritdoc */
+  async onCommand(
+    interaction: ButtonInteraction,
+    params: URLSearchParams,
+  ): Promise<void> {
+    const eventId = params.get('evt');
+    if (!eventId) return; // 必要なパラメータがない場合は旧形式の可能性があるため無視
+
+    // モーダルのためdeferReplyを使わない
+    // await interaction.deferReply({ ephemeral: true });
+
+    // イベントを取得
+    const event = await eventManager.getEventFromId(
+      eventId ? parseInt(eventId) : undefined,
+    );
+    const scheduledEvent = await eventManager.getScheduleEvent(
+      interaction,
+      event,
+    );
+    if (!event || !scheduledEvent) {
+      await interaction.reply({
+        content: 'イベントが見つかりませんでした',
+      });
+      return;
+    }
+
+    // 開始されているイベントのみ停止可能
+    if (event.active !== (GuildScheduledEventStatus.Active as number)) {
+      await interaction.reply({
+        content: '開始されていないイベントは停止できません',
+      });
+      return;
+    }
+
+    // メンバー情報を取得
+    const member = await interaction.guild?.members
+      .fetch(interaction.user.id)
+      .catch(() => undefined);
+    if (!interaction.guild || !member) {
+      await interaction.reply({
+        content: 'メンバー情報の取得に失敗しました',
+      });
+      return;
+    }
+
+    // 権限をチェック
+    if (
+      // イベントの主催者か
+      event.host?.userId !== interaction.user.id &&
+      // /event_admin で権限を持っているか
+      !(await checkCommandPermission('event_admin', member))
+    ) {
+      await interaction.reply({
+        content: 'イベント主催者のみがイベントを停止できます',
+      });
+      return;
+    }
+
+    // モーダルを表示
+    await interaction.showModal(panelStopConfirmModalAction.create(event.id));
   }
 }
 

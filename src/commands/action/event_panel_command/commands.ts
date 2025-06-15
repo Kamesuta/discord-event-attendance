@@ -2,13 +2,13 @@ import { InteractionBase } from '../../base/interaction_base.js';
 import panelReviewButtonAction from './PanelReviewButtonAction.js';
 import panelStartButtonAction from './PanelStartButtonAction.js';
 import panelStopButtonAction from './PanelStopButtonAction.js';
-import panelStopConfirmButtonAction from './PanelStopConfirmButtonAction.js';
+import panelStopConfirmModalAction from './PanelStopConfirmModalAction.js';
 
 const commands: InteractionBase[] = [
   panelStartButtonAction,
   panelReviewButtonAction,
   panelStopButtonAction,
-  panelStopConfirmButtonAction,
+  panelStopConfirmModalAction,
 ];
 
 export default commands;

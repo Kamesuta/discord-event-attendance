@@ -15,7 +15,7 @@ import { onUpdateScheduledEvent } from '../../event_handler.js';
 import { prisma } from '../../index.js';
 import panelStartButtonAction from '../action/event_panel_command/PanelStartButtonAction.js';
 import panelReviewButtonAction from '../action/event_panel_command/PanelReviewButtonAction.js';
-import panelStopConfirmButtonAction from '../action/event_panel_command/PanelStopConfirmButtonAction.js';
+import panelStopButtonAction from '../action/event_panel_command/PanelStopButtonAction.js';
 import { config } from '../../utils/config.js';
 import eventOpCommand from './EventOpCommand.js';
 import userManager from '../../event/UserManager.js';
@@ -122,7 +122,7 @@ class EventOpPanelCommand extends SubcommandInteraction {
         new ActionRowBuilder<ButtonBuilder>().addComponents(
           panelStartButtonAction.create(event.id),
           panelReviewButtonAction.create(event.id),
-          panelStopConfirmButtonAction.create(event.id),
+          panelStopButtonAction.create(event.id),
         ),
       ],
     };
