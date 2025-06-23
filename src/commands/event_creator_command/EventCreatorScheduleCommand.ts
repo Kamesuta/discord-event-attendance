@@ -18,7 +18,8 @@ import { config } from '../../utils/config.js';
 import { prisma } from '../../index.js';
 import eventCreatorCommand from './EventCreatorCommand.js';
 import { eventIncludeHost, EventWithHost } from '../../event/EventManager.js';
-import sharp from 'sharp';
+import sharp, { OverlayOptions } from 'sharp';
+import userManager from '../../event/UserManager.js';
 
 class EventCreatorScheduleCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
@@ -26,11 +27,27 @@ class EventCreatorScheduleCommand extends SubcommandInteraction {
     .setDescription('1週間分のスケジュールメッセージを作成します');
 
   /**
-   * 画像をダウンロードして高さを半分にリサイズする
+   * 画像をダウンロードして高さを半分にリサイズし、イベント名を埋め込む
    * @param imageUrl 元の画像URL
+   * @param eventName イベント名
+   * @param hostAvatarUrl 主催者のアバター画像URL（オプション）
    * @returns リサイズされた画像のバッファ
    */
-  private async _processImage(imageUrl: string): Promise<Buffer> {
+  private async _processImage(
+    imageUrl: string,
+    eventName: string,
+    hostAvatarUrl?: string,
+  ): Promise<Buffer> {
+    // 出力サイズを固定
+    const outputWidth = 512;
+    const outputHeight = 80;
+    const fontSize = 16;
+    const textColor = '#FFFFFF';
+    const shadowColor = '#000000';
+    const padding = 10;
+    const avatarSize = 32;
+    const avatarPadding = 8;
+
     // 画像をダウンロード
     const response = await fetch(imageUrl);
     if (!response.ok) {
@@ -39,25 +56,108 @@ class EventCreatorScheduleCommand extends SubcommandInteraction {
 
     const imageBuffer = Buffer.from(await response.arrayBuffer());
 
-    // 画像の情報を取得
-    const metadata = await sharp(imageBuffer).metadata();
-    if (!metadata.width || !metadata.height) {
-      throw new Error('Could not get image dimensions');
+    // 背景画像をリサイズして切り抜き
+    const backgroundImage = await sharp(imageBuffer)
+      .resize(outputWidth, outputHeight, {
+        fit: 'cover',
+        position: 'center',
+      })
+      .png()
+      .toBuffer();
+
+    // 合成用の要素を準備
+    const compositeElements: OverlayOptions[] = [];
+
+    // テキストオーバーレイ用のSVGを作成
+    const textSvg = `
+      <svg width="${outputWidth}" height="${outputHeight}" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="1" dy="1" stdDeviation="2" flood-color="${shadowColor}" flood-opacity="0.8"/>
+          </filter>
+        </defs>
+        
+        <!-- 半透明の背景オーバーレイ -->
+        <rect width="100%" height="100%" fill="rgba(0,0,0,0.4)" />
+        
+        <!-- イベント名テキスト -->
+        <text 
+          x="${outputWidth / 2}" 
+          y="${outputHeight - padding}" 
+          font-family="Arial, sans-serif" 
+          font-size="${fontSize}" 
+          font-weight="bold"
+          fill="${textColor}" 
+          text-anchor="middle" 
+          dominant-baseline="baseline"
+          filter="url(#shadow)"
+        >${eventName.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</text>
+      </svg>
+    `;
+
+    // 先にテキストオーバーレイを追加
+    compositeElements.push({
+      input: Buffer.from(textSvg),
+      blend: 'over',
+    });
+
+    // 主催者のアバター画像を処理（存在する場合）
+    if (hostAvatarUrl) {
+      try {
+        const avatarResponse = await fetch(hostAvatarUrl);
+        if (avatarResponse.ok) {
+          const avatarBuffer = Buffer.from(await avatarResponse.arrayBuffer());
+
+          // アバター画像を円形にクロップしてリサイズし、白い縁取りを追加
+          const circularAvatar = await sharp(avatarBuffer)
+            .resize(avatarSize, avatarSize, {
+              fit: 'cover',
+              position: 'center',
+            })
+            .composite([
+              {
+                input: Buffer.from(`
+                  <svg width="${avatarSize}" height="${avatarSize}">
+                    <defs>
+                      <mask id="circle">
+                        <circle cx="${avatarSize / 2}" cy="${avatarSize / 2}" r="${avatarSize / 2 - 1}" fill="white"/>
+                      </mask>
+                    </defs>
+                    <circle cx="${avatarSize / 2}" cy="${avatarSize / 2}" r="${avatarSize / 2 - 0.5}" fill="none" stroke="white" stroke-width="2"/>
+                    <rect width="100%" height="100%" fill="black" mask="url(#circle)"/>
+                  </svg>
+                `),
+                blend: 'dest-in',
+              },
+              {
+                input: Buffer.from(`
+                  <svg width="${avatarSize}" height="${avatarSize}">
+                    <circle cx="${avatarSize / 2}" cy="${avatarSize / 2}" r="${avatarSize / 2 - 1}" fill="none" stroke="white" stroke-width="2"/>
+                  </svg>
+                `),
+                blend: 'over',
+              },
+            ])
+            .png()
+            .toBuffer();
+
+          // アバター画像を右上に配置（オーバーレイの後に追加）
+          compositeElements.push({
+            input: circularAvatar,
+            left: outputWidth - avatarSize - avatarPadding,
+            top: avatarPadding,
+          });
+        }
+      } catch (error) {
+        console.error('Failed to process host avatar:', error);
+        // アバター処理に失敗しても続行
+      }
     }
 
-    // 高さを半分にして、上下を切り取る
-    const newHeight = Math.floor(metadata.height / 2);
-    const cropTop = Math.floor((metadata.height - newHeight) / 2);
-
-    // 画像を加工
-    const processedBuffer = await sharp(imageBuffer)
-      .extract({
-        left: 0,
-        top: cropTop,
-        width: metadata.width,
-        height: newHeight,
-      })
-      .png() // PNG形式で出力
+    // 背景画像とすべての要素を合成
+    const processedBuffer = await sharp(backgroundImage)
+      .composite(compositeElements)
+      .png()
       .toBuffer();
 
     return processedBuffer;
@@ -161,6 +261,8 @@ class EventCreatorScheduleCommand extends SubcommandInteraction {
           const filename = `event_${event.id}_cover.png`;
           const processedImageBuffer = await this._processImage(
             event.coverImage,
+            event.name,
+            event.host ? userManager.getUserAvatar(event.host) : undefined,
           );
 
           // 添付ファイルを作成
