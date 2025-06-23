@@ -31,7 +31,7 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Debug MCP Server",
+      "name": "Debug Only MCP Server",
       "runtimeExecutable": "node",
       "runtimeArgs": ["--nolazy", "--import", "tsx/esm"],
       "args": ["src/mcp/server.ts"],
@@ -39,9 +39,6 @@
       "envFile": "${workspaceFolder}/.env",
       "skipFiles": ["<node_internals>/**", "node_modules/**"],
       "internalConsoleOptions": "openOnSessionStart",
-      "env": {
-        "PORT": "3000"
-      }
     }
   ]
 }

@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "start": "node --import tsx/esm src/index.ts",
-    "mcp": "node --import tsx/esm src/mcp/server.ts",
+    "start:bot": "node --import tsx/esm src/bot.ts",
+    "start:mcp": "node --import tsx/esm src/mcp/server.ts",
     "clean": "rimraf dist",
     "tsc": "tsc",
     "build": "npm-run-all clean tsc",
