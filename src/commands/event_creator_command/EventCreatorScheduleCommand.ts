@@ -6,21 +6,62 @@ import {
   TextDisplayBuilder,
   SeparatorBuilder,
   SeparatorSpacingSize,
-  SectionBuilder,
-  ThumbnailBuilder,
   APIMessageTopLevelComponent,
   JSONEncodable,
+  ContainerBuilder,
+  MediaGalleryBuilder,
+  MediaGalleryItemBuilder,
+  AttachmentBuilder,
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
 import { config } from '../../utils/config.js';
 import { prisma } from '../../index.js';
 import eventCreatorCommand from './EventCreatorCommand.js';
 import { eventIncludeHost, EventWithHost } from '../../event/EventManager.js';
+import sharp from 'sharp';
 
 class EventCreatorScheduleCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
     .setName('schedule')
     .setDescription('1週間分のスケジュールメッセージを作成します');
+
+  /**
+   * 画像をダウンロードして高さを半分にリサイズする
+   * @param imageUrl 元の画像URL
+   * @returns リサイズされた画像のバッファ
+   */
+  private async _processImage(imageUrl: string): Promise<Buffer> {
+    // 画像をダウンロード
+    const response = await fetch(imageUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to download image: ${response.statusText}`);
+    }
+
+    const imageBuffer = Buffer.from(await response.arrayBuffer());
+
+    // 画像の情報を取得
+    const metadata = await sharp(imageBuffer).metadata();
+    if (!metadata.width || !metadata.height) {
+      throw new Error('Could not get image dimensions');
+    }
+
+    // 高さを半分にして、上下を切り取る
+    const newHeight = Math.floor(metadata.height / 2);
+    const cropTop = Math.floor((metadata.height - newHeight) / 2);
+
+    // 画像を加工
+    const processedBuffer = await sharp(imageBuffer)
+      .extract({
+        left: 0,
+        top: cropTop,
+        width: metadata.width,
+        height: newHeight,
+      })
+      .png() // PNG形式で出力
+      .toBuffer();
+
+    return processedBuffer;
+  }
 
   /**
    * 週間カレンダー形式のメッセージコンポーネントを生成
@@ -55,14 +96,19 @@ class EventCreatorScheduleCommand extends SubcommandInteraction {
    * @param events イベントの配列
    * @param start 開始日
    * @param end 終了日
-   * @returns 詳細情報のメッセージコンポーネント配列
+   * @returns 詳細情報のメッセージコンポーネントと添付ファイルの配列
    */
-  private _createDetailComponents(
+  private async _createDetailComponents(
     events: EventWithHost[],
     start: Date,
     end: Date,
-  ): JSONEncodable<APIMessageTopLevelComponent>[] {
+  ): Promise<{
+    components: JSONEncodable<APIMessageTopLevelComponent>[];
+    attachments: AttachmentBuilder[];
+  }> {
     const components: JSONEncodable<APIMessageTopLevelComponent>[] = [];
+    const attachments: AttachmentBuilder[] = [];
+
     components.push(
       // ヘッダー部分
       new TextDisplayBuilder()
@@ -108,13 +154,43 @@ class EventCreatorScheduleCommand extends SubcommandInteraction {
         : '';
 
       // イベントタイトルを追加
-      const section = new SectionBuilder();
+      const section = new ContainerBuilder();
       if (event.coverImage) {
-        section.setThumbnailAccessory(
-          new ThumbnailBuilder()
-            .setURL(event.coverImage)
-            .setDescription(`${event.name}のカバー画像`),
-        );
+        try {
+          // 画像をダウンロードして加工
+          const filename = `event_${event.id}_cover.png`;
+          const processedImageBuffer = await this._processImage(
+            event.coverImage,
+          );
+
+          // 添付ファイルを作成
+          const attachment = new AttachmentBuilder(processedImageBuffer, {
+            name: filename,
+            description: `${event.name}のカバー画像（リサイズ済み）`,
+          });
+          attachments.push(attachment);
+
+          section.addMediaGalleryComponents(
+            new MediaGalleryBuilder().addItems(
+              new MediaGalleryItemBuilder()
+                .setURL(`attachment://${filename}`)
+                .setDescription(`${event.name}のカバー画像`),
+            ),
+          );
+        } catch (error) {
+          console.error(
+            `Failed to process image for event ${event.id}:`,
+            error,
+          );
+          // エラーの場合は元の画像を使用
+          section.addMediaGalleryComponents(
+            new MediaGalleryBuilder().addItems(
+              new MediaGalleryItemBuilder()
+                .setURL(event.coverImage)
+                .setDescription(`${event.name}のカバー画像`),
+            ),
+          );
+        }
       }
       section.addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
@@ -131,7 +207,7 @@ class EventCreatorScheduleCommand extends SubcommandInteraction {
 通知を受け取りたい/不要な方は <id:customize> からGET/解除できます`),
     );
 
-    return components;
+    return { components, attachments };
   }
 
   async onCommand(interaction: ChatInputCommandInteraction): Promise<void> {
@@ -203,9 +279,14 @@ class EventCreatorScheduleCommand extends SubcommandInteraction {
     await scheduleChannel.send(calendarText);
 
     // 詳細メッセージを送信
-    const detailComponents = this._createDetailComponents(events, start, end);
+    const { components, attachments } = await this._createDetailComponents(
+      events,
+      start,
+      end,
+    );
     await scheduleChannel.send({
-      components: detailComponents,
+      components: components,
+      files: attachments,
       flags: MessageFlags.IsComponentsV2,
     });
 
