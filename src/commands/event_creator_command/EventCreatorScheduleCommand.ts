@@ -70,16 +70,33 @@ class EventCreatorScheduleCommand extends SubcommandInteraction {
   }
 
   /**
+   * Discordのカスタム絵文字から画像URLを取得する
+   * @param emoji 絵文字文字列
+   * @returns 画像URL（カスタム絵文字の場合）、またはnull（Unicode絵文字の場合）
+   */
+  private _getEmojiImageUrl(emoji: string): string | null {
+    // Discordのカスタム絵文字の形式: <:name:id>
+    const match = emoji.match(/<:([^:]+):(\d+)>/);
+    if (match) {
+      const [, name, id] = match;
+      return `https://cdn.discordapp.com/emojis/${id}.png`;
+    }
+    return null;
+  }
+
+  /**
    * 画像をダウンロードして高さを半分にリサイズし、イベント名を埋め込む
    * @param imageUrl 元の画像URL（nullの場合はデフォルト背景を使用）
    * @param eventName イベント名
    * @param hostAvatarUrl 主催者のアバター画像URL（オプション）
+   * @param emoji イベントの絵文字（オプション）
    * @returns リサイズされた画像のバッファ
    */
   private async _processImage(
     imageUrl: string | null,
     eventName: string,
     hostAvatarUrl?: string,
+    emoji?: string,
   ): Promise<Buffer> {
     // 出力サイズを固定
     const outputWidth = 512;
@@ -90,6 +107,8 @@ class EventCreatorScheduleCommand extends SubcommandInteraction {
     const padding = 10;
     const avatarSize = 32;
     const avatarPadding = 8;
+    const emojiSize = 24;
+    const emojiPadding = 12;
 
     let backgroundImage: Buffer;
 
@@ -122,6 +141,30 @@ class EventCreatorScheduleCommand extends SubcommandInteraction {
     // 合成用の要素を準備
     const compositeElements: OverlayOptions[] = [];
 
+    // 絵文字画像を処理（カスタム絵文字の場合）
+    let emojiImageBuffer: Buffer | null = null;
+    if (emoji) {
+      const emojiImageUrl = this._getEmojiImageUrl(emoji);
+      if (emojiImageUrl) {
+        try {
+          const emojiResponse = await fetch(emojiImageUrl);
+          if (emojiResponse.ok) {
+            const emojiBuffer = Buffer.from(await emojiResponse.arrayBuffer());
+            emojiImageBuffer = await sharp(emojiBuffer)
+              .resize(emojiSize, emojiSize, {
+                fit: 'contain',
+                background: { r: 0, g: 0, b: 0, alpha: 0 },
+              })
+              .png()
+              .toBuffer();
+          }
+        } catch (error) {
+          console.error('Failed to download emoji image:', error);
+          // 絵文字画像のダウンロードに失敗しても続行
+        }
+      }
+    }
+
     // テキストオーバーレイ用のSVGを作成
     const textSvg = `
       <svg width="${outputWidth}" height="${outputHeight}" xmlns="http://www.w3.org/2000/svg">
@@ -134,15 +177,29 @@ class EventCreatorScheduleCommand extends SubcommandInteraction {
         <!-- 半透明の背景オーバーレイ -->
         <rect width="100%" height="100%" fill="rgba(0,0,0,0.4)" />
         
+        <!-- 絵文字（Unicode絵文字の場合） -->
+        ${
+          emoji && !emojiImageBuffer
+            ? `<text 
+          x="${emojiPadding + emojiSize / 2}" 
+          y="${outputHeight / 2 + emojiSize / 3}" 
+          font-size="${emojiSize}" 
+          text-anchor="middle" 
+          dominant-baseline="middle"
+          filter="url(#shadow)"
+        >${emoji}</text>`
+            : ''
+        }
+        
         <!-- イベント名テキスト -->
         <text 
-          x="${outputWidth / 2}" 
+          x="${emoji ? emojiPadding + emojiSize + padding : outputWidth / 2}" 
           y="${outputHeight - padding}" 
           font-family="Arial, sans-serif" 
           font-size="${fontSize}" 
           font-weight="bold"
           fill="${textColor}" 
-          text-anchor="middle" 
+          text-anchor="${emoji ? 'start' : 'middle'}" 
           dominant-baseline="baseline"
           filter="url(#shadow)"
         >${eventName.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</text>
@@ -154,6 +211,15 @@ class EventCreatorScheduleCommand extends SubcommandInteraction {
       input: Buffer.from(textSvg),
       blend: 'over',
     });
+
+    // カスタム絵文字画像を追加（存在する場合）
+    if (emojiImageBuffer) {
+      compositeElements.push({
+        input: emojiImageBuffer,
+        left: emojiPadding,
+        top: Math.floor((outputHeight - emojiSize) / 2),
+      });
+    }
 
     // 主催者のアバター画像を処理（存在する場合）
     if (hostAvatarUrl) {
@@ -316,6 +382,7 @@ class EventCreatorScheduleCommand extends SubcommandInteraction {
           event.coverImage,
           event.name,
           event.host ? userManager.getUserAvatar(event.host) : undefined,
+          emoji,
         );
 
         // 添付ファイルを作成
