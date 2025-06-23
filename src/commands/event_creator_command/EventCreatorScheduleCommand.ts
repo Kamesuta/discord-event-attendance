@@ -329,6 +329,43 @@ class EventCreatorScheduleCommand extends SubcommandInteraction {
     const components: JSONEncodable<APIMessageTopLevelComponent>[] = [];
     const attachments: AttachmentBuilder[] = [];
 
+    // バナー画像を処理（設定されている場合）
+    if (config.event_banner_url) {
+      try {
+        const bannerResponse = await fetch(config.event_banner_url);
+        if (bannerResponse.ok) {
+          const bannerBuffer = Buffer.from(await bannerResponse.arrayBuffer());
+
+          // バナー画像をリサイズ（幅512px、高さは自動調整）
+          const resizedBanner = await sharp(bannerBuffer)
+            .resize(512, null, {
+              withoutEnlargement: true,
+            })
+            .png()
+            .toBuffer();
+
+          const bannerFilename = 'event_banner.png';
+          const bannerAttachment = new AttachmentBuilder(resizedBanner, {
+            name: bannerFilename,
+            description: 'イベントバナー',
+          });
+          attachments.push(bannerAttachment);
+
+          // バナー画像を追加
+          components.push(
+            new MediaGalleryBuilder().addItems(
+              new MediaGalleryItemBuilder()
+                .setURL(`attachment://${bannerFilename}`)
+                .setDescription('イベントバナー'),
+            ),
+          );
+        }
+      } catch (error) {
+        console.error('Failed to process banner image:', error);
+        // バナー処理に失敗しても続行
+      }
+    }
+
     components.push(
       // ヘッダー部分
       new TextDisplayBuilder()

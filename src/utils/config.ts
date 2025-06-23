@@ -52,6 +52,9 @@ export interface Config {
   /** 絵文字リスト */
   emojis: Record<string, string>;
 
+  /** イベントバナー画像URL */
+  event_banner_url?: string;
+
   /* eslint-enable @typescript-eslint/naming-convention */
 }
 
