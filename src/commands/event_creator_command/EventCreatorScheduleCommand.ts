@@ -27,14 +27,57 @@ class EventCreatorScheduleCommand extends SubcommandInteraction {
     .setDescription('1週間分のスケジュールメッセージを作成します');
 
   /**
+   * デフォルト背景画像を生成する
+   * @param width 幅
+   * @param height 高さ
+   * @param eventName イベント名（色の決定に使用）
+   * @returns デフォルト背景画像のバッファ
+   */
+  private async _createDefaultBackground(
+    width: number,
+    height: number,
+    eventName: string,
+  ): Promise<Buffer> {
+    // イベント名から色を決定（簡単なハッシュベースの色生成）
+    let hash = 0;
+    for (let i = 0; i < eventName.length; i++) {
+      hash = eventName.charCodeAt(i) + ((hash << 5) - hash);
+    }
+
+    // HSLカラーを生成（彩度と明度を調整してきれいな色にする）
+    const hue = Math.abs(hash) % 360;
+    const saturation = 60 + (Math.abs(hash) % 20); // 60-80%
+    const lightness = 45 + (Math.abs(hash) % 15); // 45-60%
+
+    const color1 = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+    const color2 = `hsl(${(hue + 60) % 360}, ${saturation}%, ${lightness - 10}%)`;
+
+    // SVGでグラデーション背景を作成
+    const backgroundSvg = `
+      <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="bg-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:${color1};stop-opacity:1" />
+            <stop offset="100%" style="stop-color:${color2};stop-opacity:1" />
+          </linearGradient>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#bg-gradient)" />
+      </svg>
+    `;
+
+    // SVGをPNGに変換
+    return await sharp(Buffer.from(backgroundSvg)).png().toBuffer();
+  }
+
+  /**
    * 画像をダウンロードして高さを半分にリサイズし、イベント名を埋め込む
-   * @param imageUrl 元の画像URL
+   * @param imageUrl 元の画像URL（nullの場合はデフォルト背景を使用）
    * @param eventName イベント名
    * @param hostAvatarUrl 主催者のアバター画像URL（オプション）
    * @returns リサイズされた画像のバッファ
    */
   private async _processImage(
-    imageUrl: string,
+    imageUrl: string | null,
     eventName: string,
     hostAvatarUrl?: string,
   ): Promise<Buffer> {
@@ -48,22 +91,33 @@ class EventCreatorScheduleCommand extends SubcommandInteraction {
     const avatarSize = 32;
     const avatarPadding = 8;
 
-    // 画像をダウンロード
-    const response = await fetch(imageUrl);
-    if (!response.ok) {
-      throw new Error(`Failed to download image: ${response.statusText}`);
+    let backgroundImage: Buffer;
+
+    if (imageUrl) {
+      // 画像をダウンロード
+      const response = await fetch(imageUrl);
+      if (!response.ok) {
+        throw new Error(`Failed to download image: ${response.statusText}`);
+      }
+
+      const imageBuffer = Buffer.from(await response.arrayBuffer());
+
+      // 背景画像をリサイズして切り抜き
+      backgroundImage = await sharp(imageBuffer)
+        .resize(outputWidth, outputHeight, {
+          fit: 'cover',
+          position: 'center',
+        })
+        .png()
+        .toBuffer();
+    } else {
+      // デフォルト背景を生成
+      backgroundImage = await this._createDefaultBackground(
+        outputWidth,
+        outputHeight,
+        eventName,
+      );
     }
-
-    const imageBuffer = Buffer.from(await response.arrayBuffer());
-
-    // 背景画像をリサイズして切り抜き
-    const backgroundImage = await sharp(imageBuffer)
-      .resize(outputWidth, outputHeight, {
-        fit: 'cover',
-        position: 'center',
-      })
-      .png()
-      .toBuffer();
 
     // 合成用の要素を準備
     const compositeElements: OverlayOptions[] = [];
@@ -255,36 +309,33 @@ class EventCreatorScheduleCommand extends SubcommandInteraction {
 
       // イベントタイトルを追加
       const section = new ContainerBuilder();
-      if (event.coverImage) {
-        try {
-          // 画像をダウンロードして加工
-          const filename = `event_${event.id}_cover.png`;
-          const processedImageBuffer = await this._processImage(
-            event.coverImage,
-            event.name,
-            event.host ? userManager.getUserAvatar(event.host) : undefined,
-          );
+      try {
+        // 画像を加工（coverImageがない場合はデフォルト背景を使用）
+        const filename = `event_${event.id}_cover.png`;
+        const processedImageBuffer = await this._processImage(
+          event.coverImage,
+          event.name,
+          event.host ? userManager.getUserAvatar(event.host) : undefined,
+        );
 
-          // 添付ファイルを作成
-          const attachment = new AttachmentBuilder(processedImageBuffer, {
-            name: filename,
-            description: `${event.name}のカバー画像（リサイズ済み）`,
-          });
-          attachments.push(attachment);
+        // 添付ファイルを作成
+        const attachment = new AttachmentBuilder(processedImageBuffer, {
+          name: filename,
+          description: `${event.name}のカバー画像（${event.coverImage ? 'リサイズ済み' : 'デフォルト背景'}）`,
+        });
+        attachments.push(attachment);
 
-          section.addMediaGalleryComponents(
-            new MediaGalleryBuilder().addItems(
-              new MediaGalleryItemBuilder()
-                .setURL(`attachment://${filename}`)
-                .setDescription(`${event.name}のカバー画像`),
-            ),
-          );
-        } catch (error) {
-          console.error(
-            `Failed to process image for event ${event.id}:`,
-            error,
-          );
-          // エラーの場合は元の画像を使用
+        section.addMediaGalleryComponents(
+          new MediaGalleryBuilder().addItems(
+            new MediaGalleryItemBuilder()
+              .setURL(`attachment://${filename}`)
+              .setDescription(`${event.name}のカバー画像`),
+          ),
+        );
+      } catch (error) {
+        console.error(`Failed to process image for event ${event.id}:`, error);
+        // エラーの場合、coverImageがあれば元の画像を使用、なければ画像なし
+        if (event.coverImage) {
           section.addMediaGalleryComponents(
             new MediaGalleryBuilder().addItems(
               new MediaGalleryItemBuilder()
