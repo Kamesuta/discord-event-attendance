@@ -44,7 +44,7 @@
     "@modelcontextprotocol/sdk": "^1.13.1",
     "@prisma/client": "^6.5.0",
     "csv-parse": "^5.6.0",
-    "discord.js": "^14.18.0",
+    "discord.js": "^14.19.3",
     "dotenv": "^16.4.7",
     "express": "^5.1.0",
     "if-env": "^1.0.4",
