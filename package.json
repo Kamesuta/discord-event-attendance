@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "start": "node --import tsx/esm src/index.ts",
+    "mcp": "node --import tsx/esm src/mcp/server.ts",
     "clean": "rimraf dist",
     "tsc": "tsc",
     "build": "npm-run-all clean tsc",
@@ -22,6 +23,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.24.0",
+    "@types/express": "^5.0.3",
     "@types/lodash": "^4.17.16",
     "@types/node": "^22.14.0",
     "@types/node-schedule": "^2.1.7",
@@ -38,16 +40,19 @@
     "typescript-eslint": "^8.29.0"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.13.1",
     "@prisma/client": "^6.5.0",
     "csv-parse": "^5.6.0",
     "discord.js": "^14.18.0",
     "dotenv": "^16.4.7",
+    "express": "^5.1.0",
     "if-env": "^1.0.4",
     "lodash": "^4.17.21",
     "log4js": "^6.9.1",
     "node-schedule": "^2.1.1",
     "prisma": "^6.5.0",
     "toml": "^3.0.0",
-    "tsx": "^4.19.3"
+    "tsx": "^4.19.3",
+    "zod": "^3.25.67"
   }
 }

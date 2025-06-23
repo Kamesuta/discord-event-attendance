@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "discord-event-attendance": {
+      "type": "http",
+      "url": "http://localhost:3000/mcp"
+    }
+  }
+}

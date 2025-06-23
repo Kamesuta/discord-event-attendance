@@ -27,6 +27,21 @@
       "envFile": "${workspaceFolder}/.env",
       "skipFiles": ["<node_internals>/**", "node_modules/**"],
       "console": "integratedTerminal"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug MCP Server",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["--nolazy", "--import", "tsx/esm"],
+      "args": ["src/mcp/server.ts"],
+      "cwd": "${workspaceRoot}",
+      "envFile": "${workspaceFolder}/.env",
+      "skipFiles": ["<node_internals>/**", "node_modules/**"],
+      "internalConsoleOptions": "openOnSessionStart",
+      "env": {
+        "PORT": "3000"
+      }
     }
   ]
 }
