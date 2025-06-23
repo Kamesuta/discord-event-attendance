@@ -1,0 +1,39 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+## コマンドの扱い方
+
+### コマンドの格納場所と命名規則
+- コマンドは `src/commands` ディレクトリ以下に格納する
+- コマンドの種類に応じて以下のディレクトリに分類する
+  - スラッシュコマンド: `src/commands/<コマンド名>_command`
+  - コンテキストメニュー: `src/commands/contextmenu`
+  - アクション: `src/commands/action`
+- ファイル名は以下の形式に従う
+  - スラッシュコマンド: `<親コマンド名><コマンド名>Command.ts`
+  - コンテキストメニュー: `<コマンド名>Menu.ts`
+  - アクション: `<アクション名>Action.ts`
+
+### コマンドのエクスポート方法
+- コマンドはシングルトン変数として以下の形式でエクスポートする
+```typescript
+export default new <親コマンド名><コマンド名>Command(<親コマンドをimportした変数>);
+```
+
+### コマンドの登録
+- 各コマンドディレクトリには `commands.ts` を作成し、以下の形式でコマンドを登録する
+```typescript
+import { InteractionBase } from '../base/interaction_base.js';
+import <コマンド名> from './<コマンド名>.js';
+
+const commands: InteractionBase[] = [
+  <コマンド名>,
+  // ... 他のコマンド
+];
+
+export default commands;
+```
+- 親ディレクトリの `commands.ts` で子ディレクトリのコマンドをインポートして登録する
+
