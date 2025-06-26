@@ -60,12 +60,18 @@ class PanelStopConfirmModalAction extends ModalActionInteraction {
    * モーダルを作成
    * @param eventId イベントID
    * @param stats 参加者リスト
+   * @param panelMessageId パネルメッセージID
    * @returns 作成したモーダル
    */
-  override create(eventId: number, stats: UserStatWithUser[]): ModalBuilder {
-    // カスタムIDを生成
+  override create(
+    eventId: number,
+    stats: UserStatWithUser[],
+    panelMessageId: string,
+  ): ModalBuilder {
+    // カスタムIDを生成（パネルメッセージIDを含める）
     const customId = this.createCustomId({
       evt: `${eventId}`,
+      pmid: panelMessageId,
     });
 
     // 参加者記録がされていない場合は警告を表示
@@ -113,6 +119,7 @@ class PanelStopConfirmModalAction extends ModalActionInteraction {
     params: URLSearchParams,
   ): Promise<void> {
     const eventId = params.get('evt');
+    const panelMessageId = params.get('pmid');
     if (!eventId) return; // 必要なパラメータがない場合は旧形式の可能性があるため無視
 
     await interaction.deferReply({ ephemeral: true });
@@ -152,7 +159,13 @@ class PanelStopConfirmModalAction extends ModalActionInteraction {
       return;
     }
 
-    await panelStopButtonAction.stopEvent(interaction, event, scheduledEvent);
+    // パネルメッセージIDを渡してイベントを停止
+    await panelStopButtonAction.stopEvent(
+      interaction,
+      event,
+      scheduledEvent,
+      panelMessageId || undefined,
+    );
   }
 }
 

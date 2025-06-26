@@ -50,12 +50,14 @@ class PanelStopButtonAction extends MessageComponentActionInteraction<ComponentT
    * @param interaction インタラクション
    * @param event イベント
    * @param scheduledEvent Discordイベント
+   * @param panelMessageId パネルメッセージID（オプション）
    * @returns 停止したイベント
    */
   async stopEvent(
     interaction: RepliableInteraction,
     event: Event,
     scheduledEvent: GuildScheduledEvent,
+    panelMessageId?: string,
   ): Promise<void> {
     // アナウンスチャンネルを取得
     const announcementChannel = interaction.guild?.channels.cache.get(
@@ -139,7 +141,9 @@ class PanelStopButtonAction extends MessageComponentActionInteraction<ComponentT
       const threads = await announcementChannel.threads.fetchActive();
       for (const [, thread] of threads.threads) {
         // スレッドのスターターメッセージがこのイベントのメッセージであるか確認
-        const startMessage = await thread.fetchStarterMessage();
+        const startMessage = await thread
+          .fetchStarterMessage()
+          .catch(() => undefined); // スレッドの開始メッセージが消されてたらcatch
         if (startMessage?.id !== message?.id) continue;
 
         // 試合結果
@@ -197,20 +201,28 @@ class PanelStopButtonAction extends MessageComponentActionInteraction<ComponentT
     }
 
     // パネルのメッセージ削除
-    if (interaction.isMessageComponent()) {
-      const panelMessage = await interaction.message // 確認メッセージの元のメッセージ=パネルを取得
-        .fetchReference()
-        .catch(() => undefined);
-      await panelMessage?.delete().catch((e) => {
-        // 権限エラーの場合警告を出す
-        if (e instanceof DiscordAPIError && e.code === 50013) {
-          logger.warn(
-            'パネルのメッセージ削除に失敗しました: 権限がありません。「メッセージの管理」権限の他に、「チャンネルを見る」権限も必要です。',
-          );
-        } else {
-          logger.error('パネルのメッセージ削除に失敗しました', e);
-        }
-      });
+    let panelMessage: Message | undefined;
+    try {
+      if (panelMessageId) {
+        // メッセージIDが渡された場合はそれを使用
+        panelMessage =
+          await interaction.channel?.messages.fetch(panelMessageId);
+      } else if (interaction.isMessageComponent()) {
+        // 従来の方法（後方互換性のため）
+        panelMessage = await interaction.message
+          .fetchReference()
+          .catch(() => undefined);
+      }
+      await panelMessage?.delete();
+    } catch (e) {
+      // 権限エラーの場合警告を出す
+      if (e instanceof DiscordAPIError && e.code === 50013) {
+        logger.warn(
+          'パネルのメッセージ削除に失敗しました: 権限がありません。「メッセージの管理」権限の他に、「チャンネルを見る」権限も必要です。',
+        );
+      } else {
+        logger.error('パネルのメッセージ削除に失敗しました', e);
+      }
     }
 
     await interaction.editReply({
@@ -225,6 +237,9 @@ class PanelStopButtonAction extends MessageComponentActionInteraction<ComponentT
   ): Promise<void> {
     const eventId = params.get('evt');
     if (!eventId) return; // 必要なパラメータがない場合は旧形式の可能性があるため無視
+
+    // パネルメッセージIDを取得
+    const panelMessageId = interaction.message.id;
 
     // モーダルのためdeferReplyを使わない
     // await interaction.deferReply({ ephemeral: true });
@@ -264,10 +279,10 @@ class PanelStopButtonAction extends MessageComponentActionInteraction<ComponentT
       return;
     }
 
-    // モーダルを表示
+    // モーダルを表示（パネルメッセージIDを含める）
     const stats = await panelStopConfirmModalAction.listupStats(event.id);
     await interaction.showModal(
-      panelStopConfirmModalAction.create(event.id, stats),
+      panelStopConfirmModalAction.create(event.id, stats, panelMessageId),
     );
   }
 }
