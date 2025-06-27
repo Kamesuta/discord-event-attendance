@@ -23,28 +23,8 @@ class EventOpTodayCommand extends SubcommandInteraction {
   async onCommand(interaction: ChatInputCommandInteraction): Promise<void> {
     await interaction.deferReply({ ephemeral: true });
 
-    // イベントを取得
-    const event = await eventManager.getEvent(interaction);
-    if (!event) {
-      await interaction.editReply({
-        content: 'イベントが見つかりませんでした',
-      });
-      return;
-    }
-
-    // その日のイベントを取得
-    const scheduledEvent = await interaction.guild?.scheduledEvents.fetch(
-      event.eventId,
-    );
-    if (!scheduledEvent) {
-      await interaction.editReply({
-        content: 'Discordイベントが見つかりませんでした',
-      });
-      return;
-    }
-
     // アナウンスチャンネルを取得
-    const channel = scheduledEvent.guild?.channels.cache.get(
+    const channel = interaction.guild?.channels.cache.get(
       config.schedule_channel_id,
     );
     if (!channel?.isTextBased()) {
@@ -54,8 +34,21 @@ class EventOpTodayCommand extends SubcommandInteraction {
       return;
     }
 
+    // 本日分の全イベントを取得
+    const allEvents = await interaction.guild?.scheduledEvents.fetch();
+    const today = new Date().toLocaleDateString('ja-JP');
+    const todayEvents: [GuildScheduledEvent, EventWithHost][] = [];
+    for (const ev of allEvents?.values() ?? []) {
+      if (ev.scheduledStartAt?.toLocaleDateString('ja-JP') === today) {
+        const dbEvent = await eventManager.getEventFromDiscordId(ev.id);
+        if (dbEvent) {
+          todayEvents.push([ev, dbEvent]);
+        }
+      }
+    }
+
     // イベントをアナウンス
-    const message = await this.showTodayMessage(channel, scheduledEvent, event);
+    const message = await this.showTodayMessage(channel, todayEvents);
 
     // 返信
     await interaction.editReply({
@@ -66,14 +59,12 @@ class EventOpTodayCommand extends SubcommandInteraction {
   /**
    * 本日のイベント予定を表示します
    * @param channel チャンネル
-   * @param scheduledEvent スケジュールイベント
-   * @param event イベント
+   * @param events その日のイベントリスト [GuildScheduledEvent, EventWithHost][]
    * @returns 送信したメッセージ
    */
   async showTodayMessage(
     channel: GuildTextBasedChannel,
-    scheduledEvent: GuildScheduledEvent,
-    event: EventWithHost,
+    events: [GuildScheduledEvent, EventWithHost][],
   ): Promise<Message | undefined> {
     // 前回のアナウンスメッセージを削除
     const prevMessages = await channel.messages.fetch({ limit: 5 }); // 直近5件取得
@@ -95,14 +86,16 @@ class EventOpTodayCommand extends SubcommandInteraction {
       day: '2-digit',
       weekday: 'short',
     });
-    // メッセージを生成
-    const eventListText = `- ${scheduledEvent.scheduledStartAt?.toLocaleTimeString(
-      'ja-JP',
-      {
-        hour: '2-digit',
-        minute: '2-digit',
-      },
-    )} [${scheduledEvent.name}](${scheduledEvent.url})${event.host ? ` (主催者: <@${event.host.userId}>)` : ''}`;
+    // イベントリストテキスト生成
+    const eventListText = events
+      .map(
+        ([scheduledEvent, event]) =>
+          `- ${scheduledEvent.scheduledStartAt?.toLocaleTimeString('ja-JP', {
+            hour: '2-digit',
+            minute: '2-digit',
+          })} [${scheduledEvent.name}](${scheduledEvent.url})${event.host ? ` (主催者: <@${event.host.userId}>)` : ''}`,
+      )
+      .join('\n');
     const messageText = `# 📆 本日 ${mmdd} のイベント予定！
 ${eventListText}
 かめぱわぁ～るどでは毎日夜9時にボイスチャンネルにてイベントを開催しています！ 🏁

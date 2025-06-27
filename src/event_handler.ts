@@ -602,7 +602,7 @@ export async function updateSchedules(): Promise<void> {
       scheduledEvent.scheduledStartAt?.toLocaleDateString('ja-JP'),
     );
     // 日付ごとにスケジュールを登録
-    for (const [date] of Object.entries(groupByDate)) {
+    for (const [date, events] of Object.entries(groupByDate)) {
       const jobs: Job[] = [];
       // その日の9時
       const remindDate = new Date(date);
@@ -619,21 +619,8 @@ export async function updateSchedules(): Promise<void> {
             return;
           }
 
-          // その日のイベントを取得
-          const events = registeredEventList.filter(
-            ([scheduledEvent]) =>
-              scheduledEvent.scheduledStartAt?.toLocaleDateString('ja-JP') ===
-              date,
-          );
-
-          // 各イベントに対して今日の予定を表示
-          for (const [scheduledEvent, event] of events) {
-            await eventOpTodayCommand.showTodayMessage(
-              channel,
-              scheduledEvent,
-              event,
-            );
-          }
+          // その日のイベントをまとめて渡す
+          await eventOpTodayCommand.showTodayMessage(channel, events);
         }),
       );
 
