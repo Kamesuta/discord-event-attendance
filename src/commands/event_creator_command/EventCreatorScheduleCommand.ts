@@ -20,6 +20,7 @@ import eventCreatorCommand from './EventCreatorCommand.js';
 import { eventIncludeHost, EventWithHost } from '../../event/EventManager.js';
 import sharp, { OverlayOptions } from 'sharp';
 import userManager from '../../event/UserManager.js';
+import { logger } from '../../utils/log.js';
 
 class EventCreatorScheduleCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
@@ -78,7 +79,7 @@ class EventCreatorScheduleCommand extends SubcommandInteraction {
     // Discordのカスタム絵文字の形式: <:name:id>
     const match = emoji.match(/<:([^:]+):(\d+)>/);
     if (match) {
-      const [, name, id] = match;
+      const [, _name, id] = match;
       return `https://cdn.discordapp.com/emojis/${id}.png`;
     }
     return null;
@@ -308,7 +309,7 @@ class EventCreatorScheduleCommand extends SubcommandInteraction {
       })
       .join('');
 
-    return `## 📆 ${titleWithLinks}`;
+    return `## 📆 ${titleWithLinks}\n気になるイベントがあったら↓の「興味あり」ボタンを押してください！ (開始時に**特別な通知**が来ます！)`;
   }
 
   /**
@@ -331,57 +332,26 @@ class EventCreatorScheduleCommand extends SubcommandInteraction {
 
     // バナー画像を処理（設定されている場合）
     if (config.event_banner_url) {
-      try {
-        const bannerResponse = await fetch(config.event_banner_url);
-        if (bannerResponse.ok) {
-          const bannerBuffer = Buffer.from(await bannerResponse.arrayBuffer());
-
-          // バナー画像をリサイズ（幅512px、高さは自動調整）
-          const resizedBanner = await sharp(bannerBuffer)
-            .resize(512, null, {
-              withoutEnlargement: true,
-            })
-            .png()
-            .toBuffer();
-
-          const bannerFilename = 'event_banner.png';
-          const bannerAttachment = new AttachmentBuilder(resizedBanner, {
-            name: bannerFilename,
-            description: 'イベントバナー',
-          });
-          attachments.push(bannerAttachment);
-
-          // バナー画像を追加
-          components.push(
-            new MediaGalleryBuilder().addItems(
-              new MediaGalleryItemBuilder()
-                .setURL(`attachment://${bannerFilename}`)
-                .setDescription('イベントバナー'),
-            ),
-          );
-        }
-      } catch (error) {
-        console.error('Failed to process banner image:', error);
-        // バナー処理に失敗しても続行
-      }
+      // バナー画像を追加
+      components.push(
+        new MediaGalleryBuilder().addItems(
+          new MediaGalleryItemBuilder()
+            .setURL(config.event_banner_url)
+            .setDescription('イベントバナー'),
+        ),
+      );
     }
 
+    // ヘッダー部分
     components.push(
-      // ヘッダー部分
       new TextDisplayBuilder()
         .setContent(`<@&1226256982957363230> <@&1247016990347104317>
-
-## 🎮 今週もかめぱゲームウィーク開催します！🏁
-
-ゲームやりたかったけど、遊ぶ友達がいなくて・・・キッカケがなくて・・・
-と思っている君も楽しめるように、毎日1時間だけ、いろんなゲームをローテーションで遊んでいこうと思います。
-
-**気になるイベントがあったら↑の「興味あり」ボタンを押してください！** (モチベが上がります！)
-
-期間: <t:${Math.floor(start.getTime() / 1000)}:D> 〜 <t:${Math.floor(end.getTime() / 1000 - 1)}:D> の21:00～ (毎日約1時間程度)
-※主催者の都合で予定が変わることがあります
-
-**いつもの時間以外のイベントには 🌞 マークつけています～**`),
+## 🎮 今週のイベント！🏁
+毎日21時から約1時間、VCにてマイクラやその他ゲームで遊びます！
+**新規も大歓迎**です。いきなりVCに入って🆗なので、ぜひご参加ください！
+### <t:${Math.floor(start.getTime() / 1000)}:D> 〜 <t:${Math.floor(end.getTime() / 1000 - 1)}:D> の予定一覧
+-# ※主催者の都合で予定が変わることがあります
+-# 21時以外のイベントには 🌞 マークつけています～`),
       new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Large),
     );
 
@@ -541,10 +511,15 @@ class EventCreatorScheduleCommand extends SubcommandInteraction {
       start,
       end,
     );
-    await scheduleChannel.send({
+    const detailMessage = await scheduleChannel.send({
       components: components,
       files: attachments,
       flags: MessageFlags.IsComponentsV2,
+    });
+    // メッセージを公開
+    await detailMessage?.crosspost().catch((e) => {
+      // エラーが発生した場合はログを出力して続行
+      logger.error('メッセージの公開に失敗しました。', e);
     });
 
     // 成功メッセージを返信
