@@ -6,7 +6,7 @@ import {
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
 import getWebhook from '../../event/getWebhook.js';
-import showEvent from '../../event/showEvent.js';
+import eventInfoMessageUpdater from '../../event/EventInfoMessageUpdater.js';
 import eventManager from '../../event/EventManager.js';
 import { Event } from '@prisma/client';
 import { logger } from '../../utils/log.js';
@@ -117,7 +117,7 @@ class EventOpUpdateMessageCommand extends SubcommandInteraction {
     );
 
     // イベント情報を編集
-    await showEvent(
+    await eventInfoMessageUpdater.showEvent(
       interaction,
       event,
       message.channel ?? undefined,

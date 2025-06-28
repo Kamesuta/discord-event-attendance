@@ -6,7 +6,7 @@ import {
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
 import { config } from '../../utils/config.js';
-import showEvent from '../../event/showEvent.js';
+import eventInfoMessageUpdater from '../../event/EventInfoMessageUpdater.js';
 import eventManager, { EventWithHost } from '../../event/EventManager.js';
 import eventOpCommand from './EventOpCommand.js';
 
@@ -63,7 +63,7 @@ class EventOpAnnounceCommand extends SubcommandInteraction {
     const vcName = vc?.name ?? '不明';
 
     // アナウンスチャンネルでイベントを表示
-    const message = await showEvent(
+    const message = await eventInfoMessageUpdater.showEvent(
       interaction,
       event,
       announcementChannel,

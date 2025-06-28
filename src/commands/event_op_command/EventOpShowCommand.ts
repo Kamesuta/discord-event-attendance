@@ -4,7 +4,7 @@ import {
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
 import eventManager from '../../event/EventManager.js';
-import showEvent from '../../event/showEvent.js';
+import eventInfoMessageUpdater from '../../event/EventInfoMessageUpdater.js';
 import eventOpCommand from './EventOpCommand.js';
 
 class EventOpShowCommand extends SubcommandInteraction {
@@ -38,7 +38,7 @@ class EventOpShowCommand extends SubcommandInteraction {
       'invite_link_message',
     );
     const isWebhook = !!message;
-    await showEvent(
+    await eventInfoMessageUpdater.showEvent(
       interaction,
       event,
       interaction.channel ?? undefined,

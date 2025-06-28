@@ -5,7 +5,7 @@ import {
 import { SubcommandInteraction } from '../base/command_base.js';
 import statusCommand from './StatusCommand.js';
 import eventManager from '../../event/EventManager.js';
-import showEvent from '../../event/showEvent.js';
+import eventInfoMessageUpdater from '../../event/EventInfoMessageUpdater.js';
 
 class StatusEventCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
@@ -38,7 +38,7 @@ class StatusEventCommand extends SubcommandInteraction {
       });
       return;
     }
-    await showEvent(interaction, event);
+    await eventInfoMessageUpdater.showEvent(interaction, event);
   }
 }
 
