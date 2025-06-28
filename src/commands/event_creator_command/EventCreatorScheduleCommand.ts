@@ -12,6 +12,8 @@ import {
   MediaGalleryBuilder,
   MediaGalleryItemBuilder,
   AttachmentBuilder,
+  Message,
+  TextBasedChannel,
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
 import { config } from '../../utils/config.js';
@@ -21,8 +23,24 @@ import { eventIncludeHost, EventWithHost } from '../../event/EventManager.js';
 import sharp, { OverlayOptions } from 'sharp';
 import userManager from '../../event/UserManager.js';
 import { logger } from '../../utils/log.js';
+import { MessageUpdater } from '../../event/MessageUpdater.js';
+import { client } from '../../index.js';
 
-class EventCreatorScheduleCommand extends SubcommandInteraction {
+/**
+ * スケジュールメッセージのデータ構造体
+ */
+class ScheduleMessageData {
+  constructor(
+    public start: Date,
+    public end: Date,
+    public events: EventWithHost[],
+  ) {}
+}
+
+class EventCreatorScheduleCommand
+  extends SubcommandInteraction
+  implements MessageUpdater
+{
   command = new SlashCommandSubcommandBuilder()
     .setName('schedule')
     .setDescription('1週間分のスケジュールメッセージを作成します');
@@ -435,6 +453,126 @@ class EventCreatorScheduleCommand extends SubcommandInteraction {
     );
 
     return { components, attachments };
+  }
+
+  /**
+   * メッセージがスケジュールメッセージか判定し、データをパース
+   * @param message Discordメッセージ
+   * @returns ScheduleMessageDataまたはnull
+   */
+  private async _parseScheduleMessage(
+    message: Message,
+  ): Promise<ScheduleMessageData | null> {
+    if (!message.content.startsWith('## 📆 ')) {
+      return null;
+    }
+    // 期間情報を抽出（例: <t:1234567890:D> 〜 <t:1234567891:D>）
+    const timeMatch = message.content.match(/<t:(\d+):D> 〜 <t:(\d+):D>/);
+    if (!timeMatch) {
+      return null;
+    }
+    const start = new Date(parseInt(timeMatch[1]) * 1000);
+    const end = new Date(parseInt(timeMatch[2]) * 1000);
+    // イベント情報を取得
+    const events: EventWithHost[] = await prisma.event.findMany({
+      where: {
+        active: {
+          not: GuildScheduledEventStatus.Canceled,
+        },
+        scheduleTime: {
+          gte: start,
+          lt: end,
+        },
+      },
+      orderBy: [
+        {
+          scheduleTime: 'asc',
+        },
+      ],
+      ...eventIncludeHost,
+    });
+    return new ScheduleMessageData(start, end, events);
+  }
+
+  /**
+   * スケジュールメッセージを新規作成または更新する
+   * @param channel 送信先チャンネル
+   * @param data スケジュールメッセージデータ
+   * @param message 既存メッセージ（省略時は新規作成）
+   * @returns 更新または新規作成されたメッセージ
+   */
+  private async _updateScheduleMessage(
+    channel: TextBasedChannel,
+    data: ScheduleMessageData,
+    message?: Message,
+  ): Promise<Message | undefined> {
+    const calendarText = this._createCalendarText(data.events);
+    const { components, attachments } = await this._createDetailComponents(
+      data.events,
+      data.start,
+      data.end,
+    );
+    if (message) {
+      return await message.edit({
+        content: calendarText,
+        components: components,
+        files: attachments,
+        flags: MessageFlags.IsComponentsV2,
+      });
+    } else {
+      // sendメソッドが存在するか型ガード
+      if ('send' in channel && typeof channel.send === 'function') {
+        return await channel.send({
+          content: calendarText,
+          components: components,
+          files: attachments,
+          flags: MessageFlags.IsComponentsV2,
+        });
+      }
+      return undefined;
+    }
+  }
+
+  /**
+   * @inheritdoc
+   */
+  canParseMessage(message: Message): boolean {
+    if (!message.content.startsWith('## 📆 ')) return false;
+    // 期間情報の正規表現にマッチするか
+    return /<t:\d+:D> 〜 <t:\d+:D>/.test(message.content);
+  }
+
+  /**
+   * @inheritdoc
+   */
+  async updateMessage(message: Message): Promise<Message | undefined> {
+    const data = await this._parseScheduleMessage(message);
+    if (!data) {
+      throw new Error('このメッセージはスケジュールメッセージではありません');
+    }
+    return await this._updateScheduleMessage(
+      message.channel as TextBasedChannel,
+      data,
+      message,
+    );
+  }
+
+  /**
+   * @inheritdoc
+   */
+  async getRelatedMessages(event: EventWithHost): Promise<Message[]> {
+    const messages: Message[] = [];
+    const channelId = config.schedule_channel_id;
+    const channel = await client.channels.fetch(channelId);
+    if (!channel || !channel.isTextBased()) return messages;
+    const fetchedMessages = await channel.messages.fetch({ limit: 100 });
+    for (const [, message] of fetchedMessages) {
+      const data = await this._parseScheduleMessage(message);
+      if (data && data.events.some((e) => e.id === event.id)) {
+        messages.push(message);
+      }
+    }
+    return messages;
   }
 
   async onCommand(interaction: ChatInputCommandInteraction): Promise<void> {
