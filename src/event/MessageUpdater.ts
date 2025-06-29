@@ -2,6 +2,16 @@ import { Message } from 'discord.js';
 import { EventWithHost } from './EventManager.js';
 
 /**
+ * メッセージ更新時のコンテキスト情報
+ */
+export interface MessageUpdateContext {
+  /**
+   * 強制的に指定するイベントID（単一イベント情報メッセージのみに対して有効）
+   */
+  forceEventId?: number;
+}
+
+/**
  * Discordメッセージの更新処理を共通化するインターフェース
  */
 export interface MessageUpdater {
@@ -15,9 +25,13 @@ export interface MessageUpdater {
   /**
    * 既存のメッセージを解析して更新する
    * @param message メッセージ
+   * @param context 更新コンテキスト
    * @returns 更新されたメッセージ
    */
-  updateMessage(message: Message): Promise<Message | undefined>;
+  updateMessage(
+    message: Message,
+    context?: MessageUpdateContext,
+  ): Promise<Message | undefined>;
 
   /**
    * 指定されたイベントに関連するメッセージを取得する

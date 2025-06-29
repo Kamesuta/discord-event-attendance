@@ -15,7 +15,7 @@ import {
   ThreadAutoArchiveDuration,
 } from 'discord.js';
 import { EventWithHost } from './EventManager.js';
-import { MessageUpdater } from './MessageUpdater.js';
+import { MessageUpdater, MessageUpdateContext } from './MessageUpdater.js';
 import { config } from '../utils/config.js';
 import { client, prisma } from '../index.js';
 import splitStrings from './splitStrings.js';
@@ -48,10 +48,23 @@ class EventInfoMessageUpdater implements MessageUpdater {
   /**
    * イベント情報メッセージを更新
    * @param message Discordメッセージ
+   * @param context 更新コンテキスト
    * @returns 更新されたメッセージ
    */
-  async updateMessage(message: Message): Promise<Message | undefined> {
-    const eventId = await this.parseEventIdFromMessage(message);
+  async updateMessage(
+    message: Message,
+    context?: MessageUpdateContext,
+  ): Promise<Message | undefined> {
+    let eventId: number | null;
+
+    // 強制指定されたイベントIDがある場合はそれを使用
+    if (context?.forceEventId) {
+      eventId = context.forceEventId;
+    } else {
+      // 通常の処理：メッセージからイベントIDを抽出
+      eventId = await this.parseEventIdFromMessage(message);
+    }
+
     if (!eventId) {
       throw new Error('このメッセージはイベント情報メッセージではありません');
     }

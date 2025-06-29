@@ -20,7 +20,10 @@ import {
   EventWithHost,
   eventIncludeHost,
 } from '../../../event/EventManager.js';
-import { MessageUpdater } from '../../../event/MessageUpdater.js';
+import {
+  MessageUpdater,
+  MessageUpdateContext,
+} from '../../../event/MessageUpdater.js';
 import { config } from '../../../utils/config.js';
 import { client, prisma } from '../../../index.js';
 import { ScheduleMessageData } from './types.js';
@@ -49,9 +52,13 @@ class DetailMessageUpdater implements MessageUpdater {
   /**
    * 詳細メッセージを更新
    * @param message Discordメッセージ
+   * @param _context 更新コンテキスト（スケジュールメッセージでは無視）
    * @returns 更新されたメッセージ
    */
-  async updateMessage(message: Message): Promise<Message | undefined> {
+  async updateMessage(
+    message: Message,
+    _context?: MessageUpdateContext,
+  ): Promise<Message | undefined> {
     const data = await this._parseScheduleMessage(message);
     if (!data) {
       throw new Error('このメッセージは詳細メッセージではありません');

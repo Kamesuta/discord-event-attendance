@@ -1,5 +1,5 @@
 import { Message } from 'discord.js';
-import { MessageUpdater } from './MessageUpdater.js';
+import { MessageUpdater, MessageUpdateContext } from './MessageUpdater.js';
 import { EventWithHost } from './EventManager.js';
 import { logger } from '../utils/log.js';
 
@@ -24,11 +24,15 @@ class MessageUpdateManager {
   }
 
   /**
-   * メッセージを更新（自動判定）
+   * メッセージを更新
    * @param message 更新するメッセージ
-   * @returns 更新されたメッセージ、更新できない場合はエラーをthrow
+   * @param context 更新コンテキスト
+   * @returns 更新されたメッセージ
    */
-  async updateMessage(message: Message): Promise<Message | undefined> {
+  async updateMessage(
+    message: Message,
+    context?: MessageUpdateContext,
+  ): Promise<Message | undefined> {
     const updater = this.findUpdaterForMessage(message);
     if (!updater) {
       throw new Error('このメッセージは更新できません');
@@ -39,7 +43,7 @@ class MessageUpdateManager {
     );
 
     try {
-      const updatedMessage = await updater.updateMessage(message);
+      const updatedMessage = await updater.updateMessage(message, context);
       logger.info(`メッセージ更新成功: ${message.id}`);
       return updatedMessage;
     } catch (error) {
