@@ -1,6 +1,8 @@
 import { Client, GatewayIntentBits } from 'discord.js';
 import CommandHandler from '../commands/CommandHandler.js';
 import commands from '../commands/commands.js';
+import messageUpdaters from '../event/messageUpdaters.js';
+import { MessageUpdateManager } from '../event/MessageUpdateManager.js';
 
 /**
  * Discord Client
@@ -21,3 +23,8 @@ export const client: Client = new Client({
  * コマンドハンドラー
  */
 export const commandHandler = new CommandHandler(commands);
+
+/**
+ * メッセージ更新マネージャー
+ */
+export const messageUpdateManager = new MessageUpdateManager(messageUpdaters);
