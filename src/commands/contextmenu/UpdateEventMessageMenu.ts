@@ -4,7 +4,7 @@ import {
   PermissionFlagsBits,
 } from 'discord.js';
 import { MessageContextMenuInteraction } from '../base/contextmenu_base.js';
-import eventOpUpdateMessageCommand from '../event_op_command/EventOpUpdateMessageCommand.js';
+import { messageUpdateManager } from '../../utils/client.js';
 
 class UpdateEventMessageMenu extends MessageContextMenuInteraction {
   command = new ContextMenuCommandBuilder()
@@ -17,22 +17,19 @@ class UpdateEventMessageMenu extends MessageContextMenuInteraction {
     await interaction.deferReply({ ephemeral: true });
 
     try {
-      const event = await eventOpUpdateMessageCommand.updateMessage(
-        interaction,
+      const updatedMessage = await messageUpdateManager.updateMessage(
         interaction.targetMessage,
       );
 
       // 結果を返信
       await interaction.editReply({
-        content: `イベント「${event.name}」(ID: ${event.id})の[情報](${interaction.targetMessage.url})を更新しました`,
+        content: `[メッセージ](${updatedMessage?.url ?? interaction.targetMessage.url})を更新しました`,
       });
     } catch (error) {
-      if (typeof error !== 'string') throw error;
-
       await interaction.editReply({
-        content: error,
+        content:
+          typeof error === 'string' ? error : 'メッセージの更新に失敗しました',
       });
-      return;
     }
   }
 }
