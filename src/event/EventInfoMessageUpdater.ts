@@ -51,7 +51,7 @@ class EventInfoMessageUpdater implements MessageUpdater {
    * @returns 更新されたメッセージ
    */
   async updateMessage(message: Message): Promise<Message | undefined> {
-    const eventId = await this._parseEventIdFromMessage(message);
+    const eventId = await this.parseEventIdFromMessage(message);
     if (!eventId) {
       throw new Error('このメッセージはイベント情報メッセージではありません');
     }
@@ -103,7 +103,7 @@ class EventInfoMessageUpdater implements MessageUpdater {
         const fetchedMessages = await channel.messages.fetch({ limit: 100 });
         for (const [, message] of fetchedMessages) {
           if (this.canParseMessage(message)) {
-            const messageEventId = await this._parseEventIdFromMessage(message);
+            const messageEventId = await this.parseEventIdFromMessage(message);
             if (messageEventId === event.id) {
               messages.push(message);
             }
@@ -339,9 +339,7 @@ class EventInfoMessageUpdater implements MessageUpdater {
    * @param message Discordメッセージ
    * @returns イベントID
    */
-  private async _parseEventIdFromMessage(
-    message: Message,
-  ): Promise<number | null> {
+  async parseEventIdFromMessage(message: Message): Promise<number | null> {
     if (message.embeds.length === 0) return null;
     const embed = message.embeds[0];
     if (!embed.url) return null;

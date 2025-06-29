@@ -11,19 +11,20 @@ import {
   Message,
   RepliableInteraction,
 } from 'discord.js';
-import eventManager from '../../../event/EventManager.js';
+import eventManager, { EventWithHost } from '../../../event/EventManager.js';
 import { MessageComponentActionInteraction } from '../../base/action_base.js';
 import { config } from '../../../utils/config.js';
 import { logger } from '../../../utils/log.js';
 import { onEndEvent } from '../../../event_handler.js';
-import getWebhook from '../../../event/getWebhook.js';
 import { checkEventOperationPermission } from '../../../event/checkCommandPermission.js';
-import eventAdminUpdateMessageCommand from '../../event_op_command/EventOpUpdateMessageCommand.js';
+import { messageUpdateManager } from '../../../utils/client.js';
+import eventInfoMessageUpdater from '../../../event/EventInfoMessageUpdater.js';
 import { syncRoleByCondition } from '../../../event/roleManager.js';
 import { client, prisma } from '../../../index.js';
 import { makeGameResultEmbed } from '../../../event/game.js';
 import { Event, GameResult } from '@prisma/client';
 import panelStopConfirmModalAction from './PanelStopConfirmModalAction.js';
+import { ThreadChannel } from 'discord.js';
 
 class PanelStopButtonAction extends MessageComponentActionInteraction<ComponentType.Button> {
   /**
@@ -46,6 +47,68 @@ class PanelStopButtonAction extends MessageComponentActionInteraction<ComponentT
   }
 
   /**
+   * イベントスレッドを更新（試合結果を投稿）
+   * @param thread スレッド
+   * @param event イベント
+   */
+  private async _updateEventThread(
+    thread: ThreadChannel,
+    event: Event,
+  ): Promise<void> {
+    try {
+      // 試合結果
+      const gameResults = await prisma.gameResult.findMany({
+        where: {
+          eventId: event.id,
+        },
+        include: {
+          users: true,
+        },
+      });
+
+      // ゲームの戦績をすべて表示
+      const gameResultMessages: { game: GameResult; message: Message }[] = [];
+      for (const game of gameResults) {
+        const embeds = await makeGameResultEmbed(game.id);
+        const gameResultMessage = await thread.send({ embeds: [embeds] });
+        gameResultMessages.push({ game, message: gameResultMessage });
+      }
+
+      if (gameResultMessages.length === 0) return;
+
+      const fetched = await thread.messages.fetch({ limit: 2, after: '0' });
+      const lastMessage = fetched.first();
+
+      // イベントの思い出を記録しておきましょう！というBOTのメッセージが取得できた場合、そのメッセージに戦績を記録する
+      if (
+        lastMessage &&
+        lastMessage.author.id === client.user?.id &&
+        lastMessage.content.includes('イベントの思い出を記録しておきましょう！')
+      ) {
+        // Embedを作成
+        const embed = new EmbedBuilder()
+          .setTitle(`${event.name} の試合結果一覧`)
+          .setDescription(
+            gameResultMessages
+              .map(
+                ({ game, message }) =>
+                  `[${game.name} (試合ID: ${game.id})](${message.url})`,
+              )
+              .join('\n'),
+          )
+          .setColor('#ff8c00');
+
+        // 最初のメッセージにリンクを追加
+        await lastMessage.edit({
+          embeds: [embed],
+        });
+      }
+    } catch (error) {
+      logger.error(`スレッド更新中にエラーが発生しました: ${String(error)}`);
+    }
+  }
+
+  /**
    * イベントを停止する
    * @param interaction インタラクション
    * @param event イベント
@@ -55,7 +118,7 @@ class PanelStopButtonAction extends MessageComponentActionInteraction<ComponentT
    */
   async stopEvent(
     interaction: RepliableInteraction,
-    event: Event,
+    event: EventWithHost,
     scheduledEvent: GuildScheduledEvent,
     panelMessageId?: string,
   ): Promise<void> {
@@ -91,106 +154,47 @@ class PanelStopButtonAction extends MessageComponentActionInteraction<ComponentT
       await onEndEvent(eventAfterStop, scheduledEvent.channel);
     }
 
-    // Webhookを取得
-    const webhook = await getWebhook(interaction, announcementChannel);
-    if (!webhook) {
-      await interaction.editReply({
-        content: 'Webhookの取得に失敗しました',
-      });
-      return;
+    // イベントに関連する全メッセージを汎用的に更新
+    try {
+      const updatedMessages =
+        await messageUpdateManager.updateRelatedMessages(event);
+      logger.info(
+        `イベント ${event.id} の関連メッセージ ${updatedMessages.length} 件を更新`,
+      );
+    } catch (error) {
+      logger.error(
+        `関連メッセージ更新中にエラーが発生しました: ${String(error)}`,
+      );
     }
 
-    // アナウンスチャンネルの最新3件のメッセージを取得
-    const messages = await announcementChannel.messages.fetch({ limit: 3 });
-    // Webhook経由でメッセージを取得し直す (MessageContent Intentsがないときは自身のメッセージしか取得できないため)
-    const fetchedMessages = await Promise.all(
-      messages
-        .filter((m) => m.webhookId === webhook.webhook.id)
-        .map((m) => webhook.webhook.fetchMessage(m.id)),
-    );
-
-    // イベントのメッセージを取得
-    const message = fetchedMessages.find((m) => {
-      try {
-        // メッセージをパースしてイベントIDを取得
-        const scheduledEventId =
-          eventAdminUpdateMessageCommand.parseMessageEventId(m);
-        return scheduledEventId === event.id;
-      } catch (_) {
-        return false;
-      }
-    });
-    // イベントのメッセージが見つかった場合、メッセージを更新
-    if (message) {
-      try {
-        await eventAdminUpdateMessageCommand.updateMessage(
-          interaction,
-          message,
-        );
-      } catch (error) {
-        if (typeof error !== 'string') throw error;
-        logger.error(`イベント終了中にエラーが発生しました: ${error}`);
-      }
-    }
-
-    // このイベントのスレッドを取得
+    // アナウンスチャンネルのスレッド処理
     if (
       announcementChannel.type === ChannelType.GuildAnnouncement ||
       announcementChannel.type === ChannelType.GuildText
     ) {
       const threads = await announcementChannel.threads.fetchActive();
       for (const [, thread] of threads.threads) {
-        // スレッドのスターターメッセージがこのイベントのメッセージであるか確認
+        // スレッドのスターターメッセージを取得
         const startMessage = await thread
           .fetchStarterMessage()
-          .catch(() => undefined); // スレッドの開始メッセージが消されてたらcatch
-        if (startMessage?.id !== message?.id) continue;
+          .catch(() => undefined);
 
-        // 試合結果
-        const gameResults = await prisma.gameResult.findMany({
-          where: {
-            eventId: event.id,
-          },
-          include: {
-            users: true,
-          },
-        });
-        // ゲームの戦績をすべて表示
-        const gameResultMessages: { game: GameResult; message: Message }[] = [];
-        for (const game of gameResults) {
-          const embeds = await makeGameResultEmbed(game.id);
-          const gameResultMessage = await thread.send({ embeds: [embeds] });
-          gameResultMessages.push({ game, message: gameResultMessage });
-        }
-        if (gameResultMessages.length === 0) continue;
+        if (!startMessage) continue;
 
-        const fetched = await thread.messages.fetch({ limit: 2, after: '0' });
-        const lastMessage = fetched.first();
-        // イベントの思い出を記録しておきましょう！というBOTのメッセージが取得できた場合、そのメッセージに戦績を記録する
-        if (
-          lastMessage &&
-          lastMessage.author.id === client.user?.id &&
-          lastMessage.content.includes(
-            'イベントの思い出を記録しておきましょう！',
-          )
-        ) {
-          // Embedを作成
-          const embed = new EmbedBuilder()
-            .setTitle(`${event.name} の試合結果一覧`)
-            .setDescription(
-              gameResultMessages
-                .map(
-                  ({ game, message }) =>
-                    `[${game.name} (試合ID: ${game.id})](${message.url})`,
-                )
-                .join('\n'),
-            )
-            .setColor('#ff8c00');
-
-          // 最初のメッセージにリンクを追加
-          await lastMessage.edit({
-            embeds: [embed],
-          });
+        // イベント情報メッセージかどうかチェック
+        if (eventInfoMessageUpdater.canParseMessage(startMessage)) {
+          try {
+            const messageEventId =
+              await eventInfoMessageUpdater.parseEventIdFromMessage(
+                startMessage,
+              );
+            if (messageEventId === event.id) {
+              // このスレッドは対象イベントのもの → スレッド固有の処理を実行
+              await this._updateEventThread(thread, event);
+            }
+          } catch (_) {
+            // パースに失敗した場合は無視
+          }
         }
       }
     }
