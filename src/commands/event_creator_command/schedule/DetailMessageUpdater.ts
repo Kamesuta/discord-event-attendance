@@ -29,6 +29,7 @@ import { client, prisma } from '../../../index.js';
 import { ScheduleMessageData } from './types.js';
 import { BannerImageUtil } from './BannerImageUtil.js';
 import userManager from '../../../event/UserManager.js';
+import messageEditor from '../../../event/MessageEditor.js';
 
 /**
  * 詳細メッセージ用のMessageUpdater実装
@@ -68,7 +69,7 @@ class DetailMessageUpdater implements MessageUpdater {
       data.start,
       data.end,
     );
-    return await message.edit({
+    return await messageEditor.editMessage(message, {
       components: components,
       files: attachments,
       flags: MessageFlags.IsComponentsV2,

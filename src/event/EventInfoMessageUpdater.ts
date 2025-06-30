@@ -24,7 +24,8 @@ import userManager from './UserManager.js';
 import { gameResultInclude } from './game.js';
 import { logger } from '../utils/log.js';
 import { updateAttendanceTime } from './attendance_time.js';
-import getWebhook from './getWebhook.js';
+import { getWebhookFromInteraction } from './getWebhook.js';
+import messageEditor from './MessageEditor.js';
 
 /**
  * イベント情報メッセージ用のMessageUpdater実装
@@ -90,7 +91,7 @@ class EventInfoMessageUpdater implements MessageUpdater {
       messageMatch?.[2],
     );
 
-    return await message.edit(contents);
+    return await messageEditor.editMessage(message, contents);
   }
 
   /**
@@ -407,7 +408,7 @@ class EventInfoMessageUpdater implements MessageUpdater {
     // Webhookを取得
     const webhook = !webhookChannel
       ? undefined
-      : await getWebhook(interaction, webhookChannel);
+      : await getWebhookFromInteraction(interaction, webhookChannel);
     if (webhookChannel && !webhook) {
       return;
     }

@@ -3,8 +3,8 @@ import {
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
-import getWebhook from '../../event/getWebhook.js';
 import { messageUpdateManager } from '../../utils/client.js';
+import messageEditor from '../../event/MessageEditor.js';
 import { MessageUpdateContext } from '../../event/MessageUpdater.js';
 import eventOpCommand from './EventOpCommand.js';
 
@@ -35,14 +35,27 @@ class EventOpUpdateMessageCommand extends SubcommandInteraction {
     const forceEventId = interaction.options.getNumber('event_id');
     if (!messageId) return;
 
-    // Webhook経由でメッセージを取得
-    const webhook = await getWebhook(interaction);
-    const message = await webhook?.webhook
-      .fetchMessage(messageId)
-      .catch(() => undefined);
-    if (!message) {
+    // チャンネルを確認
+    if (!interaction.channel) {
       await interaction.editReply({
-        content: 'メッセージが見つかりませんでした',
+        content: 'このコマンドはサーバー内でのみ使用できます',
+      });
+      return;
+    }
+
+    // メッセージを取得（Webhook/通常を自動切り替え）
+    let message;
+    try {
+      message = await messageEditor.fetchMessage(
+        messageId,
+        interaction.channel,
+      );
+    } catch (error) {
+      await interaction.editReply({
+        content:
+          typeof error === 'string'
+            ? error
+            : 'メッセージが見つかりませんでした',
       });
       return;
     }

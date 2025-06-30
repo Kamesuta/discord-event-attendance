@@ -13,6 +13,7 @@ import {
 } from '../../../event/MessageUpdater.js';
 import { config } from '../../../utils/config.js';
 import { client, prisma } from '../../../index.js';
+import messageEditor from '../../../event/MessageEditor.js';
 import { ScheduleMessageData } from './types.js';
 
 /**
@@ -44,7 +45,7 @@ class CalendarMessageUpdater implements MessageUpdater {
       throw new Error('このメッセージはカレンダーメッセージではありません');
     }
     const calendarText = this.createCalendarText(data.events);
-    return await message.edit({ content: calendarText });
+    return await messageEditor.editMessage(message, { content: calendarText });
   }
 
   /**

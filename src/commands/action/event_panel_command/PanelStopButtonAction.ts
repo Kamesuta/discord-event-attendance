@@ -20,6 +20,7 @@ import { checkEventOperationPermission } from '../../../event/checkCommandPermis
 import { messageUpdateManager } from '../../../utils/client.js';
 import eventInfoMessageUpdater from '../../../event/EventInfoMessageUpdater.js';
 import { syncRoleByCondition } from '../../../event/roleManager.js';
+import messageEditor from '../../../event/MessageEditor.js';
 import { client, prisma } from '../../../index.js';
 import { makeGameResultEmbed } from '../../../event/game.js';
 import { Event, GameResult } from '@prisma/client';
@@ -99,7 +100,7 @@ class PanelStopButtonAction extends MessageComponentActionInteraction<ComponentT
           .setColor('#ff8c00');
 
         // 最初のメッセージにリンクを追加
-        await lastMessage.edit({
+        await messageEditor.editMessage(lastMessage, {
           embeds: [embed],
         });
       }
@@ -207,10 +208,12 @@ class PanelStopButtonAction extends MessageComponentActionInteraction<ComponentT
     // パネルのメッセージ削除
     let panelMessage: Message | undefined;
     try {
-      if (panelMessageId) {
+      if (panelMessageId && interaction.channel) {
         // メッセージIDが渡された場合はそれを使用
-        panelMessage =
-          await interaction.channel?.messages.fetch(panelMessageId);
+        panelMessage = await messageEditor.fetchMessage(
+          panelMessageId,
+          interaction.channel,
+        );
       } else if (interaction.isMessageComponent()) {
         // 従来の方法（後方互換性のため）
         panelMessage = await interaction.message
