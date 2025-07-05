@@ -19,6 +19,8 @@ import panelStopButtonAction from '../action/event_panel_command/PanelStopButton
 import { config } from '../../utils/config.js';
 import eventOpCommand from './EventOpCommand.js';
 import userManager from '../../event/UserManager.js';
+import { messageUpdateManager } from '../../utils/client.js';
+import { logger } from '../../utils/log.js';
 
 class EventOpPanelCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
@@ -91,6 +93,19 @@ class EventOpPanelCommand extends SubcommandInteraction {
         .catch(() => undefined);
       if (scheduledEvent) {
         await eventManager.updateEventDescription(scheduledEvent, hostUser);
+      }
+
+      // イベントに関連する全メッセージを更新
+      try {
+        const updatedMessages =
+          await messageUpdateManager.updateRelatedMessages(event);
+        logger.info(
+          `主催者変更によりイベント ${event.id} の関連メッセージ ${updatedMessages.length} 件を更新`,
+        );
+      } catch (error) {
+        logger.error(
+          `関連メッセージ更新中にエラーが発生しました: ${String(error)}`,
+        );
       }
     }
 

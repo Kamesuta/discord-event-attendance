@@ -3,7 +3,7 @@ import {
   UserSelectMenuBuilder,
   UserSelectMenuInteraction,
 } from 'discord.js';
-import eventManager from '../../../event/EventManager.js';
+import eventManager, { eventIncludeHost } from '../../../event/EventManager.js';
 import { MessageComponentActionInteraction } from '../../base/action_base.js';
 import { prisma } from '../../../utils/prisma.js';
 import {
@@ -14,6 +14,8 @@ import eventCreatorSetupCommand, {
   EventSpec,
 } from '../../event_creator_command/EventCreatorSetupCommand.js';
 import userManager from '../../../event/UserManager.js';
+import { messageUpdateManager } from '../../../utils/client.js';
+import { logger } from '../../../utils/log.js';
 
 class SetupUserSelectAction extends MessageComponentActionInteraction<ComponentType.UserSelect> {
   /**
@@ -97,9 +99,10 @@ class SetupUserSelectAction extends MessageComponentActionInteraction<ComponentT
     }
 
     // イベントを更新
-    await prisma.event.update({
+    const updatedEvent = await prisma.event.update({
       where: { id: event.id },
       data: { hostId: hostUser.id },
+      ...eventIncludeHost,
     });
 
     // Discordイベントの説明文を更新
@@ -108,6 +111,21 @@ class SetupUserSelectAction extends MessageComponentActionInteraction<ComponentT
       .catch(() => undefined);
     if (scheduledEvent) {
       await eventManager.updateEventDescription(scheduledEvent, hostUser);
+    }
+
+    // イベントに関連する全メッセージを更新
+    if (updatedEvent) {
+      try {
+        const updatedMessages =
+          await messageUpdateManager.updateRelatedMessages(updatedEvent);
+        logger.info(
+          `主催者変更によりイベント ${updatedEvent.id} の関連メッセージ ${updatedMessages.length} 件を更新`,
+        );
+      } catch (error) {
+        logger.error(
+          `関連メッセージ更新中にエラーが発生しました: ${String(error)}`,
+        );
+      }
     }
 
     // パネルを表示
