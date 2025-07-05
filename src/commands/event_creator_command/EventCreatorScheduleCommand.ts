@@ -82,8 +82,15 @@ class EventCreatorScheduleCommand extends SubcommandInteraction {
     }
 
     // カレンダーメッセージを送信
-    const calendarText = calendarMessageUpdater.createCalendarText(events);
-    await scheduleChannel.send(calendarText);
+    const calendarText = calendarMessageUpdater.createCalendarText(
+      events,
+      start,
+      end,
+    );
+    await scheduleChannel.send({
+      content: calendarText,
+      flags: MessageFlags.SuppressEmbeds,
+    });
 
     // 詳細メッセージを送信
     const { components, attachments } =
@@ -91,7 +98,7 @@ class EventCreatorScheduleCommand extends SubcommandInteraction {
     const detailMessage = await scheduleChannel.send({
       components: components,
       files: attachments,
-      flags: MessageFlags.IsComponentsV2,
+      flags: MessageFlags.IsComponentsV2 | MessageFlags.SuppressEmbeds,
     });
 
     // メッセージを公開

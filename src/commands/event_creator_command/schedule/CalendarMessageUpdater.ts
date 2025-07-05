@@ -2,7 +2,7 @@
  * カレンダーメッセージ用のMessageUpdater実装
  * カレンダー形式のイベント一覧メッセージの判定・更新・取得を担当
  */
-import { Message, GuildScheduledEventStatus } from 'discord.js';
+import { Message, GuildScheduledEventStatus, MessageFlags } from 'discord.js';
 import {
   EventWithHost,
   eventIncludeHost,
@@ -27,7 +27,9 @@ class CalendarMessageUpdater implements MessageUpdater {
    * @returns 判定結果
    */
   canParseMessage(message: Message): boolean {
-    return /^## 📆 (?:.+)\n気になるイベントがあったら↓/.test(message.content);
+    return /^## 📆 (?:.+)\n-# <t:(\d+):D> 〜 <t:(\d+):D>\n気になるイベントがあったら↓/.test(
+      message.content,
+    );
   }
 
   /**
@@ -44,8 +46,15 @@ class CalendarMessageUpdater implements MessageUpdater {
     if (!data) {
       throw new Error('このメッセージはカレンダーメッセージではありません');
     }
-    const calendarText = this.createCalendarText(data.events);
-    return await messageEditor.editMessage(message, { content: calendarText });
+    const calendarText = this.createCalendarText(
+      data.events,
+      data.start,
+      data.end,
+    );
+    return await messageEditor.editMessage(message, {
+      content: calendarText,
+      flags: MessageFlags.SuppressEmbeds,
+    });
   }
 
   /**
@@ -106,9 +115,11 @@ class CalendarMessageUpdater implements MessageUpdater {
   /**
    * カレンダーメッセージ本文を生成
    * @param events イベント配列
+   * @param start 開始日
+   * @param end 終了日
    * @returns メッセージ本文
    */
-  createCalendarText(events: EventWithHost[]): string {
+  createCalendarText(events: EventWithHost[], start: Date, end: Date): string {
     const baseTitle = '今週のイベントリスト';
     const titleChars = [...baseTitle.split('')];
 
@@ -128,7 +139,12 @@ class CalendarMessageUpdater implements MessageUpdater {
       })
       .join('');
 
-    return `## 📆 ${titleWithLinks}\n気になるイベントがあったら↓の「興味あり」ボタンを押してください！ (開始時に**特別な通知**が来ます！)`;
+    // 日付範囲を小さく表示
+    const startUnix = Math.floor(start.getTime() / 1000);
+    const endUnix = Math.floor(end.getTime() / 1000 - 1);
+    const dateLine = `-# <t:${startUnix}:D> 〜 <t:${endUnix}:D>`;
+
+    return `## 📆 ${titleWithLinks}\n${dateLine}\n気になるイベントがあったら↓の「興味あり」ボタンを押してください！ (開始時に**特別な通知**が来ます！)`;
   }
 }
 

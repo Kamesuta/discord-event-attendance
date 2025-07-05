@@ -121,8 +121,7 @@ class MessageEditor {
       : [viaChannel, viaWebhook];
 
     // 実行順序に従って実行
-    for (let i = 0; i < tasks.length; i++) {
-      const { name, fn } = tasks[i];
+    for (const { name, fn } of tasks) {
       try {
         const result = await fn();
         logger.debug(`${name}の${operationName}成功`);
