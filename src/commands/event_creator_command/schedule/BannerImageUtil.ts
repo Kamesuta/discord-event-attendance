@@ -85,8 +85,8 @@ export class BannerImageUtil {
     const padding = 10;
     const avatarSize = 32;
     const avatarPadding = 8;
-    const emojiSize = 24;
-    const emojiPadding = 12;
+    const emojiSize = 48;
+    const emojiPadding = 8;
 
     let backgroundImage: Buffer;
 
@@ -129,7 +129,7 @@ export class BannerImageUtil {
           if (emojiResponse.ok) {
             const emojiBuffer = Buffer.from(await emojiResponse.arrayBuffer());
             emojiImageBuffer = await sharp(emojiBuffer)
-              .resize(emojiSize, emojiSize, {
+              .resize(emojiSize * 0.8, emojiSize * 0.8, {
                 fit: 'contain',
                 background: { r: 0, g: 0, b: 0, alpha: 0 },
               })
@@ -150,35 +150,45 @@ export class BannerImageUtil {
           <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
             <feDropShadow dx="1" dy="1" stdDeviation="2" flood-color="${shadowColor}" flood-opacity="0.8"/>
           </filter>
+          <linearGradient id="black-gradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="black" stop-opacity="0.0"/>
+            <stop offset="100%" stop-color="black" stop-opacity="0.4"/>
+          </linearGradient>
         </defs>
         
-        <!-- 半透明の背景オーバーレイ -->
-        <rect width="100%" height="100%" fill="rgba(0,0,0,0.4)" />
+        <!-- 下に行くほど濃くなる黒のグラデーションオーバーレイ -->
+        <rect width="100%" height="100%" fill="url(#black-gradient)" />
         
         <!-- 絵文字（Unicode絵文字の場合） -->
         ${
           emoji && !emojiImageBuffer
-            ? `<text 
-          x="${emojiPadding + emojiSize / 2}" 
-          y="${outputHeight / 2 + emojiSize / 3}" 
-          font-size="${emojiSize}" 
+            ? `<circle 
+          cx="${emojiPadding + (emojiSize * 0.8) / 2}" 
+          cy="${outputHeight - emojiPadding - (emojiSize * 0.8) / 2}" 
+          r="${(emojiSize * 0.8) / 2 + 2}" 
+          fill="white" 
+        />
+        <text 
+          x="${emojiPadding + (emojiSize * 0.8) / 2}" 
+          y="${outputHeight - emojiPadding - (emojiSize * 0.8) / 2 + 2}" 
+          font-size="${emojiSize * 0.6}" 
           text-anchor="middle" 
-          dominant-baseline="middle"
-          filter="url(#shadow)"
+          fill="#333333" 
+          dominant-baseline="central"
         >${emoji}</text>`
             : ''
         }
         
         <!-- イベント名テキスト -->
         <text 
-          x="${emoji ? emojiPadding + emojiSize + padding : outputWidth / 2}" 
-          y="${outputHeight - padding}" 
+          x="${emoji ? emojiPadding + emojiSize * 0.8 + padding : emojiPadding + padding}" 
+          y="${outputHeight - emojiPadding - fontSize / 2}" 
           font-family="Arial, sans-serif" 
           font-size="${fontSize}" 
           font-weight="bold"
           fill="${textColor}" 
-          text-anchor="${emoji ? 'start' : 'middle'}" 
-          dominant-baseline="baseline"
+          text-anchor="start" 
+          dominant-baseline="alphabetic"
           filter="url(#shadow)"
         >${eventName.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</text>
       </svg>
@@ -192,10 +202,40 @@ export class BannerImageUtil {
 
     // カスタム絵文字画像を追加（存在する場合）
     if (emojiImageBuffer) {
+      // 白い丸の背景を追加
+      const whiteCircle = await sharp({
+        create: {
+          width: emojiSize * 0.8 + 4,
+          height: emojiSize * 0.8 + 4,
+          channels: 4,
+          background: { r: 0, g: 0, b: 0, alpha: 0 },
+        },
+      })
+        .composite([
+          {
+            input: Buffer.from(`
+              <svg width="${emojiSize * 0.8 + 4}" height="${emojiSize * 0.8 + 4}">
+                <circle cx="${(emojiSize * 0.8 + 4) / 2}" cy="${(emojiSize * 0.8 + 4) / 2}" r="${(emojiSize * 0.8) / 2 + 2}" fill="white"/>
+              </svg>
+            `),
+            blend: 'over',
+          },
+        ])
+        .png()
+        .toBuffer();
+
+      // 白い丸を先に配置
+      compositeElements.push({
+        input: whiteCircle,
+        left: emojiPadding - 2,
+        top: outputHeight - emojiSize * 0.8 - emojiPadding - 2,
+      });
+
+      // その上に絵文字を配置
       compositeElements.push({
         input: emojiImageBuffer,
         left: emojiPadding,
-        top: Math.floor((outputHeight - emojiSize) / 2),
+        top: outputHeight - emojiSize * 0.8 - emojiPadding,
       });
     }
 
