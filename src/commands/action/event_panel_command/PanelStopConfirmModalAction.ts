@@ -10,7 +10,7 @@ import panelStopButtonAction from './PanelStopButtonAction.js';
 import eventManager from '../../../event/EventManager.js';
 import { GuildScheduledEventStatus } from 'discord.js';
 import { checkEventOperationPermission } from '../../../event/checkCommandPermission.js';
-import { prisma } from '../../../index.js';
+import { prisma } from '../../../utils/prisma.js';
 import { config } from '../../../utils/config.js';
 import { Prisma } from '@prisma/client';
 import userManager from '../../../event/UserManager.js';

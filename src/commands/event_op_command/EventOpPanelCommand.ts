@@ -12,7 +12,7 @@ import eventManager, {
   EventWithHost,
 } from '../../event/EventManager.js';
 import { onUpdateScheduledEvent } from '../../event_handler.js';
-import { prisma } from '../../index.js';
+import { prisma } from '../../utils/prisma.js';
 import panelStartButtonAction from '../action/event_panel_command/PanelStartButtonAction.js';
 import panelReviewButtonAction from '../action/event_panel_command/PanelReviewButtonAction.js';
 import panelStopButtonAction from '../action/event_panel_command/PanelStopButtonAction.js';

@@ -26,7 +26,8 @@ import {
   MessageUpdateContext,
 } from '../../../event/MessageUpdater.js';
 import { config } from '../../../utils/config.js';
-import { client, prisma } from '../../../index.js';
+import { client } from '../../../utils/client.js';
+import { prisma } from '../../../utils/prisma.js';
 import { ScheduleMessageData } from './types.js';
 import { BannerImageUtil } from './BannerImageUtil.js';
 import userManager from '../../../event/UserManager.js';

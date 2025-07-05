@@ -4,7 +4,7 @@ import {
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
 import statusCommand from './StatusCommand.js';
-import { prisma } from '../../index.js';
+import { prisma } from '../../utils/prisma.js';
 import { showGameResults } from '../../event/game.js';
 
 class StatusGameCommand extends SubcommandInteraction {

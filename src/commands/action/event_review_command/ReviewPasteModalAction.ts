@@ -8,7 +8,7 @@ import {
 import eventManager from '../../../event/EventManager.js';
 import { ModalActionInteraction } from '../../base/action_base.js';
 import { Event } from '@prisma/client';
-import { prisma } from '../../../index.js';
+import { prisma } from '../../../utils/prisma.js';
 import eventReviewCommand from '../../event_command/EventReviewCommand.js';
 
 /**

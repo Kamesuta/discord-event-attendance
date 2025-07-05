@@ -6,7 +6,7 @@ import { SubcommandInteraction } from '../base/command_base.js';
 import eventManager from '../../event/EventManager.js';
 import eventAdminCommand from './EventAdminCommand.js';
 import { updateAttendanceTime } from '../../event/attendance_time.js';
-import { prisma } from '../../index.js';
+import { prisma } from '../../utils/prisma.js';
 
 class EventAdminRecalcTimeCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()

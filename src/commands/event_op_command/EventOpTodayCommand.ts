@@ -13,7 +13,7 @@ import eventManager, { EventWithHost } from '../../event/EventManager.js';
 import eventOpCommand from './EventOpCommand.js';
 import addRoleButtonAction from '../action/AddRoleButtonAction.js';
 import { logger } from '../../utils/log.js';
-import { client } from '../../index.js';
+import { client } from '../../utils/client.js';
 
 class EventOpTodayCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()

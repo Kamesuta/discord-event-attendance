@@ -17,7 +17,8 @@ import {
 import { EventWithHost } from './EventManager.js';
 import { MessageUpdater, MessageUpdateContext } from './MessageUpdater.js';
 import { config } from '../utils/config.js';
-import { client, prisma } from '../index.js';
+import { client } from '../utils/client.js';
+import { prisma } from '../utils/prisma.js';
 import splitStrings from './splitStrings.js';
 import statusGameMenuAction from '../commands/action/StatusGameMenuAction.js';
 import userManager from './UserManager.js';

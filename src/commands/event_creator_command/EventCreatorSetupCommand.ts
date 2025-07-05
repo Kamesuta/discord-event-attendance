@@ -15,7 +15,7 @@ import { SubcommandInteraction } from '../base/command_base.js';
 import { config } from '../../utils/config.js';
 import setupUserSelectAction from '../action/event_setup_command/SetupUserSelectAction.js';
 import setupEventSelectAction from '../action/event_setup_command/SetupEventSelectAction.js';
-import { prisma } from '../../index.js';
+import { prisma } from '../../utils/prisma.js';
 import eventCreatorCommand from './EventCreatorCommand.js';
 import { eventIncludeHost, EventWithHost } from '../../event/EventManager.js';
 

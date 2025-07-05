@@ -5,7 +5,7 @@ import {
   TextBasedChannel,
   VoiceBasedChannel,
 } from 'discord.js';
-import { prisma } from '../index.js';
+import { prisma } from '../utils/prisma.js';
 import { Event, Prisma, User } from '@prisma/client';
 import userManager from './UserManager.js';
 import { logger } from '../utils/log.js';

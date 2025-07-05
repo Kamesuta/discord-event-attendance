@@ -5,7 +5,7 @@ import {
   ThreadChannel,
   TextBasedChannel,
 } from 'discord.js';
-import { client } from '../index.js';
+import { client } from '../utils/client.js';
 import { logger } from '../utils/log.js';
 
 /**

@@ -12,7 +12,7 @@ import eventManager, {
   eventIncludeHost,
   EventWithHost,
 } from './event/EventManager.js';
-import { client } from './index.js';
+import { client } from './utils/client.js';
 import { Job, scheduleJob } from 'node-schedule';
 import log4js from 'log4js';
 import eventOpPanelCommand from './commands/event_op_command/EventOpPanelCommand.js';

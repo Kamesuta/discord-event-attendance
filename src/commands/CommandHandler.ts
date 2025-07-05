@@ -1,5 +1,5 @@
 import { ApplicationCommandDataResolvable, Interaction } from 'discord.js';
-import { client } from '../index.js';
+import { client } from '../utils/client.js';
 import { config } from '../utils/config.js';
 import { logger } from '../utils/log.js';
 import { InteractionBase } from './base/interaction_base.js';

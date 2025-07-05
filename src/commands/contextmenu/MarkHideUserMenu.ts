@@ -7,7 +7,7 @@ import { UserContextMenuInteraction } from '../base/contextmenu_base.js';
 import eventManager from '../../event/EventManager.js';
 import eventReviewCommand from '../event_command/EventReviewCommand.js';
 import userManager from '../../event/UserManager.js';
-import { prisma } from '../../index.js';
+import { prisma } from '../../utils/prisma.js';
 
 class MarkHideUserMenu extends UserContextMenuInteraction {
   command = new ContextMenuCommandBuilder()

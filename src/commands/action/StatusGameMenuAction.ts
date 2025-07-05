@@ -6,7 +6,7 @@ import {
 import { MessageComponentActionInteraction } from '../base/action_base.js';
 import { Event } from '@prisma/client';
 import { GameResultData, showGameResults } from '../../event/game.js';
-import { prisma } from '../../index.js';
+import { prisma } from '../../utils/prisma.js';
 
 class StatusGameMenuAction extends MessageComponentActionInteraction<ComponentType.StringSelect> {
   /**

@@ -8,7 +8,7 @@ import eventManager from '../../../event/EventManager.js';
 import { MessageComponentActionInteraction } from '../../base/action_base.js';
 import { Event } from '@prisma/client';
 import eventReviewCommand from '../../event_command/EventReviewCommand.js';
-import { prisma } from '../../../index.js';
+import { prisma } from '../../../utils/prisma.js';
 
 class ReviewMarkClearButtonAction extends MessageComponentActionInteraction<ComponentType.Button> {
   /**
