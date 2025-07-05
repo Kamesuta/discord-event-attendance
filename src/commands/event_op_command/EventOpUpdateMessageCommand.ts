@@ -5,7 +5,7 @@ import {
 import { SubcommandInteraction } from '../base/command_base.js';
 import { messageUpdateManager } from '../../utils/client.js';
 import messageEditor from '../../event/MessageEditor.js';
-import { MessageUpdateContext } from '../../event/MessageUpdater.js';
+import { MessageUpdateContext } from '../../message_updaters/MessageUpdater.js';
 import eventOpCommand from './EventOpCommand.js';
 
 class EventOpUpdateMessageCommand extends SubcommandInteraction {

@@ -5,7 +5,7 @@ import {
 import { SubcommandInteraction } from '../base/command_base.js';
 import statusCommand from './StatusCommand.js';
 import eventManager from '../../event/EventManager.js';
-import eventInfoMessageUpdater from '../../event/EventInfoMessageUpdater.js';
+import eventInfoMessageUpdater from '../../message_updaters/EventInfoMessageUpdater.js';
 
 class StatusEventCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()

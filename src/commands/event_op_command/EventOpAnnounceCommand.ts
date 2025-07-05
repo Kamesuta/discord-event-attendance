@@ -6,7 +6,7 @@ import {
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
 import { config } from '../../utils/config.js';
-import eventInfoMessageUpdater from '../../event/EventInfoMessageUpdater.js';
+import eventInfoMessageUpdater from '../../message_updaters/EventInfoMessageUpdater.js';
 import eventManager, { EventWithHost } from '../../event/EventManager.js';
 import eventOpCommand from './EventOpCommand.js';
 

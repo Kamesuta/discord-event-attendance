@@ -10,8 +10,8 @@ import { prisma } from '../../utils/prisma.js';
 import eventCreatorCommand from './EventCreatorCommand.js';
 import { eventIncludeHost, EventWithHost } from '../../event/EventManager.js';
 import { logger } from '../../utils/log.js';
-import calendarMessageUpdater from './schedule/CalendarMessageUpdater.js';
-import detailMessageUpdater from './schedule/DetailMessageUpdater.js';
+import calendarMessageUpdater from '../../message_updaters/CalendarMessageUpdater.js';
+import detailMessageUpdater from '../../message_updaters/DetailMessageUpdater.js';
 class EventCreatorScheduleCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
     .setName('schedule')

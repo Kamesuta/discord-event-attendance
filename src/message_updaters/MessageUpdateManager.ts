@@ -1,6 +1,6 @@
 import { Message } from 'discord.js';
 import { MessageUpdater, MessageUpdateContext } from './MessageUpdater.js';
-import { EventWithHost } from './EventManager.js';
+import { EventWithHost } from '../event/EventManager.js';
 import { logger } from '../utils/log.js';
 
 /**

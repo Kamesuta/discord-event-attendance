@@ -1,6 +1,6 @@
 import eventInfoMessageUpdater from './EventInfoMessageUpdater.js';
-import calendarMessageUpdater from '../commands/event_creator_command/schedule/CalendarMessageUpdater.js';
-import detailMessageUpdater from '../commands/event_creator_command/schedule/DetailMessageUpdater.js';
+import calendarMessageUpdater from './CalendarMessageUpdater.js';
+import detailMessageUpdater from './DetailMessageUpdater.js';
 import { MessageUpdater } from './MessageUpdater.js';
 
 /**

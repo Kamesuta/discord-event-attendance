@@ -1,5 +1,5 @@
 import { Message } from 'discord.js';
-import { EventWithHost } from './EventManager.js';
+import { EventWithHost } from '../event/EventManager.js';
 
 /**
  * メッセージ更新時のコンテキスト情報

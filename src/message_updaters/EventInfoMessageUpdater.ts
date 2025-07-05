@@ -14,19 +14,19 @@ import {
   TextBasedChannel,
   ThreadAutoArchiveDuration,
 } from 'discord.js';
-import { EventWithHost } from './EventManager.js';
+import { EventWithHost } from '../event/EventManager.js';
 import { MessageUpdater, MessageUpdateContext } from './MessageUpdater.js';
 import { config } from '../utils/config.js';
 import { client } from '../utils/client.js';
 import { prisma } from '../utils/prisma.js';
-import splitStrings from './splitStrings.js';
+import splitStrings from '../event/splitStrings.js';
 import statusGameMenuAction from '../commands/action/StatusGameMenuAction.js';
-import userManager from './UserManager.js';
-import { gameResultInclude } from './game.js';
+import userManager from '../event/UserManager.js';
+import { gameResultInclude } from '../event/game.js';
 import { logger } from '../utils/log.js';
-import { updateAttendanceTime } from './attendance_time.js';
-import { getWebhookFromInteraction } from './getWebhook.js';
-import messageEditor from './MessageEditor.js';
+import { updateAttendanceTime } from '../event/attendance_time.js';
+import { getWebhookFromInteraction } from '../event/getWebhook.js';
+import messageEditor from '../event/MessageEditor.js';
 
 /**
  * イベント情報メッセージ用のMessageUpdater実装

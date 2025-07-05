@@ -18,7 +18,7 @@ import { logger } from '../../../utils/log.js';
 import { onEndEvent } from '../../../event_handler.js';
 import { checkEventOperationPermission } from '../../../event/checkCommandPermission.js';
 import { messageUpdateManager } from '../../../utils/client.js';
-import eventInfoMessageUpdater from '../../../event/EventInfoMessageUpdater.js';
+import eventInfoMessageUpdater from '../../../message_updaters/EventInfoMessageUpdater.js';
 import { syncRoleByCondition } from '../../../event/roleManager.js';
 import messageEditor from '../../../event/MessageEditor.js';
 import { client } from '../../../utils/client.js';
