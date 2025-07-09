@@ -19,6 +19,7 @@ import eventOpPanelCommand from './commands/event_op_command/EventOpPanelCommand
 import groupBy from 'lodash/groupBy.js';
 import userManager from './event/UserManager.js';
 import eventOpTodayCommand from './commands/event_op_command/EventOpTodayCommand.js';
+import { hostRequestScheduler } from './event/HostRequestScheduler.js';
 
 const prisma = new PrismaClient();
 
@@ -630,6 +631,22 @@ export async function updateSchedules(): Promise<void> {
       );
       schedules[date] = jobs;
     }
+
+    // 週次主催者お伺いパネルのスケジュールを追加
+    const hostRequestExecutionTime =
+      hostRequestScheduler.getNextExecutionTime();
+    scheduleJob(hostRequestExecutionTime, async () => {
+      try {
+        loggerSchedule.info('週次主催者お伺いパネルを実行します');
+        await hostRequestScheduler.executeWeeklyPanel();
+      } catch (error) {
+        loggerSchedule.error('週次主催者お伺いパネルの実行でエラー:', error);
+      }
+    });
+
+    loggerSchedule.info(
+      `週次主催者お伺いパネルのスケジュールを登録しました: ${hostRequestExecutionTime.toLocaleString()}`,
+    );
 
     // ログを出力
     loggerSchedule.info('↑スケジュールを更新しました');

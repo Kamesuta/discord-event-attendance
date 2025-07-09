@@ -4,7 +4,6 @@ import {
   ThreadChannel,
   ThreadAutoArchiveDuration,
   EmbedBuilder,
-  User,
 } from 'discord.js';
 import { client } from '../utils/client.js';
 import { config } from '../utils/config.js';

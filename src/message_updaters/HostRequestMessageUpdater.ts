@@ -2,13 +2,7 @@
  * 主催者お伺いメッセージ用のMessageUpdater実装
  * 主催者お伺い関連のメッセージの判定・更新・取得を担当
  */
-import {
-  Message,
-  EmbedBuilder,
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
-} from 'discord.js';
+import { Message, EmbedBuilder } from 'discord.js';
 import { EventWithHost } from '../event/EventManager.js';
 import { MessageUpdater, MessageUpdateContext } from './MessageUpdater.js';
 import { config } from '../utils/config.js';
@@ -48,12 +42,12 @@ class HostRequestMessageUpdater implements MessageUpdater {
   /**
    * 主催者お伺いメッセージを更新
    * @param message メッセージ
-   * @param context 更新コンテキスト
+   * @param _context 更新コンテキスト
    * @returns Promise<Message | undefined>
    */
   async updateMessage(
     message: Message,
-    context?: MessageUpdateContext,
+    _context?: MessageUpdateContext,
   ): Promise<Message | undefined> {
     try {
       // Embedからメタデータを抽出

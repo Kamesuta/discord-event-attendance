@@ -12,7 +12,6 @@ import eventHostCommand from './EventHostCommand.js';
 import { hostWorkflowManager } from '../../event/HostWorkflowManager.js';
 import { hostRequestManager } from '../../event/HostRequestManager.js';
 import { client } from '../../utils/client.js';
-import { config } from '../../utils/config.js';
 import { logger } from '../../utils/log.js';
 
 /**
@@ -32,7 +31,9 @@ class EventHostStartCommand extends SubcommandInteraction {
     .addBooleanOption((option) =>
       option
         .setName('show')
-        .setDescription('コマンドの結果をチャットに表示しますか？（デフォルトは非公開）')
+        .setDescription(
+          'コマンドの結果をチャットに表示しますか？（デフォルトは非公開）',
+        )
         .setRequired(false),
     );
 
@@ -46,7 +47,7 @@ class EventHostStartCommand extends SubcommandInteraction {
   ): Promise<void> {
     const eventId = interaction.options.getInteger('event_id', true);
     const show = interaction.options.getBoolean('show') ?? false;
-    
+
     await interaction.deferReply({ ephemeral: !show });
 
     try {
@@ -54,7 +55,8 @@ class EventHostStartCommand extends SubcommandInteraction {
       const workflow = await hostWorkflowManager.getWorkflow(eventId);
       if (!workflow) {
         await interaction.editReply({
-          content: '指定されたイベントのワークフローが見つかりません。先に `/event_host plan` で計画を作成してください。',
+          content:
+            '指定されたイベントのワークフローが見つかりません。先に `/event_host plan` で計画を作成してください。',
         });
         return;
       }
@@ -74,7 +76,9 @@ class EventHostStartCommand extends SubcommandInteraction {
 
       const embed = new EmbedBuilder()
         .setTitle('🚀 主催者お伺いワークフロー開始')
-        .setDescription(`イベント「${workflow.event.name}」の主催者お伺いを開始しました。`)
+        .setDescription(
+          `イベント「${workflow.event.name}」の主催者お伺いを開始しました。`,
+        )
         .addFields(
           {
             name: '対象イベント',
@@ -98,11 +102,11 @@ class EventHostStartCommand extends SubcommandInteraction {
       await interaction.editReply({
         embeds: [embed],
       });
-
     } catch (error) {
       logger.error('主催者お伺いワークフロー開始でエラー:', error);
       await interaction.editReply({
-        content: 'エラーが発生しました。しばらく時間をおいて再試行してください。',
+        content:
+          'エラーが発生しました。しばらく時間をおいて再試行してください。',
       });
     }
   }
@@ -115,8 +119,11 @@ class EventHostStartCommand extends SubcommandInteraction {
   private async _sendFirstHostRequest(eventId: number): Promise<void> {
     try {
       // 最初の優先度のリクエストを取得
-      const requests = await hostRequestManager.getRequestsByEvent(eventId, 'pending');
-      const firstRequest = requests.find(req => req.priority === 1);
+      const requests = await hostRequestManager.getRequestsByEvent(
+        eventId,
+        'pending',
+      );
+      const firstRequest = requests.find((req) => req.priority === 1);
 
       if (!firstRequest) {
         logger.error('最初の候補者が見つかりません', { eventId });
@@ -125,7 +132,6 @@ class EventHostStartCommand extends SubcommandInteraction {
 
       // DMを送信
       await this._sendHostRequestDM(firstRequest.id);
-
     } catch (error) {
       logger.error('最初の候補者へのDM送信でエラー:', error);
       throw error;
@@ -141,7 +147,9 @@ class EventHostStartCommand extends SubcommandInteraction {
     try {
       const hostRequest = await hostRequestManager.getRequest(hostRequestId);
       if (!hostRequest) {
-        throw new Error(`お伺いリクエストが見つかりません: ID=${hostRequestId}`);
+        throw new Error(
+          `お伺いリクエストが見つかりません: ID=${hostRequestId}`,
+        );
       }
 
       // DMチャンネルを取得
@@ -157,7 +165,7 @@ class EventHostStartCommand extends SubcommandInteraction {
 
       // 期限の計算
       const remainingHours = Math.floor(
-        (hostRequest.expiresAt.getTime() - Date.now()) / (1000 * 60 * 60)
+        (hostRequest.expiresAt.getTime() - Date.now()) / (1000 * 60 * 60),
       );
 
       // Embedを作成
@@ -165,15 +173,19 @@ class EventHostStartCommand extends SubcommandInteraction {
         .setTitle('🎯 イベント主催のお伺い')
         .setDescription(
           `**${hostRequest.event.name}** の主催をお願いできませんでしょうか？\n\n` +
-          (hostRequest.message || 'よろしくお願いいたします。')
+            (hostRequest.message || 'よろしくお願いいたします。'),
         )
         .addFields(
           {
             name: 'イベント情報',
-            value: 
-              `📅 **開催予定**: ${hostRequest.event.scheduleTime ? 
-                new Date(hostRequest.event.scheduleTime).toLocaleString('ja-JP') : '未定'}\n` +
-              `🆔 **イベントID**: ${hostRequest.event.id}`,
+            value:
+              `📅 **開催予定**: ${
+                hostRequest.event.scheduleTime
+                  ? new Date(hostRequest.event.scheduleTime).toLocaleString(
+                      'ja-JP',
+                    )
+                  : '未定'
+              }\n` + `🆔 **イベントID**: ${hostRequest.event.id}`,
             inline: false,
           },
           {
@@ -194,24 +206,23 @@ class EventHostStartCommand extends SubcommandInteraction {
         .setTimestamp();
 
       // ボタンを作成
-      const buttons = new ActionRowBuilder<ButtonBuilder>()
-        .addComponents(
-          new ButtonBuilder()
-            .setCustomId(`host_accept_${hostRequestId}`)
-            .setLabel('主催を受諾')
-            .setStyle(ButtonStyle.Success)
-            .setEmoji('✅'),
-          new ButtonBuilder()
-            .setCustomId(`host_decline_${hostRequestId}`)
-            .setLabel('お断りする')
-            .setStyle(ButtonStyle.Danger)
-            .setEmoji('❌'),
-          new ButtonBuilder()
-            .setCustomId(`host_alternate_${hostRequestId}`)
-            .setLabel('別日を提案')
-            .setStyle(ButtonStyle.Secondary)
-            .setEmoji('📅'),
-        );
+      const buttons = new ActionRowBuilder<ButtonBuilder>().addComponents(
+        new ButtonBuilder()
+          .setCustomId(`host_accept_${hostRequestId}`)
+          .setLabel('主催を受諾')
+          .setStyle(ButtonStyle.Success)
+          .setEmoji('✅'),
+        new ButtonBuilder()
+          .setCustomId(`host_decline_${hostRequestId}`)
+          .setLabel('お断りする')
+          .setStyle(ButtonStyle.Danger)
+          .setEmoji('❌'),
+        new ButtonBuilder()
+          .setCustomId(`host_alternate_${hostRequestId}`)
+          .setLabel('別日を提案')
+          .setStyle(ButtonStyle.Secondary)
+          .setEmoji('📅'),
+      );
 
       // DMを送信
       const dmMessage = await dmChannel.send({
@@ -226,8 +237,9 @@ class EventHostStartCommand extends SubcommandInteraction {
         dmMessage.id,
       );
 
-      logger.info(`主催者お伺いDMを送信しました: User=${hostRequest.user.username}, Event=${hostRequest.event.name}`);
-
+      logger.info(
+        `主催者お伺いDMを送信しました: User=${hostRequest.user.username}, Event=${hostRequest.event.name}`,
+      );
     } catch (error) {
       logger.error('主催者お伺いDM送信でエラー:', error);
       throw error;
@@ -253,4 +265,4 @@ class EventHostStartCommand extends SubcommandInteraction {
 /**
  * EventHostStartCommandのインスタンス
  */
-export default new EventHostStartCommand(eventHostCommand); 
+export default new EventHostStartCommand(eventHostCommand);

@@ -73,7 +73,7 @@ class EventHostStatusCommand extends SubcommandInteraction {
   private async _showEventStatus(
     interaction: ChatInputCommandInteraction<'cached'>,
     eventId: number,
-  ) {
+  ): Promise<void> {
     const progress = await hostWorkflowManager.getWorkflowProgress(eventId);
 
     if (!progress.workflow) {
@@ -128,7 +128,7 @@ class EventHostStatusCommand extends SubcommandInteraction {
     // 候補者一覧
     if (progress.requests.length > 0) {
       const candidateList = progress.requests
-        .map((request, index) => {
+        .map((request, _index) => {
           const status = this._getRequestStatusEmoji(request.status);
           const current =
             request.priority === progress.currentPosition ? '👉 ' : '';
@@ -169,7 +169,7 @@ class EventHostStatusCommand extends SubcommandInteraction {
    */
   private async _showOverallStatus(
     interaction: ChatInputCommandInteraction<'cached'>,
-  ) {
+  ): Promise<void> {
     const activeWorkflows = await hostWorkflowManager.getActiveWorkflows();
 
     const embed = new EmbedBuilder()
@@ -298,13 +298,13 @@ class EventHostStatusCommand extends SubcommandInteraction {
 
   /**
    * ワークフロー進捗の詳細表示
-   * @param interaction インタラクション
-   * @param eventId イベントID
+   * @param _interaction インタラクション
+   * @param _eventId イベントID
    * @returns Promise<void>
    */
   private async _showWorkflowDetails(
-    interaction: ChatInputCommandInteraction<'cached'>,
-    eventId: number,
+    _interaction: ChatInputCommandInteraction<'cached'>,
+    _eventId: number,
   ): Promise<void> {
     // Implementation of _showWorkflowDetails method
   }
