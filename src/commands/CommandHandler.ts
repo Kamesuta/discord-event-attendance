@@ -3,6 +3,7 @@ import { client } from '../utils/client.js';
 import { config } from '../utils/config.js';
 import { logger } from '../utils/log.js';
 import { InteractionBase } from './base/interaction_base.js';
+import { CommandBasedInteraction } from './base/command_base.js';
 
 /**
  * コマンドハンドラー
@@ -33,7 +34,24 @@ export default class CommandHandler {
     );
 
     // コマンドを登録
-    await guild.commands.set(applicationCommands);
+    const registeredCommands = await guild.commands.set(applicationCommands);
+
+    // 登録後にrootApplicationCommandを各コマンドクラスに設定
+    this._commands
+      .filter(
+        (command): command is CommandBasedInteraction =>
+          command instanceof CommandBasedInteraction,
+      )
+      .map((command) => ({
+        command,
+        registeredCommand: registeredCommands.find(
+          (c) => c.name === command.rootCommand?.name,
+        ),
+      }))
+      .filter(({ registeredCommand }) => registeredCommand !== undefined)
+      .forEach(({ command, registeredCommand }) => {
+        command.rootApplicationCommand = registeredCommand!;
+      });
   }
 
   /**

@@ -26,6 +26,7 @@ import { ScheduleMessageData } from '../commands/event_creator_command/schedule/
 import { BannerImageUtil } from '../commands/event_creator_command/schedule/BannerImageUtil.js';
 import userManager from '../event/UserManager.js';
 import messageEditor from '../event/MessageEditor.js';
+import statusCommand from '../commands/status_command/StatusCommand.js';
 
 /**
  * 詳細メッセージ用のMessageUpdater実装
@@ -260,7 +261,10 @@ class DetailMessageUpdater implements MessageUpdater {
     components.push(
       new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Large),
       new TextDisplayBuilder().setContent(`### 📧通知ロールについて
-通知を受け取りたい/不要な方は <id:customize> からGET/解除できます`),
+通知を受け取りたい/不要な方は <id:customize> からGET/解除できます
+### 📊統計コマンドについて
+下記コマンドを使うと、過去イベントを検索したりランキングを見たり出来ます～
+</status event_list:${statusCommand.rootApplicationCommand?.id}> </status ranking:${statusCommand.rootApplicationCommand?.id}> </status user:${statusCommand.rootApplicationCommand?.id}>`),
     );
 
     return { components, attachments };

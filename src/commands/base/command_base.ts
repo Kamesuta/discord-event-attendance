@@ -1,7 +1,9 @@
 import {
+  ApplicationCommand,
   ApplicationCommandDataResolvable,
   ChatInputCommandInteraction,
   Interaction,
+  SharedSlashCommand,
   SlashCommandBuilder,
   SlashCommandSubcommandBuilder,
   SlashCommandSubcommandGroupBuilder,
@@ -12,22 +14,29 @@ import { InteractionBase } from './interaction_base.js';
 /**
  * コマンドベースのインタラクション
  */
-interface CommandBasedInteraction {
+export abstract class CommandBasedInteraction extends InteractionBase {
+  /**
+   * ルートコマンド (サブコマンド登録時)
+   */
+  rootCommand?: SharedSlashCommand;
+
+  /**
+   * ルートコマンド（registerSubCommandsで設定される）
+   */
+  rootApplicationCommand?: ApplicationCommand;
+
   /**
    * 自分のインタラクションかどうかを判定するための関数
    * @param interaction インタラクション
    * @returns 自分のインタラクションかどうか
    */
-  isMyInteraction(interaction: ChatInputCommandInteraction): boolean;
+  abstract isMyInteraction(interaction: ChatInputCommandInteraction): boolean;
 }
 
 /**
  * コマンドグループ
  */
-export abstract class CommandGroupInteraction
-  extends InteractionBase
-  implements CommandBasedInteraction
-{
+export abstract class CommandGroupInteraction extends CommandBasedInteraction {
   abstract command: SlashCommandSubcommandsOnlyBuilder;
 
   /** @inheritdoc */
@@ -35,6 +44,7 @@ export abstract class CommandGroupInteraction
     commandList: ApplicationCommandDataResolvable[],
   ): void {
     commandList.push(this.command);
+    this.rootCommand = this.command;
   }
 
   /** @inheritdoc */
@@ -46,10 +56,7 @@ export abstract class CommandGroupInteraction
 /**
  * サブコマンドグループ
  */
-export abstract class SubcommandGroupInteraction
-  extends InteractionBase
-  implements CommandBasedInteraction
-{
+export abstract class SubcommandGroupInteraction extends CommandBasedInteraction {
   abstract command: SlashCommandSubcommandGroupBuilder;
 
   /**
@@ -63,6 +70,7 @@ export abstract class SubcommandGroupInteraction
   /** @inheritdoc */
   override registerSubCommands(): void {
     this._registry.command.addSubcommandGroup(this.command);
+    this.rootCommand = this._registry.rootCommand;
   }
 
   /** @inheritdoc */
@@ -77,10 +85,7 @@ export abstract class SubcommandGroupInteraction
 /**
  * コマンド
  */
-export abstract class CommandInteraction
-  extends InteractionBase
-  implements CommandBasedInteraction
-{
+export abstract class CommandInteraction extends CommandBasedInteraction {
   abstract command: SlashCommandBuilder;
 
   /** @inheritdoc */
@@ -88,6 +93,7 @@ export abstract class CommandInteraction
     commandList: ApplicationCommandDataResolvable[],
   ): void {
     commandList.push(this.command);
+    this.rootCommand = this.command;
   }
 
   /** @inheritdoc */
@@ -112,10 +118,7 @@ export abstract class CommandInteraction
 /**
  * サブコマンド
  */
-export abstract class SubcommandInteraction
-  extends InteractionBase
-  implements CommandBasedInteraction
-{
+export abstract class SubcommandInteraction extends CommandBasedInteraction {
   abstract command: SlashCommandSubcommandBuilder;
 
   /**
@@ -131,6 +134,7 @@ export abstract class SubcommandInteraction
   /** @inheritdoc */
   override registerSubCommands(): void {
     this._registry.command.addSubcommand(this.command);
+    this.rootCommand = this._registry.rootCommand;
   }
 
   /** @inheritdoc */
