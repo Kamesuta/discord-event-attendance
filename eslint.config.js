@@ -1,6 +1,6 @@
 // eslint.config.js
 
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+ 
 /* eslint-disable jsdoc/require-jsdoc */
 /* eslint-disable @typescript-eslint/naming-convention */
 
@@ -10,6 +10,16 @@ import eslint from '@eslint/js';
 import eslintConfigPrettier from 'eslint-config-prettier';
 
 export default [
+    // Ignore patterns
+    {
+        ignores: [
+            'dist/**',
+            'node_modules/**',
+            'coverage/**',
+            '*.js',
+            '*.mjs'
+        ]
+    },
     // Plugins
     eslint.configs.recommended,
     ...tseslint.configs.recommendedTypeChecked,

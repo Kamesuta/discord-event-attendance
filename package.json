@@ -11,7 +11,7 @@
     "clean": "rimraf dist",
     "tsc": "tsc",
     "build": "npm-run-all clean tsc",
-    "lint": "tsc --noEmit && eslint --cache --fix",
+    "lint": "tsc --noEmit && eslint --cache",
     "prettier": "prettier --write",
     "lint-staged": "lint-staged",
     "prepare": "npx if-env NODE_ENV=production && echo 'Skipping husky in production' || husky",

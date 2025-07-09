@@ -55,6 +55,21 @@ export interface Config {
   /** イベントバナー画像URL */
   event_banner_url?: string;
 
+  /** 主催者お伺い管理チャンネルID */
+  host_request_channel_id: string;
+
+  /** イベント案チャンネルID（公募用） */
+  host_request_proposal_channel_id: string;
+
+  /** お伺いのタイムアウト時間（時間） */
+  host_request_timeout_hours: number;
+
+  /** 週何曜日にパネルを出すか (0=日曜) */
+  host_request_schedule_day: number;
+
+  /** 何時にパネルを出すか */
+  host_request_schedule_time: string;
+
   /* eslint-enable @typescript-eslint/naming-convention */
 }
 
@@ -142,4 +157,36 @@ assert(
 assert(
   config.emojis && typeof config.emojis === 'object',
   'emojis is required and must be an object.',
+);
+
+assert(
+  config.host_request_channel_id &&
+    typeof config.host_request_channel_id === 'string',
+  'host_request_channel_id is required and must be a string.',
+);
+
+assert(
+  config.host_request_proposal_channel_id &&
+    typeof config.host_request_proposal_channel_id === 'string',
+  'host_request_proposal_channel_id is required and must be a string.',
+);
+
+assert(
+  typeof config.host_request_timeout_hours === 'number' &&
+    config.host_request_timeout_hours > 0,
+  'host_request_timeout_hours is required and must be a positive number.',
+);
+
+assert(
+  typeof config.host_request_schedule_day === 'number' &&
+    config.host_request_schedule_day >= 0 &&
+    config.host_request_schedule_day <= 6,
+  'host_request_schedule_day is required and must be a number between 0-6.',
+);
+
+assert(
+  config.host_request_schedule_time &&
+    typeof config.host_request_schedule_time === 'string' &&
+    /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(config.host_request_schedule_time),
+  'host_request_schedule_time is required and must be a valid time format (HH:MM).',
 );

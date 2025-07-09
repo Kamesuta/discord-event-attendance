@@ -1,4 +1,4 @@
-﻿/* eslint-disable @typescript-eslint/explicit-function-return-type */
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
 const config = {
   '{src,test}/**/*.{js,ts}': 'eslint --cache --fix',
   '{src,test}/**': 'prettier --write',

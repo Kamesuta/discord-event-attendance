@@ -27,12 +27,14 @@ model Event {
   startTime    DateTime?
   endTime      DateTime?
 
-  voiceLogs   VoiceLog[]
-  stats       UserStat[]
-  games       GameResult[]
-  gameResults UserGameResult[]
-  userMutes   UserMute[]
-  host        User?            @relation(fields: [hostId], references: [id])
+  voiceLogs    VoiceLog[]
+  stats        UserStat[]
+  games        GameResult[]
+  gameResults  UserGameResult[]
+  userMutes    UserMute[]
+  host         User?            @relation(fields: [hostId], references: [id])
+  hostRequests HostRequest[]
+  hostWorkflow HostWorkflow?
 }
 
 model User {
@@ -52,6 +54,7 @@ model User {
   gameResults  UserGameResult[]
   userMutes    UserMute[]
   hostedEvents Event[]
+  hostRequests HostRequest[]
 }
 
 model VoiceLog {
@@ -120,4 +123,36 @@ model UserGameResult {
   user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([gameId, userId])
+}
+
+model HostRequest {
+  id          Int      @id @default(autoincrement())
+  eventId     Int
+  priority    Int // 依頼順（1番手、2番手...）
+  userId      Int
+  status      String // "pending", "accepted", "declined", "expired"
+  message     String?  @db.VarChar(1000) // カスタム依頼メッセージ
+  dmMessageId String? // DMのメッセージID
+  expiresAt   DateTime // 期限
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId]) // 同じイベントの同じユーザーへの重複依頼を防ぐ
+}
+
+model HostWorkflow {
+  id                   Int      @id @default(autoincrement())
+  eventId              Int      @unique
+  currentPriority      Int      @default(1) // 現在依頼中の順番
+  status               String // "planning", "requesting", "completed", "cancelled"
+  allowPublicApply     Boolean  @default(false) // 並行公募フラグ
+  publicApplyMessageId String? // 公募メッセージID
+  customMessage        String?  @db.VarChar(1000) // カスタム依頼メッセージ
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
 }
