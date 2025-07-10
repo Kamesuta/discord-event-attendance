@@ -33,7 +33,7 @@ class SetupUserSelectAction extends MessageComponentActionInteraction<ComponentT
     const userSelect = new UserSelectMenuBuilder()
       .setCustomId(customId)
       .setPlaceholder(event?.event?.name ?? 'ユーザーを選択してください')
-      .setMinValues(1)
+      .setMinValues(0)
       .setMaxValues(1);
 
     if (event?.event?.host?.userId) {
@@ -67,13 +67,9 @@ class SetupUserSelectAction extends MessageComponentActionInteraction<ComponentT
 
     // ホストユーザーを取得
     const hostUserMember = interaction.members.first();
-    if (!hostUserMember) {
-      await interaction.editReply({
-        content: 'ユーザーが見つかりませんでした',
-      });
-      return;
-    }
-    const hostUser = await userManager.getOrCreateUser(hostUserMember);
+    const hostUser = hostUserMember
+      ? await userManager.getOrCreateUser(hostUserMember)
+      : undefined;
 
     // イベントを取得
     let event =
@@ -101,7 +97,7 @@ class SetupUserSelectAction extends MessageComponentActionInteraction<ComponentT
     // イベントを更新
     const updatedEvent = await prisma.event.update({
       where: { id: event.id },
-      data: { hostId: hostUser.id },
+      data: { hostId: hostUser?.id ?? null },
       ...eventIncludeHost,
     });
 
