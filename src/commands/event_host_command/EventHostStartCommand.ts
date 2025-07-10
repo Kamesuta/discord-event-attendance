@@ -46,7 +46,7 @@ class EventHostStartCommand extends SubcommandInteraction {
     interaction: ChatInputCommandInteraction<'cached'>,
   ): Promise<void> {
     const eventId = interaction.options.getInteger('event_id', true);
-    const show = interaction.options.getBoolean('show') ?? false;
+    const show = interaction.options.getBoolean('show') ?? true;
 
     await interaction.deferReply({ ephemeral: !show });
 
