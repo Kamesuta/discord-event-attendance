@@ -3,7 +3,7 @@ import {
   StringSelectMenuBuilder,
   StringSelectMenuInteraction,
   ActionRowBuilder,
-  ButtonBuilder,
+  MessageActionRowComponentBuilder,
 } from 'discord.js';
 import { MessageComponentActionInteraction } from '../../base/action_base.js';
 import { Event } from '@prisma/client';
@@ -13,7 +13,6 @@ import { prisma } from '../../../utils/prisma.js';
 import eventHostPlanCommand, {
   PlanSetupData,
 } from '../../event_host_command/EventHostPlanCommand.js';
-import planCandidateSelectButtonAction from './PlanCandidateSelectButtonAction.js';
 
 /**
  * 主催者お伺いワークフロー計画作成 - イベント選択アクション
@@ -123,12 +122,10 @@ class PlanEventSelectAction extends MessageComponentActionInteraction<ComponentT
     }
 
     // 設定データを取得・初期化
-    const key = new URLSearchParams({
-      user: interaction.user.id,
-      event: eventId.toString(),
-    }).toString();
-
-    const setupData = await eventHostPlanCommand.getSetupData(key, eventId);
+    const setupData = await eventHostPlanCommand.getSetupData(
+      interaction,
+      eventId,
+    );
 
     // 設定パネルを表示
     await this._updateSetupPanel(interaction, event, setupData);
@@ -147,19 +144,27 @@ class PlanEventSelectAction extends MessageComponentActionInteraction<ComponentT
     setupData: PlanSetupData,
   ): Promise<void> {
     const embed = eventHostPlanCommand.makeSetupEmbed(event, setupData);
-
-    // 設定用のボタンを作成
-    const buttons = new ActionRowBuilder<ButtonBuilder>().addComponents(
-      planCandidateSelectButtonAction.create(event.id),
-      // 他のボタンは後で追加
-    );
+    const components = this._createSetupPanelComponents(event.id, setupData);
 
     const message = {
       embeds: [embed],
-      components: [buttons],
+      components,
     };
 
     await interaction.editReply(message);
+  }
+
+  /**
+   * 設定パネルのコンポーネントを作成
+   * @param eventId イベントID
+   * @param setupData 設定データ
+   * @returns ActionRowBuilder[]
+   */
+  private _createSetupPanelComponents(
+    eventId: number,
+    setupData: PlanSetupData,
+  ): ActionRowBuilder<MessageActionRowComponentBuilder>[] {
+    return eventHostPlanCommand.createSetupPanelComponents(eventId, setupData);
   }
 
   /**

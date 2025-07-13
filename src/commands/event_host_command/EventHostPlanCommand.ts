@@ -9,6 +9,10 @@ import {
   GuildScheduledEventStatus,
   Collection,
   InteractionEditReplyOptions,
+  RepliableInteraction,
+  UserSelectMenuBuilder,
+  MessageActionRowComponentBuilder,
+  ButtonStyle,
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
 import eventHostCommand from './EventHostCommand.js';
@@ -19,6 +23,8 @@ import planEventSelectAction from '../action/event_host_command/PlanEventSelectA
 import planSetupAllButtonAction from '../action/event_host_command/PlanSetupAllButtonAction.js';
 import planCancelButtonAction from '../action/event_host_command/PlanCancelButtonAction.js';
 import { config } from '../../utils/config.js';
+import { logger } from '../../utils/log.js';
+import planCandidatePositionUserSelectAction from '../action/event_host_command/PlanCandidatePositionUserSelectAction.js';
 
 /**
  * 主催者お伺いワークフロー計画の設定データ
@@ -61,6 +67,8 @@ class EventHostPlanCommand extends SubcommandInteraction {
   private _scheduledEvents:
     | Collection<string, GuildScheduledEvent<GuildScheduledEventStatus>>
     | undefined;
+  /** 計画作成パネルのメッセージ参照 (ユーザーID -> インタラクション) */
+  private _planningPanelInteractions: Record<string, RepliableInteraction> = {};
 
   async onCommand(
     interaction: ChatInputCommandInteraction<'cached'>,
@@ -72,25 +80,33 @@ class EventHostPlanCommand extends SubcommandInteraction {
     this._scheduledEvents = await interaction.guild?.scheduledEvents.fetch();
 
     // パネルを作成
-    const reply = await this._createPlanningPanel(interaction);
+    const reply = await this.createPlanningPanel(interaction);
     if (!reply) return;
     await interaction.editReply(reply);
+
+    // 計画パネルのインタラクションを保存
+    this._planningPanelInteractions[interaction.user.id] = interaction;
   }
 
   /**
    * 計画作成パネルを表示
    * @param interaction インタラクション
-   * @returns Promise<void>
+   * @returns Promise<InteractionEditReplyOptions | undefined>
    */
-  private async _createPlanningPanel(
-    interaction: ChatInputCommandInteraction<'cached'>,
+  async createPlanningPanel(
+    interaction: RepliableInteraction,
   ): Promise<InteractionEditReplyOptions | undefined> {
-    const scheduledEvents = this._scheduledEvents;
+    // スケジュールイベントを取得
+    let scheduledEvents = this._scheduledEvents;
+    if (!scheduledEvents && 'guild' in interaction && interaction.guild) {
+      scheduledEvents = await interaction.guild.scheduledEvents.fetch();
+      this._scheduledEvents = scheduledEvents;
+    }
+
     if (!scheduledEvents || scheduledEvents.size === 0) {
-      await interaction.editReply({
+      return {
         content: 'イベントが見つかりませんでした',
-      });
-      return;
+      };
     }
 
     // イベント一覧を取得
@@ -105,13 +121,12 @@ class EventHostPlanCommand extends SubcommandInteraction {
     );
 
     if (eventsWithoutHost.length === 0) {
-      await interaction.editReply({
+      return {
         content: '主催者が決まっていないイベントが見つかりませんでした。',
-      });
-      return;
+      };
     }
 
-    // イベントとイベント主催者の表を表示
+    // イベントと設定状況の表を表示
     const eventTable = eventSpecs
       .map(({ event, scheduledEvent }) => {
         const date = event?.scheduleTime ?? scheduledEvent.scheduledStartAt;
@@ -119,14 +134,46 @@ class EventHostPlanCommand extends SubcommandInteraction {
           ? `<t:${Math.floor(date.getTime() / 1000)}:D>`
           : '未定';
         const eventInfo = `${dateStr} [「${event?.name ?? scheduledEvent?.name ?? '？'}」(ID: ${event?.id ?? '？'})](https://discord.com/events/${config.guild_id}/${scheduledEvent.id})`;
-        const hostInfo = event
-          ? event.host?.userId
-            ? `<@${event.host.userId}>`
-            : '主催者なし'
-          : 'イベント未生成';
-        return `${eventInfo}: ${hostInfo}`;
+
+        // 設定状況を取得
+        let statusInfo = '';
+        if (!event) {
+          statusInfo = 'イベント未生成';
+        } else if (event.hostId) {
+          statusInfo = `主催者決定済み (<@${event.hostId}>)`;
+        } else {
+          // PlanSetupDataから設定を確認
+          const setupData = this._setupData[interaction.user.id];
+          const hasSetup = setupData && setupData.eventId === event.id;
+
+          if (!hasSetup) {
+            statusInfo = '未設定';
+          } else {
+            // 設定詳細を表示
+            const candidates =
+              setupData.candidates.length > 0
+                ? setupData.candidates
+                    .map((user, index) => `${index + 1}.<@${user.userId}>`)
+                    .join(' ')
+                : '未設定';
+            const publicApply = setupData.allowPublicApply
+              ? '公募ON'
+              : '公募OFF';
+            const message =
+              setupData.customMessage &&
+              setupData.customMessage !== 'よろしくお願いいたします。'
+                ? setupData.customMessage.length > 20
+                  ? setupData.customMessage.substring(0, 20) + '...'
+                  : setupData.customMessage
+                : 'デフォルト';
+
+            statusInfo = `[${candidates}] ${publicApply} "${message}"`;
+          }
+        }
+
+        return `${eventInfo}\n　└ ${statusInfo}`;
       })
-      .join('\n');
+      .join('\n\n');
 
     // パネルを作成
     const embed = new EmbedBuilder()
@@ -165,24 +212,25 @@ class EventHostPlanCommand extends SubcommandInteraction {
 
   /**
    * 設定データを取得・初期化
-   * @param key キー
+   * @param interaction インタラクション（userIdを取得するため）
    * @param eventId イベントID
    * @param clear 設定データをクリアするか
    * @returns 設定データ
    */
   async getSetupData(
-    key: string,
+    interaction: RepliableInteraction,
     eventId: number,
     clear = false,
   ): Promise<PlanSetupData> {
+    const userId = interaction.user.id;
     // 設定データを取得
-    let setupData: PlanSetupData | undefined = this._setupData[key];
+    let setupData: PlanSetupData | undefined = this._setupData[userId];
 
     // 設定データがない場合は新規作成
     if (!setupData || clear) {
       // 設定データを作成
-      this._setupData[key] = setupData = {
-        key,
+      this._setupData[userId] = setupData = {
+        key: userId,
         eventId,
         availableUsers: [],
         candidates: [],
@@ -218,29 +266,46 @@ class EventHostPlanCommand extends SubcommandInteraction {
   }
 
   /**
-   * 設定データを更新
-   * @param setupData 設定データ
-   * @param options 更新オプション
+   * 元の計画作成パネルを更新
+   * @param userId ユーザーID
+   * @returns Promise<boolean> 更新成功かどうか
    */
-  setSetupData(
-    setupData: PlanSetupData,
-    options: {
-      /** 候補者（1～3番手） */
-      candidates?: User[];
-      /** 並行して公募するか */
-      allowPublicApply?: boolean;
-      /** 依頼メッセージ */
-      customMessage?: string;
-    },
-  ): void {
-    if (options.candidates !== undefined) {
-      setupData.candidates = options.candidates;
+  async updatePlanningPanel(userId: string): Promise<boolean> {
+    const originalInteraction = this._planningPanelInteractions[userId];
+    if (!originalInteraction) {
+      return false; // 元のパネルが見つからない
     }
-    if (options.allowPublicApply !== undefined) {
-      setupData.allowPublicApply = options.allowPublicApply;
+
+    try {
+      const reply = await this.createPlanningPanel(originalInteraction);
+      if (!reply) return false;
+
+      // 元のメッセージを編集
+      await originalInteraction.editReply(reply);
+      return true;
+    } catch (error) {
+      logger.error('計画パネル更新でエラー:', error);
+      return false;
     }
-    if (options.customMessage !== undefined) {
-      setupData.customMessage = options.customMessage;
+  }
+
+  /**
+   * アクションから呼び出される計画パネル更新メソッド
+   * @param interaction アクションのインタラクション
+   * @returns Promise<void>
+   */
+  async updatePlanningPanelFromAction(
+    interaction: RepliableInteraction,
+  ): Promise<void> {
+    try {
+      // 元の計画作成パネルを更新
+      const updated = await this.updatePlanningPanel(interaction.user.id);
+      if (!updated) {
+        logger.warn('計画作成パネルの更新に失敗しました');
+      }
+    } catch (error) {
+      logger.error('計画作成パネル更新でエラー:', error);
+      // エラーでも処理を継続
     }
   }
 
@@ -298,6 +363,63 @@ class EventHostPlanCommand extends SubcommandInteraction {
     });
 
     return embed;
+  }
+
+  /**
+   * 設定パネルのコンポーネントを作成
+   * @param eventId イベントID
+   * @param setupData 設定データ
+   * @returns ActionRowBuilder[]
+   */
+  createSetupPanelComponents(
+    eventId: number,
+    setupData: PlanSetupData,
+  ): ActionRowBuilder<MessageActionRowComponentBuilder>[] {
+    // 3つの候補者選択フィールドを作成
+    const candidateRows: ActionRowBuilder<UserSelectMenuBuilder>[] = [];
+    for (let i = 1; i <= 3; i++) {
+      const userSelect = planCandidatePositionUserSelectAction.create(
+        eventId,
+        i,
+      );
+
+      // 現在の選択状態を反映
+      if (setupData.candidates.length >= i && setupData.candidates[i - 1]) {
+        const selectedUser = setupData.candidates[i - 1];
+        userSelect.setDefaultUsers([selectedUser.userId]);
+      }
+
+      const row = new ActionRowBuilder<UserSelectMenuBuilder>().addComponents(
+        userSelect,
+      );
+      candidateRows.push(row);
+    }
+
+    // 並行公募・確定・キャンセルボタンを作成
+    const controlButtons = new ActionRowBuilder<ButtonBuilder>().addComponents(
+      new ButtonBuilder()
+        .setCustomId(`hpat_${eventId}`) // 並行公募切り替え
+        .setLabel(`並行公募: ${setupData.allowPublicApply ? 'はい' : 'いいえ'}`)
+        .setStyle(
+          setupData.allowPublicApply
+            ? ButtonStyle.Success
+            : ButtonStyle.Secondary,
+        ),
+      new ButtonBuilder()
+        .setCustomId(`hpme_${eventId}`) // 依頼メッセージ編集
+        .setLabel('依頼メッセージ編集')
+        .setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setCustomId(`hpco_${eventId}`) // 確定
+        .setLabel('確定')
+        .setStyle(ButtonStyle.Primary),
+      new ButtonBuilder()
+        .setCustomId(`hpca_${eventId}`) // キャンセル
+        .setLabel('キャンセル')
+        .setStyle(ButtonStyle.Danger),
+    );
+
+    return [...candidateRows, controlButtons];
   }
 }
 

@@ -57,13 +57,8 @@ class PlanCandidateSelectButtonAction extends MessageComponentActionInteraction<
 
     try {
       // 設定データを取得
-      const key = new URLSearchParams({
-        user: interaction.user.id,
-        event: eventId,
-      }).toString();
-
       const _setupData = await eventHostPlanCommand.getSetupData(
-        key,
+        interaction,
         parseInt(eventId),
       );
 

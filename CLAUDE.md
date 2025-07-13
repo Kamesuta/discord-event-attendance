@@ -29,7 +29,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run clean` - distフォルダ削除
 
 ### コード品質
-- `npm run lint` - TypeScriptチェック・ESLint実行
+- `npm run lint` - TypeScriptチェック・ESLint実行（**必須：コード変更後は必ず実行**）
 - `npm run prettier` - Prettierでコード整形
 
 ### データベース

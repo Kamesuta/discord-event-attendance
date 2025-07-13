@@ -63,13 +63,8 @@ class PlanCandidateUserSelectAction extends MessageComponentActionInteraction<Co
       }
 
       // 設定データを取得
-      const key = new URLSearchParams({
-        user: interaction.user.id,
-        event: eventIdNum.toString(),
-      }).toString();
-
       const setupData = await eventHostPlanCommand.getSetupData(
-        key,
+        interaction,
         eventIdNum,
       );
 
@@ -84,9 +79,7 @@ class PlanCandidateUserSelectAction extends MessageComponentActionInteraction<Co
       });
 
       // 設定データを更新
-      eventHostPlanCommand.setSetupData(setupData, {
-        candidates: selectedUsers,
-      });
+      setupData.candidates = selectedUsers;
 
       await interaction.editReply({
         content:
@@ -95,6 +88,9 @@ class PlanCandidateUserSelectAction extends MessageComponentActionInteraction<Co
             .map((user, index) => `${index + 1}. <@${user.userId}>`)
             .join('\n'),
       });
+
+      // 計画作成パネルを更新
+      await eventHostPlanCommand.updatePlanningPanelFromAction(interaction);
     } catch (error) {
       logger.error('候補者選択処理でエラー:', error);
       await interaction.editReply({

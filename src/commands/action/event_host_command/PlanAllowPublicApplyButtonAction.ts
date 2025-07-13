@@ -1,59 +1,56 @@
 import {
-  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonInteraction,
+  ButtonStyle,
   ComponentType,
+  ActionRowBuilder,
   MessageActionRowComponentBuilder,
-  UserSelectMenuBuilder,
-  UserSelectMenuInteraction,
 } from 'discord.js';
+import { Event } from '@prisma/client';
 import { MessageComponentActionInteraction } from '../../base/action_base.js';
 import { logger } from '../../../utils/log.js';
 import eventHostPlanCommand, {
   PlanSetupData,
 } from '../../event_host_command/EventHostPlanCommand.js';
 import { prisma } from '../../../utils/prisma.js';
-import { Event, User } from '@prisma/client';
 
 /**
- * 主催者お伺いワークフロー計画作成 - 候補者ポジション別ユーザーセレクトアクション
+ * 主催者お伺いワークフロー設定 - 並行公募切り替えボタンアクション
  */
-class PlanCandidatePositionUserSelectAction extends MessageComponentActionInteraction<ComponentType.UserSelect> {
+class PlanAllowPublicApplyButtonAction extends MessageComponentActionInteraction<ComponentType.Button> {
   /**
-   * ユーザーセレクトメニューを作成
+   * 並行公募切り替えボタンを作成
    * @param eventId イベントID
-   * @param position ポジション（1番手、2番手、3番手）
+   * @param allowPublicApply 現在の並行公募設定
    * @returns 作成したビルダー
    */
-  override create(eventId: number, position: number): UserSelectMenuBuilder {
+  override create(eventId: number, allowPublicApply: boolean): ButtonBuilder {
     // カスタムIDを生成
     const customId = this.createCustomId({
       evt: eventId.toString(),
-      pos: position.toString(),
     });
 
-    // ユーザーセレクトメニューを作成
-    return new UserSelectMenuBuilder()
+    // ボタンを作成
+    return new ButtonBuilder()
       .setCustomId(customId)
-      .setPlaceholder(`${position}番手候補者を選択（空欄可）`)
-      .setMinValues(0)
-      .setMaxValues(1);
+      .setLabel(`並行公募: ${allowPublicApply ? 'はい' : 'いいえ'}`)
+      .setStyle(allowPublicApply ? ButtonStyle.Success : ButtonStyle.Secondary);
   }
 
   /**
-   * ユーザー選択処理
+   * 並行公募切り替え処理
    * @param interaction インタラクション
    * @param params URLパラメータ
    * @returns Promise<void>
    */
   async onCommand(
-    interaction: UserSelectMenuInteraction,
+    interaction: ButtonInteraction,
     params: URLSearchParams,
   ): Promise<void> {
     const eventId = params.get('evt');
-    const position = params.get('pos');
-
-    if (!eventId || !position) {
+    if (!eventId) {
       await interaction.reply({
-        content: 'パラメータが見つかりませんでした。',
+        content: 'イベントIDが見つかりませんでした。',
         ephemeral: true,
       });
       return;
@@ -63,11 +60,10 @@ class PlanCandidatePositionUserSelectAction extends MessageComponentActionIntera
 
     try {
       const eventIdNum = parseInt(eventId);
-      const positionNum = parseInt(position);
 
-      if (isNaN(eventIdNum) || isNaN(positionNum)) {
+      if (isNaN(eventIdNum)) {
         await interaction.followUp({
-          content: 'パラメータが無効です。',
+          content: 'イベントIDが無効です。',
           ephemeral: true,
         });
         return;
@@ -79,41 +75,8 @@ class PlanCandidatePositionUserSelectAction extends MessageComponentActionIntera
         eventIdNum,
       );
 
-      // 選択されたユーザーを取得
-      let selectedUser = null;
-      if (interaction.values.length > 0) {
-        const selectedUserId = interaction.values[0];
-        selectedUser = await prisma.user.findFirst({
-          where: {
-            userId: selectedUserId,
-          },
-        });
-      }
-
-      // 現在の候補者配列をコピー
-      const currentCandidates: (User | null)[] = [...setupData.candidates];
-
-      // 指定されたポジションの候補者を更新
-      if (selectedUser) {
-        // ポジションに候補者を設定（配列を拡張してインデックスを確保）
-        while (currentCandidates.length < positionNum) {
-          currentCandidates.push(null); // 一時的にnullで埋める
-        }
-        currentCandidates[positionNum - 1] = selectedUser;
-      } else {
-        // 候補者を削除
-        if (currentCandidates.length >= positionNum) {
-          currentCandidates[positionNum - 1] = null;
-        }
-      }
-
-      // nullを除去して詰める
-      const filteredCandidates = currentCandidates.filter(
-        (candidate): candidate is User => candidate !== null,
-      );
-
-      // 設定データを更新
-      setupData.candidates = filteredCandidates;
+      // 並行公募設定を切り替え
+      setupData.allowPublicApply = !setupData.allowPublicApply;
 
       // イベント情報を取得
       const event = await prisma.event.findUnique({
@@ -134,7 +97,7 @@ class PlanCandidatePositionUserSelectAction extends MessageComponentActionIntera
       // 計画作成パネルも更新
       await eventHostPlanCommand.updatePlanningPanelFromAction(interaction);
     } catch (error) {
-      logger.error('候補者選択処理でエラー:', error);
+      logger.error('並行公募切り替え処理でエラー:', error);
       await interaction.followUp({
         content:
           'エラーが発生しました。しばらく時間をおいて再試行してください。',
@@ -151,7 +114,7 @@ class PlanCandidatePositionUserSelectAction extends MessageComponentActionIntera
    * @returns Promise<void>
    */
   private async _updateSetupPanel(
-    interaction: UserSelectMenuInteraction,
+    interaction: ButtonInteraction,
     event: Event,
     setupData: PlanSetupData,
   ): Promise<void> {
@@ -187,7 +150,7 @@ class PlanCandidatePositionUserSelectAction extends MessageComponentActionIntera
   }
 }
 
-export default new PlanCandidatePositionUserSelectAction(
-  'hpcp',
-  ComponentType.UserSelect,
+export default new PlanAllowPublicApplyButtonAction(
+  'hpat',
+  ComponentType.Button,
 );
