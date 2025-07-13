@@ -28,6 +28,11 @@ import planAllowPublicApplyButtonAction from '../action/event_host_command/PlanA
 import planMessageEditButtonAction from '../action/event_host_command/PlanMessageEditButtonAction.js';
 import planConfirmButtonAction from '../action/event_host_command/PlanConfirmButtonAction.js';
 import planCancelSetupButtonAction from '../action/event_host_command/PlanCancelSetupButtonAction.js';
+import {
+  hostWorkflowManager,
+  HostWorkflowWithRelations,
+} from '../../event/HostWorkflowManager.js';
+import { HostRequestWithRelations } from '../../event/HostRequestManager.js';
 
 /**
  * 主催者お伺いワークフロー計画の設定データ
@@ -130,8 +135,8 @@ class EventHostPlanCommand extends SubcommandInteraction {
     }
 
     // イベントと設定状況の表を表示
-    const eventTable = eventSpecs
-      .map(({ event, scheduledEvent }) => {
+    const eventTable = await Promise.all(
+      eventSpecs.map(async ({ event, scheduledEvent }) => {
         const date = event?.scheduleTime ?? scheduledEvent.scheduledStartAt;
         const dateStr = date
           ? `<t:${Math.floor(date.getTime() / 1000)}:D>`
@@ -145,38 +150,43 @@ class EventHostPlanCommand extends SubcommandInteraction {
         } else if (event.hostId) {
           statusInfo = `主催者決定済み (<@${event.hostId}>)`;
         } else {
-          // PlanSetupDataから設定を確認
+          // 既存のワークフロー情報を取得（候補者情報も含む）
+          const workflowProgress =
+            await hostWorkflowManager.getWorkflowProgress(event.id);
+
+          // 編集中の設定情報を取得
           const setupData = this._setupData[interaction.user.id];
           const hasSetup = setupData && setupData.eventId === event.id;
 
-          if (!hasSetup) {
+          const statusParts: string[] = [];
+
+          // 既存のワークフロー情報を表示
+          if (workflowProgress.workflow) {
+            const workflowInfo = this._formatWorkflowInfo(
+              workflowProgress.workflow,
+              workflowProgress,
+            );
+            statusParts.push(workflowInfo);
+          }
+
+          // 編集中の設定情報を表示
+          if (hasSetup) {
+            const setupInfo = this._formatSetupInfo(setupData);
+            statusParts.push(`📝編集中: ${setupInfo}`);
+          }
+
+          if (statusParts.length === 0) {
             statusInfo = '未設定';
           } else {
-            // 設定詳細を表示
-            const candidates =
-              setupData.candidates.length > 0
-                ? setupData.candidates
-                    .map((user, index) => `${index + 1}.<@${user.userId}>`)
-                    .join(' ')
-                : '未設定';
-            const publicApply = setupData.allowPublicApply
-              ? '公募ON'
-              : '公募OFF';
-            const message =
-              setupData.customMessage &&
-              setupData.customMessage !== 'よろしくお願いいたします。'
-                ? setupData.customMessage.length > 20
-                  ? setupData.customMessage.substring(0, 20) + '...'
-                  : setupData.customMessage
-                : 'デフォルト';
-
-            statusInfo = `[${candidates}] ${publicApply} "${message}"`;
+            statusInfo = statusParts.join('\n　　');
           }
         }
 
         return `${eventInfo}\n　└ ${statusInfo}`;
-      })
-      .join('\n\n');
+      }),
+    );
+
+    const eventTableText = eventTable.join('\n\n');
 
     // パネルを作成
     const embed = new EmbedBuilder()
@@ -184,7 +194,7 @@ class EventHostPlanCommand extends SubcommandInteraction {
       .setDescription(
         '主催者が決まっていないイベントが見つかりました。\n' +
           'お伺いワークフローを作成するイベントを選択してください。\n\n' +
-          eventTable,
+          eventTableText,
       )
       .setColor(0x3498db);
 
@@ -231,23 +241,31 @@ class EventHostPlanCommand extends SubcommandInteraction {
 
     // 設定データがない場合は新規作成
     if (!setupData || clear) {
+      // 既存ワークフローから初期設定を読み込み
+      const existingWorkflow = await hostWorkflowManager.getWorkflow(eventId);
+
       // 設定データを作成
       this._setupData[userId] = setupData = {
         key: userId,
         eventId,
         availableUsers: [],
         candidates: [],
-        allowPublicApply: false,
-        customMessage: 'よろしくお願いいたします。',
+        allowPublicApply: existingWorkflow?.allowPublicApply ?? false,
+        customMessage:
+          existingWorkflow?.customMessage ?? 'よろしくお願いいたします。',
       };
     }
 
     // イベントIDが異なる場合は初期化
     if (setupData.eventId !== eventId) {
+      // 既存ワークフローから初期設定を読み込み
+      const existingWorkflow = await hostWorkflowManager.getWorkflow(eventId);
+
       setupData.eventId = eventId;
       setupData.candidates = [];
-      setupData.allowPublicApply = false;
-      setupData.customMessage = 'よろしくお願いいたします。';
+      setupData.allowPublicApply = existingWorkflow?.allowPublicApply ?? false;
+      setupData.customMessage =
+        existingWorkflow?.customMessage ?? 'よろしくお願いいたします。';
     }
 
     // 選択可能なユーザー一覧を取得（参加者から）
@@ -410,6 +428,86 @@ class EventHostPlanCommand extends SubcommandInteraction {
     );
 
     return [...candidateRows, controlButtons];
+  }
+
+  /**
+   * ワークフロー情報をフォーマット
+   * @param workflow ワークフロー情報
+   * @param progress ワークフロー進捗情報
+   * @returns フォーマット済み文字列
+   */
+  private _formatWorkflowInfo(
+    workflow: HostWorkflowWithRelations,
+    progress: {
+      workflow: HostWorkflowWithRelations | null;
+      requests: HostRequestWithRelations[];
+      currentRequest: HostRequestWithRelations | null;
+      totalCandidates: number;
+      currentPosition: number;
+    },
+  ): string {
+    // ステータスを絵文字付きで表示
+    const statusEmoji =
+      workflow.status === 'planning'
+        ? '⚙️計画:'
+        : workflow.status === 'requesting'
+          ? '📬依頼中:'
+          : workflow.status === 'completed'
+            ? '✅確定:'
+            : workflow.status === 'cancelled'
+              ? '❌キャンセル:'
+              : `${workflow.status}:`;
+
+    // 候補者情報を取得
+    const candidates: string[] = [];
+    if (progress.requests && progress.requests.length > 0) {
+      // リクエストから候補者を取得
+      progress.requests.forEach(
+        (request: HostRequestWithRelations, index: number) => {
+          if (request.user) {
+            candidates.push(`${index + 1}.<@${request.user.userId}>`);
+          }
+        },
+      );
+    }
+
+    const candidatesText =
+      candidates.length > 0 ? `[${candidates.join(' ')}]` : '[候補者未設定]';
+    const publicApply = workflow.allowPublicApply ? '公募ON' : '公募OFF';
+    const message =
+      workflow.customMessage &&
+      workflow.customMessage !== 'よろしくお願いいたします。'
+        ? workflow.customMessage.length > 15
+          ? workflow.customMessage.substring(0, 15) + '...'
+          : workflow.customMessage
+        : 'デフォルト';
+
+    return `${statusEmoji} ${candidatesText} ${publicApply} "${message}"`;
+  }
+
+  /**
+   * 設定情報をフォーマット
+   * @param setupData 設定データ
+   * @returns フォーマット済み文字列
+   */
+  private _formatSetupInfo(setupData: PlanSetupData): string {
+    const candidates =
+      setupData.candidates.length > 0
+        ? setupData.candidates
+            .map((user, index) => `${index + 1}.<@${user.userId}>`)
+            .join(' ')
+        : '未設定';
+
+    const publicApply = setupData.allowPublicApply ? '公募ON' : '公募OFF';
+    const message =
+      setupData.customMessage &&
+      setupData.customMessage !== 'よろしくお願いいたします。'
+        ? setupData.customMessage.length > 15
+          ? setupData.customMessage.substring(0, 15) + '...'
+          : setupData.customMessage
+        : 'デフォルト';
+
+    return `[${candidates}] ${publicApply} "${message}"`;
   }
 }
 

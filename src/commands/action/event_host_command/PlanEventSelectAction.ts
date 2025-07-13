@@ -112,16 +112,7 @@ class PlanEventSelectAction extends MessageComponentActionInteraction<ComponentT
       return;
     }
 
-    // 既存のワークフローをチェック
-    const existingWorkflow = await hostWorkflowManager.getWorkflow(eventId);
-    if (existingWorkflow) {
-      await interaction.editReply({
-        content: `イベント「${event.name}」は既にワークフローが作成されています。`,
-      });
-      return;
-    }
-
-    // 設定データを取得・初期化
+    // 設定データを取得・初期化（既存ワークフローがあればそれを読み込み）
     const setupData = await eventHostPlanCommand.getSetupData(
       interaction,
       eventId,

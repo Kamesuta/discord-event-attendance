@@ -6,8 +6,14 @@ import {
 } from 'discord.js';
 import { MessageComponentActionInteraction } from '../../base/action_base.js';
 import { logger } from '../../../utils/log.js';
-import eventHostPlanCommand from '../../event_host_command/EventHostPlanCommand.js';
-import { hostWorkflowManager } from '../../../event/HostWorkflowManager.js';
+import eventHostPlanCommand, {
+  PlanSetupData,
+} from '../../event_host_command/EventHostPlanCommand.js';
+import {
+  hostWorkflowManager,
+  HostWorkflowWithRelations,
+} from '../../../event/HostWorkflowManager.js';
+import { hostRequestManager } from '../../../event/HostRequestManager.js';
 import { prisma } from '../../../utils/prisma.js';
 
 /**
@@ -93,39 +99,105 @@ class PlanConfirmButtonAction extends MessageComponentActionInteraction<Componen
       // 既存のワークフローをチェック
       const existingWorkflow =
         await hostWorkflowManager.getWorkflow(eventIdNum);
-      if (existingWorkflow) {
-        await interaction.editReply({
-          content: `イベント「${event.name}」は既にワークフローが作成されています。`,
-        });
-        return;
-      }
 
-      // ワークフローを作成
-      await hostWorkflowManager.createWorkflow(
-        eventIdNum,
-        setupData.allowPublicApply,
-        setupData.customMessage,
-      );
+      if (existingWorkflow) {
+        // 既存ワークフローを更新
+        await this._updateExistingWorkflow(existingWorkflow, setupData);
+
+        // 既存の候補者リクエストを削除
+        await prisma.hostRequest.deleteMany({
+          where: {
+            eventId: eventIdNum,
+            status: 'pending', // pendingのもののみ削除
+          },
+        });
+
+        // 新しい候補者のHostRequestを作成
+        for (let i = 0; i < setupData.candidates.length; i++) {
+          const candidate = setupData.candidates[i];
+          await hostRequestManager.createRequest(
+            eventIdNum,
+            candidate.id, // Userテーブルのid（数値）を使用
+            i + 1, // priority: 1番手、2番手、3番手
+            setupData.customMessage,
+          );
+        }
+
+        await interaction.editReply({
+          content:
+            `⚙️ イベント「${event.name}」のワークフローを更新しました。\n` +
+            `候補者: ${setupData.candidates.map((user, index) => `${index + 1}.${user.userId}`).join(' ')}\n` +
+            `並行公募: ${setupData.allowPublicApply ? 'あり' : 'なし'}\n` +
+            `メッセージ: ${setupData.customMessage}`,
+        });
+      } else {
+        // 新規ワークフローを作成
+        await hostWorkflowManager.createWorkflow(
+          eventIdNum,
+          setupData.allowPublicApply,
+          setupData.customMessage,
+        );
+
+        // 候補者のHostRequestを作成
+        for (let i = 0; i < setupData.candidates.length; i++) {
+          const candidate = setupData.candidates[i];
+          await hostRequestManager.createRequest(
+            eventIdNum,
+            candidate.id, // Userテーブルのid（数値）を使用
+            i + 1, // priority: 1番手、2番手、3番手
+            setupData.customMessage,
+          );
+        }
+
+        await interaction.editReply({
+          content:
+            `✅ イベント「${event.name}」の主催者お伺いワークフローを作成しました。\n` +
+            `候補者: ${setupData.candidates.map((user, index) => `${index + 1}.${user.userId}`).join(' ')}\n` +
+            `並行公募: ${setupData.allowPublicApply ? 'あり' : 'なし'}\n` +
+            `メッセージ: ${setupData.customMessage}`,
+        });
+      }
 
       // 設定データをクリア
       await eventHostPlanCommand.getSetupData(interaction, eventIdNum, true);
 
+      // 少し待ってからパネル更新（DB操作完了を確実にするため）
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
       // 計画作成パネルを更新
       await eventHostPlanCommand.updatePlanningPanelFromAction(interaction);
-
-      await interaction.editReply({
-        content:
-          `✅ イベント「${event.name}」の主催者お伺いワークフローを作成しました。\n` +
-          `候補者: ${setupData.candidates.map((user, index) => `${index + 1}.${user.userId}`).join(' ')}\n` +
-          `並行公募: ${setupData.allowPublicApply ? 'あり' : 'なし'}\n` +
-          `メッセージ: ${setupData.customMessage}`,
-      });
     } catch (error) {
       logger.error('確定処理でエラー:', error);
       await interaction.editReply({
         content:
           'エラーが発生しました。しばらく時間をおいて再試行してください。',
       });
+    }
+  }
+
+  /**
+   * 既存ワークフローを更新
+   * @param existingWorkflow 既存ワークフロー
+   * @param setupData 設定データ
+   * @returns Promise<void>
+   */
+  private async _updateExistingWorkflow(
+    existingWorkflow: HostWorkflowWithRelations,
+    setupData: PlanSetupData,
+  ): Promise<void> {
+    try {
+      // ワークフローの設定を更新
+      await prisma.hostWorkflow.update({
+        where: { id: existingWorkflow.id },
+        data: {
+          allowPublicApply: setupData.allowPublicApply,
+          customMessage: setupData.customMessage,
+          // ステータスは現状維持
+        },
+      });
+    } catch (error) {
+      logger.error('ワークフロー更新でエラー:', error);
+      throw error;
     }
   }
 }
