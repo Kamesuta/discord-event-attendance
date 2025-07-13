@@ -128,6 +128,8 @@ src/commands/action/<command_group>_command/
 3. メッセージベースDM転送（DB会話保存なし）
 4. HostRequest/HostWorkflowモデルでステータス追跡
 
+**詳細設計**: `docs/主催者お伺いワークフロー.md`を参照してください。このドキュメントには正確なデータベーススキーマ、設計原則、マイグレーション計画が記載されています。
+
 ## 重要な注意事項
 
 ### JSDoc要件

@@ -33,7 +33,6 @@ model Event {
   gameResults  UserGameResult[]
   userMutes    UserMute[]
   host         User?            @relation(fields: [hostId], references: [id])
-  hostRequests HostRequest[]
   hostWorkflow HostWorkflow?
 }
 
@@ -125,34 +124,40 @@ model UserGameResult {
   @@unique([gameId, userId])
 }
 
-model HostRequest {
-  id          Int      @id @default(autoincrement())
-  eventId     Int
-  priority    Int // 依頼順（1番手、2番手...）
-  userId      Int
-  status      String // "pending", "accepted", "declined", "expired"
-  message     String?  @db.VarChar(1000) // カスタム依頼メッセージ
-  dmMessageId String? // DMのメッセージID
-  expiresAt   DateTime // 期限
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([eventId, userId]) // 同じイベントの同じユーザーへの重複依頼を防ぐ
+enum HostRequestStatus {
+  WAITING // 順番待ち（まだDM送信していない）
+  PENDING // 依頼中（DM送信済み、返答待ち）
+  ACCEPTED // 承認
+  DECLINED // 承認されなかった（拒否・期限切れ・他者承認等）
 }
 
 model HostWorkflow {
   id                   Int      @id @default(autoincrement())
   eventId              Int      @unique
-  currentPriority      Int      @default(1) // 現在依頼中の順番
-  status               String // "planning", "requesting", "completed", "cancelled"
   allowPublicApply     Boolean  @default(false) // 並行公募フラグ
   publicApplyMessageId String? // 公募メッセージID
-  customMessage        String?  @db.VarChar(1000) // カスタム依頼メッセージ
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 
-  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  event    Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  requests HostRequest[] // このワークフローに属するリクエスト
+}
+
+model HostRequest {
+  id          Int               @id @default(autoincrement())
+  workflowId  Int // ワークフローID（外部キー）
+  priority    Int // 依頼順（1番手、2番手、3番手...）
+  userId      Int // 依頼対象ユーザーID
+  status      HostRequestStatus @default(WAITING)
+  message     String?           @db.VarChar(1000) // 個別カスタム依頼メッセージ
+  dmMessageId String? // DMのメッセージID
+  expiresAt   DateTime // 期限
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  workflow HostWorkflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  user     User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workflowId, userId]) // 同じワークフローの同じユーザーへの重複依頼を防ぐ
+  @@unique([workflowId, priority]) // 同じワークフローで同じ順番の重複を防ぐ
 }
