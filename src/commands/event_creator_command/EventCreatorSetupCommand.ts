@@ -15,23 +15,9 @@ import { SubcommandInteraction } from '../base/command_base.js';
 import { config } from '../../utils/config.js';
 import setupUserSelectAction from '../action/event_setup_command/SetupUserSelectAction.js';
 import setupEventSelectAction from '../action/event_setup_command/SetupEventSelectAction.js';
-import { prisma } from '../../utils/prisma.js';
-import eventCreatorCommand from './EventCreatorCommand.js';
-import { eventIncludeHost, EventWithHost } from '../../event/EventManager.js';
 
-/**
- * イベント情報
- */
-export interface EventSpec {
-  /**
-   * Discordイベント
-   */
-  scheduledEvent: GuildScheduledEvent;
-  /**
-   * イベント
-   */
-  event?: EventWithHost;
-}
+import eventCreatorCommand from './EventCreatorCommand.js';
+import eventManager, { EventSpec } from '../../event/EventManager.js';
 
 /**
  * 設定中のデータ
@@ -42,17 +28,28 @@ interface EditData {
 }
 
 class EventCreatorSetupCommand extends SubcommandInteraction {
+  command = new SlashCommandSubcommandBuilder()
+    .setName('setup')
+    .setDescription('1週間分のイベントの主催者を設定します')
+    .addBooleanOption((option) =>
+      option
+        .setName('show')
+        .setDescription(
+          'コマンドの結果をチャットに表示しますか？（デフォルトは非公開）',
+        )
+        .setRequired(false),
+    );
+
+  /** 設定データ */
   setupPanels: Record<string, EditData> = {};
+  /** イベント一覧 */
   scheduledEvents:
     | Collection<string, GuildScheduledEvent<GuildScheduledEventStatus>>
     | undefined;
 
-  command = new SlashCommandSubcommandBuilder()
-    .setName('setup')
-    .setDescription('1週間分のイベントの主催者を設定します');
-
   async onCommand(interaction: ChatInputCommandInteraction): Promise<void> {
-    await interaction.deferReply({ ephemeral: true });
+    const show = interaction.options.getBoolean('show') ?? false;
+    await interaction.deferReply({ ephemeral: !show });
 
     // イベントを取得してキャッシュしておく。プルダウンメニューを選んだときなどは取得する代わりにキャッシュを使う
     this.scheduledEvents = await interaction.guild?.scheduledEvents.fetch();
@@ -92,35 +89,13 @@ class EventCreatorSetupCommand extends SubcommandInteraction {
     }
 
     // イベントを取得
-    const events = await prisma.event.findMany({
-      where: {
-        eventId: {
-          in: scheduledEvents.map((event) => event.id),
-        },
-        active: GuildScheduledEventStatus.Scheduled,
-      },
-      ...eventIncludeHost,
-    });
-    const eventList: EventSpec[] = scheduledEvents
-      .map((scheduledEvent) => {
-        const event = events.find((e) => e.eventId === scheduledEvent.id);
-        return {
-          scheduledEvent,
-          event,
-        };
-      })
-      .sort(
-        (a, b) =>
-          (a.event?.scheduleTime?.getTime() ??
-            a.scheduledEvent.scheduledStartTimestamp ??
-            0) -
-          (b.event?.scheduleTime?.getTime() ??
-            b.scheduledEvent.scheduledStartTimestamp ??
-            0),
-      );
+    const eventSpecs: EventSpec[] = await eventManager.getEventSpecs(
+      scheduledEvents,
+      GuildScheduledEventStatus.Scheduled,
+    );
 
     // イベントとイベント主催者の表を表示
-    const eventTable = eventList
+    const eventTable = eventSpecs
       .map(({ event, scheduledEvent }) => {
         const date = event?.scheduleTime ?? scheduledEvent.scheduledStartAt;
         const dateStr = date
@@ -149,11 +124,11 @@ class EventCreatorSetupCommand extends SubcommandInteraction {
     this.setupPanels[this.key(interaction)] = editData = {
       interaction,
       selectedEvent:
-        editData?.selectedEvent ?? eventList[0]?.scheduledEvent.id ?? '',
+        editData?.selectedEvent ?? eventSpecs[0]?.scheduledEvent.id ?? '',
     };
 
     // 選択中のイベントを取得
-    const selectedEvent = eventList.find(
+    const selectedEvent = eventSpecs.find(
       ({ scheduledEvent }) => scheduledEvent.id === editData?.selectedEvent,
     );
 
@@ -161,7 +136,7 @@ class EventCreatorSetupCommand extends SubcommandInteraction {
       embeds: [embed],
       components: [
         new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
-          setupEventSelectAction.create(eventList, selectedEvent),
+          setupEventSelectAction.create(eventSpecs, selectedEvent),
         ),
         new ActionRowBuilder<UserSelectMenuBuilder>().addComponents(
           setupUserSelectAction.create(selectedEvent),

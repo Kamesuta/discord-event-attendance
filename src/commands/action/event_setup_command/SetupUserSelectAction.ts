@@ -10,9 +10,8 @@ import {
   onCreateScheduledEvent,
   updateSchedules,
 } from '../../../event_handler.js';
-import eventCreatorSetupCommand, {
-  EventSpec,
-} from '../../event_creator_command/EventCreatorSetupCommand.js';
+import eventCreatorSetupCommand from '../../event_creator_command/EventCreatorSetupCommand.js';
+import { EventSpec } from '../../../event/EventManager.js';
 import userManager from '../../../event/UserManager.js';
 import { messageUpdateManager } from '../../../utils/client.js';
 import { logger } from '../../../utils/log.js';

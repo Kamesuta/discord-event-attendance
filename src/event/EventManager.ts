@@ -1,4 +1,5 @@
 import {
+  Collection,
   GuildScheduledEvent,
   GuildScheduledEventStatus,
   Interaction,
@@ -23,6 +24,20 @@ export const eventIncludeHost = {
  * イベントにホストを含む型
  */
 export type EventWithHost = Prisma.EventGetPayload<typeof eventIncludeHost>;
+
+/**
+ * イベント情報（Discord + DB）
+ */
+export interface EventSpec {
+  /**
+   * Discordイベント
+   */
+  scheduledEvent: GuildScheduledEvent;
+  /**
+   * イベント
+   */
+  event?: EventWithHost;
+}
 
 /**
  * イベント情報を取得します
@@ -110,6 +125,51 @@ class EventManager {
         ...eventIncludeHost,
       });
     }
+  }
+
+  /**
+   * Discord scheduled eventsからイベント情報を取得します
+   * @param scheduledEvents Discord scheduled events
+   * @param activeStatus アクティブ状態フィルター（省略時は全て）
+   * @returns イベント情報リスト
+   */
+  async getEventSpecs(
+    scheduledEvents: Collection<
+      string,
+      GuildScheduledEvent<GuildScheduledEventStatus>
+    >,
+    activeStatus?: GuildScheduledEventStatus,
+  ): Promise<EventSpec[]> {
+    // イベントを取得
+    const events = await prisma.event.findMany({
+      where: {
+        eventId: {
+          in: scheduledEvents.map((event) => event.id),
+        },
+        ...(activeStatus ? { active: activeStatus } : {}),
+      },
+      ...eventIncludeHost,
+    });
+
+    const eventList: EventSpec[] = scheduledEvents
+      .map((scheduledEvent) => {
+        const event = events.find((e) => e.eventId === scheduledEvent.id);
+        return {
+          scheduledEvent,
+          event,
+        };
+      })
+      .sort(
+        (a, b) =>
+          (a.event?.scheduleTime?.getTime() ??
+            a.scheduledEvent.scheduledStartTimestamp ??
+            0) -
+          (b.event?.scheduleTime?.getTime() ??
+            b.scheduledEvent.scheduledStartTimestamp ??
+            0),
+      );
+
+    return eventList;
   }
 
   /**

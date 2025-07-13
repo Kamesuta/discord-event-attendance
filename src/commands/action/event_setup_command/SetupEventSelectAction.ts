@@ -4,9 +4,8 @@ import {
   StringSelectMenuInteraction,
 } from 'discord.js';
 import { MessageComponentActionInteraction } from '../../base/action_base.js';
-import eventCreatorSetupCommand, {
-  EventSpec,
-} from '../../event_creator_command/EventCreatorSetupCommand.js';
+import eventCreatorSetupCommand from '../../event_creator_command/EventCreatorSetupCommand.js';
+import { EventSpec } from '../../../event/EventManager.js';
 
 class SetupEventSelectAction extends MessageComponentActionInteraction<ComponentType.StringSelect> {
   /**

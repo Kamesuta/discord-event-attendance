@@ -7,6 +7,7 @@ import planSetupAllButtonAction from './PlanSetupAllButtonAction.js';
 import planCancelButtonAction from './PlanCancelButtonAction.js';
 import planCandidateSelectButtonAction from './PlanCandidateSelectButtonAction.js';
 import planCandidateUserSelectAction from './PlanCandidateUserSelectAction.js';
+import planCandidatePositionUserSelectAction from './PlanCandidatePositionUserSelectAction.js';
 
 export default [
   hostAcceptButtonAction,
@@ -18,4 +19,5 @@ export default [
   planCancelButtonAction,
   planCandidateSelectButtonAction,
   planCandidateUserSelectAction,
+  planCandidatePositionUserSelectAction,
 ];

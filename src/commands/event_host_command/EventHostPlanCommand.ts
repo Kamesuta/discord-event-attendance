@@ -5,15 +5,20 @@ import {
   ActionRowBuilder,
   StringSelectMenuBuilder,
   ButtonBuilder,
+  GuildScheduledEvent,
+  GuildScheduledEventStatus,
+  Collection,
+  InteractionEditReplyOptions,
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
 import eventHostCommand from './EventHostCommand.js';
 import { prisma } from '../../utils/prisma.js';
-import { logger } from '../../utils/log.js';
 import { Event, User } from '@prisma/client';
+import eventManager from '../../event/EventManager.js';
 import planEventSelectAction from '../action/event_host_command/PlanEventSelectAction.js';
 import planSetupAllButtonAction from '../action/event_host_command/PlanSetupAllButtonAction.js';
 import planCancelButtonAction from '../action/event_host_command/PlanCancelButtonAction.js';
+import { config } from '../../utils/config.js';
 
 /**
  * 主催者お伺いワークフロー計画の設定データ
@@ -41,12 +46,6 @@ class EventHostPlanCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
     .setName('plan')
     .setDescription('主催者お伺いワークフローの計画を作成します')
-    .addStringOption((option) =>
-      option
-        .setName('period')
-        .setDescription('対象期間（例：今週、来週、1/20-1/27）')
-        .setRequired(false),
-    )
     .addBooleanOption((option) =>
       option
         .setName('show')
@@ -58,110 +57,93 @@ class EventHostPlanCommand extends SubcommandInteraction {
 
   /** 設定データ */
   private _setupData: Record<string, PlanSetupData> = {};
+  /** イベント一覧 */
+  private _scheduledEvents:
+    | Collection<string, GuildScheduledEvent<GuildScheduledEventStatus>>
+    | undefined;
 
-  /**
-   * コマンド実行
-   * @param interaction インタラクション
-   * @returns Promise<void>
-   */
   async onCommand(
     interaction: ChatInputCommandInteraction<'cached'>,
   ): Promise<void> {
     const show = interaction.options.getBoolean('show') ?? true;
     await interaction.deferReply({ ephemeral: !show });
 
-    try {
-      // 対象期間の解析（省略時は来週）
-      const _period = interaction.options.getString('period') ?? '来週';
+    // イベントを取得してキャッシュしておく。プルダウンメニューを選んだときなどは取得する代わりにキャッシュを使う
+    this._scheduledEvents = await interaction.guild?.scheduledEvents.fetch();
 
-      // 主催者が決まっていないイベントを取得
-      const eventsWithoutHost = await this._getEventsWithoutHost();
-
-      if (eventsWithoutHost.length === 0) {
-        await interaction.editReply({
-          content: '主催者が決まっていないイベントが見つかりませんでした。',
-        });
-        return;
-      }
-
-      // 計画作成パネルを表示
-      await this._showPlanningPanel(interaction, eventsWithoutHost);
-    } catch (error) {
-      logger.error('主催者お伺いワークフロー計画作成でエラー:', error);
-      await interaction.editReply({
-        content:
-          'エラーが発生しました。しばらく時間をおいて再試行してください。',
-      });
-    }
-  }
-
-  /**
-   * 主催者が決まっていないイベントを取得
-   * @returns 主催者なしイベント一覧
-   */
-  private async _getEventsWithoutHost(): Promise<Event[]> {
-    // 簡単な実装として、スケジュール済みで主催者が決まっていないイベントを取得
-    const startDate = new Date();
-    const endDate = new Date();
-    endDate.setDate(endDate.getDate() + 7);
-
-    const events = await prisma.event.findMany({
-      where: {
-        active: 1, // アクティブなイベント
-        hostId: null, // 主催者が決まっていない
-        scheduleTime: {
-          gte: startDate,
-          lte: endDate,
-        },
-      },
-      orderBy: {
-        scheduleTime: 'asc',
-      },
-    });
-
-    return events;
+    // パネルを作成
+    const reply = await this._createPlanningPanel(interaction);
+    if (!reply) return;
+    await interaction.editReply(reply);
   }
 
   /**
    * 計画作成パネルを表示
    * @param interaction インタラクション
-   * @param events 対象イベント一覧
    * @returns Promise<void>
    */
-  private async _showPlanningPanel(
+  private async _createPlanningPanel(
     interaction: ChatInputCommandInteraction<'cached'>,
-    events: Event[],
-  ): Promise<void> {
+  ): Promise<InteractionEditReplyOptions | undefined> {
+    const scheduledEvents = this._scheduledEvents;
+    if (!scheduledEvents || scheduledEvents.size === 0) {
+      await interaction.editReply({
+        content: 'イベントが見つかりませんでした',
+      });
+      return;
+    }
+
+    // イベント一覧を取得
+    const eventSpecs = await eventManager.getEventSpecs(
+      scheduledEvents,
+      GuildScheduledEventStatus.Scheduled,
+    );
+
+    // 主催者が決まっていないイベントのみフィルタリング
+    const eventsWithoutHost = eventSpecs.filter(
+      (eventSpec) => !eventSpec.event?.hostId,
+    );
+
+    if (eventsWithoutHost.length === 0) {
+      await interaction.editReply({
+        content: '主催者が決まっていないイベントが見つかりませんでした。',
+      });
+      return;
+    }
+
+    // イベントとイベント主催者の表を表示
+    const eventTable = eventSpecs
+      .map(({ event, scheduledEvent }) => {
+        const date = event?.scheduleTime ?? scheduledEvent.scheduledStartAt;
+        const dateStr = date
+          ? `<t:${Math.floor(date.getTime() / 1000)}:D>`
+          : '未定';
+        const eventInfo = `${dateStr} [「${event?.name ?? scheduledEvent?.name ?? '？'}」(ID: ${event?.id ?? '？'})](https://discord.com/events/${config.guild_id}/${scheduledEvent.id})`;
+        const hostInfo = event
+          ? event.host?.userId
+            ? `<@${event.host.userId}>`
+            : '主催者なし'
+          : 'イベント未生成';
+        return `${eventInfo}: ${hostInfo}`;
+      })
+      .join('\n');
+
+    // パネルを作成
     const embed = new EmbedBuilder()
       .setTitle('🎯 主催者お伺いワークフロー計画作成')
       .setDescription(
         '主催者が決まっていないイベントが見つかりました。\n' +
-          'お伺いワークフローを作成するイベントを選択してください。',
+          'お伺いワークフローを作成するイベントを選択してください。\n\n' +
+          eventTable,
       )
       .setColor(0x3498db);
 
-    // イベント一覧を表示
-    const eventListText = events
-      .map((event, _index) => {
-        const dateStr = event.scheduleTime
-          ? new Date(event.scheduleTime).toLocaleDateString('ja-JP', {
-              month: '2-digit',
-              day: '2-digit',
-              hour: '2-digit',
-              minute: '2-digit',
-            })
-          : '未定';
-        return `${_index + 1}. **${event.name}** (${dateStr})`;
-      })
-      .join('\\n');
-
-    embed.addFields({
-      name: '対象イベント一覧',
-      value: eventListText || 'なし',
-      inline: false,
-    });
-
     // イベント選択メニューを作成
+    const events = eventsWithoutHost
+      .map((spec) => spec.event)
+      .filter(
+        (event): event is NonNullable<typeof event> => event !== undefined,
+      );
     const eventSelectMenu = planEventSelectAction.create(events);
 
     // ボタンを作成
@@ -175,10 +157,10 @@ class EventHostPlanCommand extends SubcommandInteraction {
         eventSelectMenu,
       );
 
-    await interaction.editReply({
+    return {
       embeds: [embed],
       components: [selectRow, buttons],
-    });
+    };
   }
 
   /**
