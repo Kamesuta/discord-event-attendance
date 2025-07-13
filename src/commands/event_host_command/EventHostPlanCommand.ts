@@ -12,7 +12,6 @@ import {
   RepliableInteraction,
   UserSelectMenuBuilder,
   MessageActionRowComponentBuilder,
-  ButtonStyle,
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
 import eventHostCommand from './EventHostCommand.js';
@@ -25,6 +24,10 @@ import planCancelButtonAction from '../action/event_host_command/PlanCancelButto
 import { config } from '../../utils/config.js';
 import { logger } from '../../utils/log.js';
 import planCandidatePositionUserSelectAction from '../action/event_host_command/PlanCandidatePositionUserSelectAction.js';
+import planAllowPublicApplyButtonAction from '../action/event_host_command/PlanAllowPublicApplyButtonAction.js';
+import planMessageEditButtonAction from '../action/event_host_command/PlanMessageEditButtonAction.js';
+import planConfirmButtonAction from '../action/event_host_command/PlanConfirmButtonAction.js';
+import planCancelSetupButtonAction from '../action/event_host_command/PlanCancelSetupButtonAction.js';
 
 /**
  * 主催者お伺いワークフロー計画の設定データ
@@ -397,26 +400,13 @@ class EventHostPlanCommand extends SubcommandInteraction {
 
     // 並行公募・確定・キャンセルボタンを作成
     const controlButtons = new ActionRowBuilder<ButtonBuilder>().addComponents(
-      new ButtonBuilder()
-        .setCustomId(`hpat_${eventId}`) // 並行公募切り替え
-        .setLabel(`並行公募: ${setupData.allowPublicApply ? 'はい' : 'いいえ'}`)
-        .setStyle(
-          setupData.allowPublicApply
-            ? ButtonStyle.Success
-            : ButtonStyle.Secondary,
-        ),
-      new ButtonBuilder()
-        .setCustomId(`hpme_${eventId}`) // 依頼メッセージ編集
-        .setLabel('依頼メッセージ編集')
-        .setStyle(ButtonStyle.Secondary),
-      new ButtonBuilder()
-        .setCustomId(`hpco_${eventId}`) // 確定
-        .setLabel('確定')
-        .setStyle(ButtonStyle.Primary),
-      new ButtonBuilder()
-        .setCustomId(`hpca_${eventId}`) // キャンセル
-        .setLabel('キャンセル')
-        .setStyle(ButtonStyle.Danger),
+      planAllowPublicApplyButtonAction.create(
+        eventId,
+        setupData.allowPublicApply,
+      ),
+      planMessageEditButtonAction.create(eventId),
+      planConfirmButtonAction.create(eventId),
+      planCancelSetupButtonAction.create(eventId),
     );
 
     return [...candidateRows, controlButtons];

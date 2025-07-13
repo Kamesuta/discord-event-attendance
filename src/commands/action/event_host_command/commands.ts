@@ -9,6 +9,10 @@ import planCandidateSelectButtonAction from './PlanCandidateSelectButtonAction.j
 import planCandidateUserSelectAction from './PlanCandidateUserSelectAction.js';
 import planCandidatePositionUserSelectAction from './PlanCandidatePositionUserSelectAction.js';
 import planAllowPublicApplyButtonAction from './PlanAllowPublicApplyButtonAction.js';
+import planMessageEditButtonAction from './PlanMessageEditButtonAction.js';
+import planMessageEditModalAction from './PlanMessageEditModalAction.js';
+import planConfirmButtonAction from './PlanConfirmButtonAction.js';
+import planCancelSetupButtonAction from './PlanCancelSetupButtonAction.js';
 
 export default [
   hostAcceptButtonAction,
@@ -22,4 +26,8 @@ export default [
   planCandidateUserSelectAction,
   planCandidatePositionUserSelectAction,
   planAllowPublicApplyButtonAction,
+  planMessageEditButtonAction,
+  planMessageEditModalAction,
+  planConfirmButtonAction,
+  planCancelSetupButtonAction,
 ];
