@@ -10,7 +10,10 @@ import {
   ComponentType,
 } from 'discord.js';
 import { MessageComponentActionInteraction } from '../../base/action_base.js';
-import { hostRequestManager, HostRequestWithRelations } from '../../../event/HostRequestManager.js';
+import {
+  hostRequestManager,
+  HostRequestWithRelations,
+} from '../../../event/HostRequestManager.js';
 import { config } from '../../../utils/config.js';
 import { client } from '../../../utils/client.js';
 import { logger } from '../../../utils/log.js';
@@ -48,7 +51,10 @@ export class HostAlternateButtonAction extends MessageComponentActionInteraction
    * @param _params URLSearchParams（未使用）
    * @returns Promise<void>
    */
-  async onCommand(interaction: ButtonInteraction<'cached'>, _params: URLSearchParams): Promise<void> {
+  async onCommand(
+    interaction: ButtonInteraction<'cached'>,
+    _params: URLSearchParams,
+  ): Promise<void> {
     try {
       // カスタムIDからホストリクエストIDを抽出
       const match = this.customIdPattern.exec(interaction.customId);
@@ -73,7 +79,7 @@ export class HostAlternateButtonAction extends MessageComponentActionInteraction
       }
 
       // 既に回答済みかチェック
-      if (hostRequest.status !== 'pending') {
+      if (hostRequest.status !== 'PENDING') {
         await interaction.reply({
           content: `この依頼は既に${this._getStatusText(hostRequest.status)}済みです。`,
           ephemeral: true,
@@ -100,8 +106,11 @@ export class HostAlternateButtonAction extends MessageComponentActionInteraction
       }
 
       // 別日提案モーダルを表示
-      await this._showAlternateModal(interaction, hostRequestId, hostRequest.event.name);
-
+      await this._showAlternateModal(
+        interaction,
+        hostRequestId,
+        hostRequest.workflow.event.name,
+      );
     } catch (error) {
       logger.error('別日提案ボタン処理でエラー:', error);
       await interaction.reply({
@@ -143,10 +152,10 @@ export class HostAlternateButtonAction extends MessageComponentActionInteraction
       .setRequired(false)
       .setMaxLength(500);
 
-    const firstActionRow = new ActionRowBuilder<TextInputBuilder>()
-      .addComponents(proposedDateInput);
-    const secondActionRow = new ActionRowBuilder<TextInputBuilder>()
-      .addComponents(reasonInput);
+    const firstActionRow =
+      new ActionRowBuilder<TextInputBuilder>().addComponents(proposedDateInput);
+    const secondActionRow =
+      new ActionRowBuilder<TextInputBuilder>().addComponents(reasonInput);
 
     modal.addComponents(firstActionRow, secondActionRow);
 
@@ -171,19 +180,24 @@ export class HostAlternateButtonAction extends MessageComponentActionInteraction
       const embed = new EmbedBuilder()
         .setTitle('🎯 イベント主催のお伺い')
         .setDescription(
-          `**${hostRequest.event.name}** の主催をお願いできませんでしょうか？\n\n` +
-          (hostRequest.message || 'よろしくお願いいたします。') + '\n\n' +
-          `**📅 別日提案済み** (${new Date().toLocaleString('ja-JP')})\n` +
-          `**提案日時**: ${proposedDate}` +
-          (reason ? `\n**理由**: ${reason}` : '')
+          `**${hostRequest.workflow.event.name}** の主催をお願いできませんでしょうか？\n\n` +
+            (hostRequest.message || 'よろしくお願いいたします。') +
+            '\n\n' +
+            `**📅 別日提案済み** (${new Date().toLocaleString('ja-JP')})\n` +
+            `**提案日時**: ${proposedDate}` +
+            (reason ? `\n**理由**: ${reason}` : ''),
         )
         .addFields(
           {
             name: 'イベント情報',
-            value: 
-              `📅 **開催予定**: ${hostRequest.event.scheduleTime ? 
-                new Date(hostRequest.event.scheduleTime).toLocaleString('ja-JP') : '未定'}\n` +
-              `🆔 **イベントID**: ${hostRequest.event.id}`,
+            value:
+              `📅 **開催予定**: ${
+                hostRequest.workflow.event.scheduleTime
+                  ? new Date(
+                      hostRequest.workflow.event.scheduleTime,
+                    ).toLocaleString('ja-JP')
+                  : '未定'
+              }\n` + `🆔 **イベントID**: ${hostRequest.workflow.event.id}`,
             inline: false,
           },
           {
@@ -199,13 +213,13 @@ export class HostAlternateButtonAction extends MessageComponentActionInteraction
         )
         .setColor(0xf39c12)
         .setFooter({
-          text: `HostRequest:${hostRequest.id} | Event:${hostRequest.eventId} | User:${hostRequest.userId}`,
+          text: `HostRequest:${hostRequest.id} | Event:${hostRequest.workflow.event.id} | User:${hostRequest.userId}`,
         })
         .setTimestamp();
 
       // ボタンを無効化
-      const disabledButtons = new ActionRowBuilder<ButtonBuilder>()
-        .addComponents(
+      const disabledButtons =
+        new ActionRowBuilder<ButtonBuilder>().addComponents(
           new ButtonBuilder()
             .setCustomId('disabled_accept')
             .setLabel('主催を受諾')
@@ -227,10 +241,13 @@ export class HostAlternateButtonAction extends MessageComponentActionInteraction
         );
 
       // 元のメッセージを取得して更新
-      const dmChannel = interaction.user.dmChannel || await interaction.user.createDM();
+      const dmChannel =
+        interaction.user.dmChannel || (await interaction.user.createDM());
       if (hostRequest.dmMessageId) {
         try {
-          const originalMessage = await dmChannel.messages.fetch(hostRequest.dmMessageId);
+          const originalMessage = await dmChannel.messages.fetch(
+            hostRequest.dmMessageId,
+          );
           await originalMessage.edit({
             embeds: [embed],
             components: [disabledButtons],
@@ -239,7 +256,6 @@ export class HostAlternateButtonAction extends MessageComponentActionInteraction
           logger.error('元DMメッセージの更新でエラー:', error);
         }
       }
-
     } catch (error) {
       logger.error('元DMメッセージの更新でエラー:', error);
     }
@@ -258,16 +274,20 @@ export class HostAlternateButtonAction extends MessageComponentActionInteraction
     reason?: string,
   ): Promise<void> {
     try {
-      const managementChannel = client.channels.cache.get(config.host_request_channel_id);
+      const managementChannel = client.channels.cache.get(
+        config.host_request_channel_id,
+      );
       if (!managementChannel?.isTextBased() || !('send' in managementChannel)) {
-        logger.warn('管理チャンネルが見つからないか、テキストチャンネルではありません');
+        logger.warn(
+          '管理チャンネルが見つからないか、テキストチャンネルではありません',
+        );
         return;
       }
 
       const embed = new EmbedBuilder()
         .setTitle('📅 別日提案通知')
         .setDescription(
-          `**${hostRequest.event.name}** の主催について別日提案がありました。`
+          `**${hostRequest.workflow.event.name}** の主催について別日提案がありました。`,
         )
         .addFields(
           {
@@ -277,13 +297,16 @@ export class HostAlternateButtonAction extends MessageComponentActionInteraction
           },
           {
             name: 'イベント',
-            value: `${hostRequest.event.name} (ID: ${hostRequest.event.id})`,
+            value: `${hostRequest.workflow.event.name} (ID: ${hostRequest.workflow.event.id})`,
             inline: false,
           },
           {
             name: '元の開催予定',
-            value: hostRequest.event.scheduleTime ? 
-              new Date(hostRequest.event.scheduleTime).toLocaleString('ja-JP') : '未定',
+            value: hostRequest.workflow.event.scheduleTime
+              ? new Date(
+                  hostRequest.workflow.event.scheduleTime,
+                ).toLocaleString('ja-JP')
+              : '未定',
             inline: true,
           },
           {
@@ -311,7 +334,6 @@ export class HostAlternateButtonAction extends MessageComponentActionInteraction
       await managementChannel.send({
         embeds: [embed],
       });
-
     } catch (error) {
       logger.error('管理チャンネル通知の送信でエラー:', error);
     }

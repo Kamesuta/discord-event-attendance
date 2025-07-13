@@ -251,8 +251,7 @@ class EventHostPlanCommand extends SubcommandInteraction {
         availableUsers: [],
         candidates: [],
         allowPublicApply: existingWorkflow?.allowPublicApply ?? false,
-        customMessage:
-          existingWorkflow?.customMessage ?? 'よろしくお願いいたします。',
+        customMessage: 'よろしくお願いいたします。',
       };
     }
 
@@ -264,8 +263,26 @@ class EventHostPlanCommand extends SubcommandInteraction {
       setupData.eventId = eventId;
       setupData.candidates = [];
       setupData.allowPublicApply = existingWorkflow?.allowPublicApply ?? false;
-      setupData.customMessage =
-        existingWorkflow?.customMessage ?? 'よろしくお願いいたします。';
+      setupData.customMessage = 'よろしくお願いいたします。';
+
+      // 既存ワークフローの候補者を読み込み
+      if (existingWorkflow && existingWorkflow.requests) {
+        // 優先順位でソートして、最大3人まで取得
+        const sortedRequests = existingWorkflow.requests
+          .sort((a, b) => a.priority - b.priority)
+          .slice(0, 3);
+
+        // ユーザーIDからUserオブジェクトを取得
+        const userIds = sortedRequests.map((request) => request.userId);
+        const users = await prisma.user.findMany({
+          where: { id: { in: userIds } },
+        });
+
+        // 優先順位順に並び替え
+        setupData.candidates = sortedRequests
+          .map((request) => users.find((user) => user.id === request.userId))
+          .filter((user): user is User => user !== undefined);
+      }
     }
 
     // 選択可能なユーザー一覧を取得（参加者から）
@@ -446,43 +463,57 @@ class EventHostPlanCommand extends SubcommandInteraction {
       currentPosition: number;
     },
   ): string {
-    // ステータスを絵文字付きで表示
-    const statusEmoji =
-      workflow.status === 'planning'
-        ? '⚙️計画:'
-        : workflow.status === 'requesting'
-          ? '📬依頼中:'
-          : workflow.status === 'completed'
-            ? '✅確定:'
-            : workflow.status === 'cancelled'
-              ? '❌キャンセル:'
-              : `${workflow.status}:`;
+    // ワークフローの状態をリクエストの状態から推定
+    const requests = progress.requests || [];
+    const hasPending = requests.some((r) => r.status === 'PENDING');
+    const hasAccepted = requests.some((r) => r.status === 'ACCEPTED');
+    const hasWaiting = requests.some((r) => r.status === 'WAITING');
 
-    // 候補者情報を取得
+    let statusEmoji: string;
+    if (hasAccepted) {
+      statusEmoji = '✅確定:';
+    } else if (hasPending) {
+      statusEmoji = '📬依頼中:';
+    } else if (hasWaiting) {
+      statusEmoji = '⚙️計画:';
+    } else {
+      statusEmoji = '⚙️計画:';
+    }
+
+    // 候補者情報を取得（ステータス付き）
     const candidates: string[] = [];
-    if (progress.requests && progress.requests.length > 0) {
-      // リクエストから候補者を取得
-      progress.requests.forEach(
-        (request: HostRequestWithRelations, index: number) => {
+    if (requests && requests.length > 0) {
+      requests
+        .sort((a, b) => a.priority - b.priority)
+        .forEach((request: HostRequestWithRelations) => {
           if (request.user) {
-            candidates.push(`${index + 1}.<@${request.user.userId}>`);
+            let statusIcon = '';
+            switch (request.status) {
+              case 'WAITING':
+                statusIcon = '⏳';
+                break;
+              case 'PENDING':
+                statusIcon = '📬';
+                break;
+              case 'ACCEPTED':
+                statusIcon = '✅';
+                break;
+              case 'DECLINED':
+                statusIcon = '❌';
+                break;
+            }
+            candidates.push(
+              `${request.priority}.${statusIcon}<@${request.user.userId}>`,
+            );
           }
-        },
-      );
+        });
     }
 
     const candidatesText =
       candidates.length > 0 ? `[${candidates.join(' ')}]` : '[候補者未設定]';
     const publicApply = workflow.allowPublicApply ? '公募ON' : '公募OFF';
-    const message =
-      workflow.customMessage &&
-      workflow.customMessage !== 'よろしくお願いいたします。'
-        ? workflow.customMessage.length > 15
-          ? workflow.customMessage.substring(0, 15) + '...'
-          : workflow.customMessage
-        : 'デフォルト';
 
-    return `${statusEmoji} ${candidatesText} ${publicApply} "${message}"`;
+    return `${statusEmoji} ${candidatesText} ${publicApply}`;
   }
 
   /**

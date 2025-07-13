@@ -147,7 +147,7 @@ export class DMRelayManager {
       const userId = parseInt(dmMessage.author.id);
       const recentRequests = await hostRequestManager.getRequestsByUser(
         userId,
-        'pending',
+        'PENDING',
       );
 
       // 最新のpendingリクエストを返す

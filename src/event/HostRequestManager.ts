@@ -1,18 +1,23 @@
-import { HostRequest, User, Event } from '@prisma/client';
+import {
+  HostRequest,
+  User,
+  HostWorkflow,
+  HostRequestStatus,
+} from '@prisma/client';
 import { prisma } from '../utils/prisma.js';
-import { config } from '../utils/config.js';
 import { logger } from '../utils/log.js';
-
-/**
- * お伺いリクエストの状態
- */
-export type HostRequestStatus = 'pending' | 'accepted' | 'declined' | 'expired';
 
 /**
  * HostRequestとリレーション情報を含む型
  */
 export type HostRequestWithRelations = HostRequest & {
-  event: Event;
+  workflow: HostWorkflow & {
+    event: {
+      id: number;
+      name: string;
+      scheduleTime?: Date | null;
+    };
+  };
   user: User;
 };
 
@@ -23,42 +28,53 @@ export type HostRequestWithRelations = HostRequest & {
 export class HostRequestManager {
   /**
    * お伺いリクエストを作成します
-   * @param eventId イベントID
+   * @param workflowId ワークフローID
    * @param userId ユーザーID
    * @param priority 依頼順（1番手、2番手...）
    * @param customMessage カスタム依頼メッセージ
+   * @param expiresAt 期限（指定されない場合はWAITINGステータス）
    * @returns 作成されたお伺いリクエスト
    */
   async createRequest(
-    eventId: number,
+    workflowId: number,
     userId: number,
     priority: number,
     customMessage?: string,
+    expiresAt?: Date,
   ): Promise<HostRequestWithRelations> {
     try {
-      // 期限を設定（現在時刻 + 設定されたタイムアウト時間）
-      const expiresAt = new Date();
-      expiresAt.setHours(
-        expiresAt.getHours() + config.host_request_timeout_hours,
-      );
+      // 期限が指定されない場合はデフォルトで24時間後に設定（WAITING状態用）
+      const defaultExpiresAt =
+        expiresAt || new Date(Date.now() + 24 * 60 * 60 * 1000);
+      const status: HostRequestStatus = expiresAt ? 'PENDING' : 'WAITING';
 
       const hostRequest = await prisma.hostRequest.create({
         data: {
-          eventId,
+          workflowId,
           userId,
           priority,
-          status: 'pending',
+          status,
           message: customMessage,
-          expiresAt,
+          expiresAt: defaultExpiresAt,
         },
         include: {
-          event: true,
+          workflow: {
+            include: {
+              event: {
+                select: {
+                  id: true,
+                  name: true,
+                  scheduleTime: true,
+                },
+              },
+            },
+          },
           user: true,
         },
       });
 
       logger.info(
-        `お伺いリクエストを作成しました: Event=${eventId}, User=${userId}, Priority=${priority}`,
+        `お伺いリクエストを作成しました: Workflow=${workflowId}, User=${userId}, Priority=${priority}, Status=${status}`,
       );
 
       return hostRequest;
@@ -78,7 +94,17 @@ export class HostRequestManager {
       return await prisma.hostRequest.findUnique({
         where: { id },
         include: {
-          event: true,
+          workflow: {
+            include: {
+              event: {
+                select: {
+                  id: true,
+                  name: true,
+                  scheduleTime: true,
+                },
+              },
+            },
+          },
           user: true,
         },
       });
@@ -101,11 +127,23 @@ export class HostRequestManager {
     try {
       return await prisma.hostRequest.findMany({
         where: {
-          eventId,
+          workflow: {
+            eventId,
+          },
           ...(status && { status }),
         },
         include: {
-          event: true,
+          workflow: {
+            include: {
+              event: {
+                select: {
+                  id: true,
+                  name: true,
+                  scheduleTime: true,
+                },
+              },
+            },
+          },
           user: true,
         },
         orderBy: {
@@ -135,7 +173,17 @@ export class HostRequestManager {
           ...(status && { status }),
         },
         include: {
-          event: true,
+          workflow: {
+            include: {
+              event: {
+                select: {
+                  id: true,
+                  name: true,
+                  scheduleTime: true,
+                },
+              },
+            },
+          },
           user: true,
         },
         orderBy: {
@@ -152,18 +200,26 @@ export class HostRequestManager {
    * お伺いリクエストの状態を更新します
    * @param id お伺いリクエストID
    * @param status 新しい状態
+   * @param expiresAt 期限（PENDINGに変更する場合は必須）
    * @param dmMessageId DMメッセージID（DMを送信した場合）
    * @returns 更新されたお伺いリクエスト
    */
   async updateRequestStatus(
     id: number,
     status: HostRequestStatus,
+    expiresAt?: Date,
     dmMessageId?: string,
   ): Promise<HostRequestWithRelations> {
     try {
-      const updateData: { status: HostRequestStatus; dmMessageId?: string } = {
-        status,
-      };
+      const updateData: {
+        status: HostRequestStatus;
+        expiresAt?: Date;
+        dmMessageId?: string;
+      } = { status };
+
+      if (expiresAt) {
+        updateData.expiresAt = expiresAt;
+      }
       if (dmMessageId) {
         updateData.dmMessageId = dmMessageId;
       }
@@ -172,7 +228,17 @@ export class HostRequestManager {
         where: { id },
         data: updateData,
         include: {
-          event: true,
+          workflow: {
+            include: {
+              event: {
+                select: {
+                  id: true,
+                  name: true,
+                  scheduleTime: true,
+                },
+              },
+            },
+          },
           user: true,
         },
       });
@@ -189,7 +255,7 @@ export class HostRequestManager {
   }
 
   /**
-   * 期限切れのお伺いリクエストを自動で期限切れ状態に更新します
+   * 期限切れのお伺いリクエストを自動でDECLINED状態に更新します
    * @returns 更新された件数
    */
   async expireOverdueRequests(): Promise<number> {
@@ -197,13 +263,13 @@ export class HostRequestManager {
       const now = new Date();
       const result = await prisma.hostRequest.updateMany({
         where: {
-          status: 'pending',
+          status: 'PENDING',
           expiresAt: {
             lt: now,
           },
         },
         data: {
-          status: 'expired',
+          status: 'DECLINED',
         },
       });
 
@@ -244,7 +310,11 @@ export class HostRequestManager {
   async deleteRequestsByEvent(eventId: number): Promise<void> {
     try {
       const result = await prisma.hostRequest.deleteMany({
-        where: { eventId },
+        where: {
+          workflow: {
+            eventId,
+          },
+        },
       });
 
       logger.info(
@@ -268,7 +338,17 @@ export class HostRequestManager {
       return await prisma.hostRequest.findFirst({
         where: { dmMessageId },
         include: {
-          event: true,
+          workflow: {
+            include: {
+              event: {
+                select: {
+                  id: true,
+                  name: true,
+                  scheduleTime: true,
+                },
+              },
+            },
+          },
           user: true,
         },
       });
@@ -299,6 +379,17 @@ export class HostRequestManager {
     const now = new Date();
     const remaining = hostRequest.expiresAt.getTime() - now.getTime();
     return Math.floor(remaining / (1000 * 60));
+  }
+
+  /**
+   * リレーション情報付きでお伺いリクエストを取得します
+   * @param id お伺いリクエストID
+   * @returns お伺いリクエスト
+   */
+  async getRequestWithRelations(
+    id: number,
+  ): Promise<HostRequestWithRelations | null> {
+    return this.getRequest(id);
   }
 }
 

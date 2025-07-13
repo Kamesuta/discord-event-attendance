@@ -1,4 +1,4 @@
-import { HostWorkflow, Event } from '@prisma/client';
+import { HostWorkflow, Event, HostRequest } from '@prisma/client';
 import { prisma } from '../utils/prisma.js';
 import { logger } from '../utils/log.js';
 import {
@@ -8,19 +8,11 @@ import {
 } from './HostRequestManager.js';
 
 /**
- * ワークフローの状態
- */
-export type HostWorkflowStatus =
-  | 'planning'
-  | 'requesting'
-  | 'completed'
-  | 'cancelled';
-
-/**
  * HostWorkflowとリレーション情報を含む型
  */
 export type HostWorkflowWithRelations = HostWorkflow & {
   event: Event;
+  requests: HostRequest[];
 };
 
 /**
@@ -42,24 +34,21 @@ export class HostWorkflowManager {
    * ワークフローを作成します
    * @param eventId イベントID
    * @param allowPublicApply 並行公募フラグ
-   * @param customMessage カスタム依頼メッセージ
    * @returns 作成されたワークフロー
    */
   async createWorkflow(
     eventId: number,
     allowPublicApply: boolean = false,
-    customMessage?: string,
   ): Promise<HostWorkflowWithRelations> {
     try {
       const workflow = await prisma.hostWorkflow.create({
         data: {
           eventId,
-          status: 'planning',
           allowPublicApply,
-          customMessage,
         },
         include: {
           event: true,
+          requests: true,
         },
       });
 
@@ -84,6 +73,14 @@ export class HostWorkflowManager {
         where: { eventId },
         include: {
           event: true,
+          requests: {
+            include: {
+              user: true,
+            },
+            orderBy: {
+              priority: 'asc',
+            },
+          },
         },
       });
     } catch (error) {
@@ -93,23 +90,23 @@ export class HostWorkflowManager {
   }
 
   /**
-   * ワークフローの状態を更新します
+   * ワークフローの公募設定を更新します
    * @param eventId イベントID
-   * @param status 新しい状態
+   * @param allowPublicApply 並行公募フラグ
    * @param publicApplyMessageId 公募メッセージID（公募開始時）
    * @returns 更新されたワークフロー
    */
-  async updateWorkflowStatus(
+  async updatePublicApplySettings(
     eventId: number,
-    status: HostWorkflowStatus,
+    allowPublicApply: boolean,
     publicApplyMessageId?: string,
   ): Promise<HostWorkflowWithRelations> {
     try {
       const updateData: {
-        status: HostWorkflowStatus;
+        allowPublicApply: boolean;
         publicApplyMessageId?: string;
-      } = { status };
-      if (publicApplyMessageId) {
+      } = { allowPublicApply };
+      if (publicApplyMessageId !== undefined) {
         updateData.publicApplyMessageId = publicApplyMessageId;
       }
 
@@ -118,50 +115,22 @@ export class HostWorkflowManager {
         data: updateData,
         include: {
           event: true,
+          requests: true,
         },
       });
 
       logger.info(
-        `ワークフローの状態を更新しました: Event=${eventId}, Status=${status}`,
+        `ワークフローの公募設定を更新しました: Event=${eventId}, AllowPublicApply=${allowPublicApply}`,
       );
       return workflow;
     } catch (error) {
-      logger.error('ワークフロー状態の更新に失敗しました:', error);
+      logger.error('ワークフロー公募設定の更新に失敗しました:', error);
       throw error;
     }
   }
 
   /**
-   * ワークフローの現在の依頼順を更新します
-   * @param eventId イベントID
-   * @param currentPriority 現在の依頼順
-   * @returns 更新されたワークフロー
-   */
-  async updateCurrentPriority(
-    eventId: number,
-    currentPriority: number,
-  ): Promise<HostWorkflowWithRelations> {
-    try {
-      const workflow = await prisma.hostWorkflow.update({
-        where: { eventId },
-        data: { currentPriority },
-        include: {
-          event: true,
-        },
-      });
-
-      logger.info(
-        `ワークフローの現在依頼順を更新しました: Event=${eventId}, Priority=${currentPriority}`,
-      );
-      return workflow;
-    } catch (error) {
-      logger.error('ワークフロー依頼順の更新に失敗しました:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * ワークフローを開始します（計画状態からリクエスト状態へ）
+   * ワークフローを開始します（最初の候補者にお伺いを送信）
    * @param eventId イベントID
    * @returns 開始されたワークフロー
    */
@@ -172,19 +141,24 @@ export class HostWorkflowManager {
         throw new Error(`ワークフローが見つかりません: Event=${eventId}`);
       }
 
-      if (workflow.status !== 'planning') {
-        throw new Error(
-          `ワークフローを開始できません。現在の状態: ${workflow.status}`,
-        );
+      // 最初の候補者（priority=1）を取得
+      const firstRequest = workflow.requests.find((r) => r.priority === 1);
+      if (!firstRequest) {
+        throw new Error(`候補者が設定されていません: Event=${eventId}`);
       }
 
-      const updatedWorkflow = await this.updateWorkflowStatus(
-        eventId,
-        'requesting',
+      // 最初の候補者のステータスをPENDINGに更新
+      await this._hostRequestManager.updateRequestStatus(
+        firstRequest.id,
+        'PENDING',
+        new Date(Date.now() + 24 * 60 * 60 * 1000), // 24時間後に期限
       );
-      logger.info(`ワークフローを開始しました: Event=${eventId}`);
 
-      return updatedWorkflow;
+      logger.info(
+        `ワークフローを開始しました: Event=${eventId}, FirstCandidate=${firstRequest.userId}`,
+      );
+
+      return (await this.getWorkflow(eventId)) as HostWorkflowWithRelations;
     } catch (error) {
       logger.error('ワークフローの開始に失敗しました:', error);
       throw error;
@@ -208,24 +182,47 @@ export class HostWorkflowManager {
         data: { hostId: hostUserId },
       });
 
-      // ワークフローを完了状態に
-      const workflow = await this.updateWorkflowStatus(eventId, 'completed');
-
-      // 他のpendingなリクエストをキャンセル
+      // 承認されたリクエストをACCEPTEDに
       await prisma.hostRequest.updateMany({
         where: {
-          eventId,
-          status: 'pending',
+          workflowId: {
+            in: await prisma.hostWorkflow
+              .findMany({
+                where: { eventId },
+                select: { id: true },
+              })
+              .then((workflows) => workflows.map((w) => w.id)),
+          },
+          userId: hostUserId,
         },
         data: {
-          status: 'declined',
+          status: 'ACCEPTED',
         },
       });
 
+      // 他のpendingなリクエストをDECLINEDに
+      await prisma.hostRequest.updateMany({
+        where: {
+          workflowId: {
+            in: await prisma.hostWorkflow
+              .findMany({
+                where: { eventId },
+                select: { id: true },
+              })
+              .then((workflows) => workflows.map((w) => w.id)),
+          },
+          status: 'PENDING',
+        },
+        data: {
+          status: 'DECLINED',
+        },
+      });
+
+      const workflow = await this.getWorkflow(eventId);
       logger.info(
         `ワークフローを完了しました: Event=${eventId}, Host=${hostUserId}`,
       );
-      return workflow;
+      return workflow as HostWorkflowWithRelations;
     } catch (error) {
       logger.error('ワークフローの完了に失敗しました:', error);
       throw error;
@@ -237,20 +234,29 @@ export class HostWorkflowManager {
    * @param eventId イベントID
    * @returns キャンセルされたワークフロー
    */
-  async cancelWorkflow(eventId: number): Promise<HostWorkflowWithRelations> {
+  async cancelWorkflow(
+    eventId: number,
+  ): Promise<HostWorkflowWithRelations | null> {
     try {
       // 全てのpendingなリクエストをキャンセル
       await prisma.hostRequest.updateMany({
         where: {
-          eventId,
-          status: 'pending',
+          workflowId: {
+            in: await prisma.hostWorkflow
+              .findMany({
+                where: { eventId },
+                select: { id: true },
+              })
+              .then((workflows) => workflows.map((w) => w.id)),
+          },
+          status: 'PENDING',
         },
         data: {
-          status: 'declined',
+          status: 'DECLINED',
         },
       });
 
-      const workflow = await this.updateWorkflowStatus(eventId, 'cancelled');
+      const workflow = await this.getWorkflow(eventId);
       logger.info(`ワークフローをキャンセルしました: Event=${eventId}`);
 
       return workflow;
@@ -274,25 +280,33 @@ export class HostWorkflowManager {
         throw new Error(`ワークフローが見つかりません: Event=${eventId}`);
       }
 
-      // 次の候補者を取得
-      const nextPriority = workflow.currentPriority + 1;
-      const nextRequest = await this._hostRequestManager.getRequestsByEvent(
-        eventId,
-        'pending',
+      // 現在のpendingリクエストの次の候補者を取得
+      const currentPendingRequest = workflow.requests.find(
+        (r) => r.status === 'PENDING',
       );
+      const currentPriority = currentPendingRequest?.priority || 0;
+      const nextPriority = currentPriority + 1;
 
-      const nextCandidate = nextRequest.find(
-        (request: HostRequestWithRelations) =>
-          request.priority === nextPriority,
+      const nextCandidate = workflow.requests.find(
+        (request) =>
+          request.priority === nextPriority && request.status === 'WAITING',
       );
 
       if (nextCandidate) {
-        // 現在の依頼順を更新
-        await this.updateCurrentPriority(eventId, nextPriority);
-        logger.info(
-          `次の候補者に進みました: Event=${eventId}, Priority=${nextPriority}`,
+        // 次の候補者のステータスをPENDINGに更新
+        await this._hostRequestManager.updateRequestStatus(
+          nextCandidate.id,
+          'PENDING',
+          new Date(Date.now() + 24 * 60 * 60 * 1000), // 24時間後に期限
         );
-        return nextCandidate;
+
+        logger.info(
+          `次の候補者に進みました: Event=${eventId}, Priority=${nextPriority}, User=${nextCandidate.userId}`,
+        );
+
+        return await this._hostRequestManager.getRequestWithRelations(
+          nextCandidate.id,
+        );
       } else {
         // 全候補者が終了
         logger.info(`全候補者が終了しました: Event=${eventId}`);
@@ -318,24 +332,19 @@ export class HostWorkflowManager {
   }> {
     try {
       const workflow = await this.getWorkflow(eventId);
-      const requests =
-        await this._hostRequestManager.getRequestsByEvent(eventId);
+      const requests = workflow?.requests || [];
 
-      let currentRequest = null;
-      if (workflow) {
-        currentRequest =
-          requests.find(
-            (request: HostRequestWithRelations) =>
-              request.priority === workflow.currentPriority,
-          ) || null;
-      }
+      // 現在PENDINGの候補者を取得
+      const currentRequest =
+        requests.find((r) => r.status === 'PENDING') || null;
+      const currentPosition = currentRequest?.priority || 0;
 
       return {
         workflow,
-        requests,
-        currentRequest,
+        requests: requests as HostRequestWithRelations[],
+        currentRequest: currentRequest as HostRequestWithRelations | null,
         totalCandidates: requests.length,
-        currentPosition: workflow ? workflow.currentPriority : 0,
+        currentPosition,
       };
     } catch (error) {
       logger.error('ワークフロー進捗の取得に失敗しました:', error);
@@ -344,19 +353,29 @@ export class HostWorkflowManager {
   }
 
   /**
-   * 進行中のワークフロー一覧を取得します
+   * 進行中のワークフロー一覧を取得します（PENDINGリクエストがあるワークフロー）
    * @returns 進行中のワークフロー一覧
    */
   async getActiveWorkflows(): Promise<HostWorkflowWithRelations[]> {
     try {
       return await prisma.hostWorkflow.findMany({
         where: {
-          status: {
-            in: ['requesting'],
+          requests: {
+            some: {
+              status: 'PENDING',
+            },
           },
         },
         include: {
           event: true,
+          requests: {
+            include: {
+              user: true,
+            },
+            orderBy: {
+              priority: 'asc',
+            },
+          },
         },
         orderBy: {
           createdAt: 'asc',

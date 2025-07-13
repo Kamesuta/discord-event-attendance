@@ -51,10 +51,10 @@ export class HostAlternateModalAction extends ModalActionInteraction {
       .setRequired(false)
       .setMaxLength(500);
 
-    const firstActionRow = new ActionRowBuilder<TextInputBuilder>()
-      .addComponents(proposedDateInput);
-    const secondActionRow = new ActionRowBuilder<TextInputBuilder>()
-      .addComponents(reasonInput);
+    const firstActionRow =
+      new ActionRowBuilder<TextInputBuilder>().addComponents(proposedDateInput);
+    const secondActionRow =
+      new ActionRowBuilder<TextInputBuilder>().addComponents(reasonInput);
 
     modal.addComponents(firstActionRow, secondActionRow);
 
@@ -67,7 +67,10 @@ export class HostAlternateModalAction extends ModalActionInteraction {
    * @param _params URLSearchParams（未使用）
    * @returns Promise<void>
    */
-  async onCommand(interaction: ModalSubmitInteraction<'cached'>, _params: URLSearchParams): Promise<void> {
+  async onCommand(
+    interaction: ModalSubmitInteraction<'cached'>,
+    _params: URLSearchParams,
+  ): Promise<void> {
     await interaction.deferReply({ ephemeral: true });
 
     try {
@@ -92,23 +95,28 @@ export class HostAlternateModalAction extends ModalActionInteraction {
       }
 
       // 入力値を取得
-      const proposedDate = interaction.fields.getTextInputValue('proposed_date');
-      const reason = interaction.fields.getTextInputValue('reason') || undefined;
+      const proposedDate =
+        interaction.fields.getTextInputValue('proposed_date');
+      const reason =
+        interaction.fields.getTextInputValue('reason') || undefined;
 
       // 元のDMメッセージを更新（モーダル経由なのでDM更新はスキップ）
-      
+
       // 管理チャンネルに通知
-      logger.info(`別日提案: ${proposedDate}${reason ? `, 理由: ${reason}` : ''}`);
+      logger.info(
+        `別日提案: ${proposedDate}${reason ? `, 理由: ${reason}` : ''}`,
+      );
       // TODO: 管理チャンネル通知機能の実装
 
       // ユーザーに確認メッセージ
       const embed = new EmbedBuilder()
         .setTitle('📅 別日提案完了')
         .setDescription(
-          `**${hostRequest.event.name}** について別日程を提案いたしました。\n\n` +
-          `**提案日時**: ${proposedDate}` +
-          (reason ? `\n**理由**: ${reason}` : '') + '\n\n' +
-          '管理者に通知が送信されました。回答をお待ちください。'
+          `**${hostRequest.workflow.event.name}** について別日程を提案いたしました。\n\n` +
+            `**提案日時**: ${proposedDate}` +
+            (reason ? `\n**理由**: ${reason}` : '') +
+            '\n\n' +
+            '管理者に通知が送信されました。回答をお待ちください。',
         )
         .setColor(0xf39c12)
         .setTimestamp();
@@ -118,9 +126,8 @@ export class HostAlternateModalAction extends ModalActionInteraction {
       });
 
       logger.info(
-        `別日提案が完了しました: User=${interaction.user.username}, Event=${hostRequest.event.name}, ProposedDate=${proposedDate}`,
+        `別日提案が完了しました: User=${interaction.user.username}, Event=${hostRequest.workflow.event.name}, ProposedDate=${proposedDate}`,
       );
-
     } catch (error) {
       logger.error('別日提案処理でエラー:', error);
       await interaction.editReply({
@@ -130,4 +137,4 @@ export class HostAlternateModalAction extends ModalActionInteraction {
   }
 }
 
-export default new HostAlternateModalAction(); 
+export default new HostAlternateModalAction();

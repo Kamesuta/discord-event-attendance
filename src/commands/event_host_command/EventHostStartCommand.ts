@@ -61,9 +61,11 @@ class EventHostStartCommand extends SubcommandInteraction {
         return;
       }
 
-      if (workflow.status !== 'planning') {
+      // ワークフローの状態を推定
+      const workflowStatus = this._inferWorkflowStatus(workflow.requests || []);
+      if (workflowStatus !== 'planning') {
         await interaction.editReply({
-          content: `ワークフローは既に${this._getStatusText(workflow.status)}状態です。`,
+          content: `ワークフローは既に${this._getStatusText(workflowStatus)}状態です。`,
         });
         return;
       }
@@ -121,7 +123,7 @@ class EventHostStartCommand extends SubcommandInteraction {
       // 最初の優先度のリクエストを取得
       const requests = await hostRequestManager.getRequestsByEvent(
         eventId,
-        'pending',
+        'WAITING',
       );
       const firstRequest = requests.find((req) => req.priority === 1);
 
@@ -172,7 +174,7 @@ class EventHostStartCommand extends SubcommandInteraction {
       const embed = new EmbedBuilder()
         .setTitle('🎯 イベント主催のお伺い')
         .setDescription(
-          `**${hostRequest.event.name}** の主催をお願いできませんでしょうか？\n\n` +
+          `**${hostRequest.workflow.event.name}** の主催をお願いできませんでしょうか？\n\n` +
             (hostRequest.message || 'よろしくお願いいたします。'),
         )
         .addFields(
@@ -180,12 +182,12 @@ class EventHostStartCommand extends SubcommandInteraction {
             name: 'イベント情報',
             value:
               `📅 **開催予定**: ${
-                hostRequest.event.scheduleTime
-                  ? new Date(hostRequest.event.scheduleTime).toLocaleString(
-                      'ja-JP',
-                    )
+                hostRequest.workflow.event.scheduleTime
+                  ? new Date(
+                      hostRequest.workflow.event.scheduleTime,
+                    ).toLocaleString('ja-JP')
                   : '未定'
-              }\n` + `🆔 **イベントID**: ${hostRequest.event.id}`,
+              }\n` + `🆔 **イベントID**: ${hostRequest.workflow.event.id}`,
             inline: false,
           },
           {
@@ -201,7 +203,7 @@ class EventHostStartCommand extends SubcommandInteraction {
         )
         .setColor(0x3498db)
         .setFooter({
-          text: `HostRequest:${hostRequestId} | Event:${hostRequest.eventId} | User:${hostRequest.userId}`,
+          text: `HostRequest:${hostRequestId} | Event:${hostRequest.workflow.event.id} | User:${hostRequest.userId}`,
         })
         .setTimestamp();
 
@@ -233,17 +235,46 @@ class EventHostStartCommand extends SubcommandInteraction {
       // DMメッセージIDを保存
       await hostRequestManager.updateRequestStatus(
         hostRequestId,
-        'pending',
+        'PENDING',
+        new Date(Date.now() + 24 * 60 * 60 * 1000), // 24時間後に期限
         dmMessage.id,
       );
 
       logger.info(
-        `主催者お伺いDMを送信しました: User=${hostRequest.user.username}, Event=${hostRequest.event.name}`,
+        `主催者お伺いDMを送信しました: User=${hostRequest.user.username}, Event=${hostRequest.workflow.event.name}`,
       );
     } catch (error) {
       logger.error('主催者お伺いDM送信でエラー:', error);
       throw error;
     }
+  }
+
+  /**
+   * リクエストからワークフローの状態を推定
+   * @param requests お伺いリクエスト一覧
+   * @returns ワークフロー状態
+   */
+  private _inferWorkflowStatus(requests: Array<{ status: string }>): string {
+    if (!requests || requests.length === 0) {
+      return 'planning';
+    }
+
+    const hasAccepted = requests.some((r) => r.status === 'ACCEPTED');
+    if (hasAccepted) {
+      return 'completed';
+    }
+
+    const hasPending = requests.some((r) => r.status === 'PENDING');
+    if (hasPending) {
+      return 'requesting';
+    }
+
+    const hasWaiting = requests.some((r) => r.status === 'WAITING');
+    if (hasWaiting) {
+      return 'planning';
+    }
+
+    return 'cancelled';
   }
 
   /**

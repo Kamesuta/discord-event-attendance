@@ -183,7 +183,7 @@ class HostRequestMessageUpdater implements MessageUpdater {
       const embed = new EmbedBuilder()
         .setTitle(this._getStatusTitle(hostRequest.status))
         .setDescription(
-          `**イベント:** ${hostRequest.event.name}\n` +
+          `**イベント:** ${hostRequest.workflow.event.name}\n` +
             `**対象ユーザー:** ${hostRequest.user.username}\n` +
             `**優先順位:** ${hostRequest.priority}番目\n` +
             `**期限:** <t:${Math.floor(hostRequest.expiresAt.getTime() / 1000)}:R>\n` +
@@ -191,7 +191,7 @@ class HostRequestMessageUpdater implements MessageUpdater {
         )
         .setColor(this._getStatusColor(hostRequest.status))
         .setFooter({
-          text: `HostRequest:${hostRequest.id} | Event:${hostRequest.event.id}`,
+          text: `HostRequest:${hostRequest.id} | Event:${hostRequest.workflow.event.id}`,
         })
         .setTimestamp();
 
@@ -226,22 +226,24 @@ class HostRequestMessageUpdater implements MessageUpdater {
       const requests = await hostRequestManager.getRequestsByEvent(
         workflow.eventId,
       );
-      const currentRequest = requests.find(
-        (req) => req.priority === workflow.currentPriority,
-      );
+      const currentRequest = requests.find((req) => req.status === 'PENDING');
+
+      // ワークフローの状態を推定
+      const workflowStatus = this._inferWorkflowStatus(requests);
+      const currentPriority = currentRequest?.priority || 0;
 
       const embed = new EmbedBuilder()
         .setTitle(
-          `🎯 主催者お伺いワークフロー - ${this._getWorkflowStatusText(workflow.status)}`,
+          `🎯 主催者お伺いワークフロー - ${this._getWorkflowStatusText(workflowStatus)}`,
         )
         .setDescription(
           `**イベント:** ${workflow.event.name}\n` +
-            `**現在の進行:** ${workflow.currentPriority}番目の候補者\n` +
+            `**現在の進行:** ${currentPriority}番目の候補者\n` +
             `**現在の対象:** ${currentRequest ? currentRequest.user.username : '完了'}\n` +
             `**公募併用:** ${workflow.allowPublicApply ? '有効' : '無効'}\n` +
             `**全候補者数:** ${requests.length}名`,
         )
-        .setColor(this._getWorkflowStatusColor(workflow.status))
+        .setColor(this._getWorkflowStatusColor(workflowStatus))
         .setFooter({
           text: `HostWorkflow:${workflow.id} | Event:${workflow.event.id}`,
         })
@@ -294,6 +296,34 @@ class HostRequestMessageUpdater implements MessageUpdater {
       default:
         return '不明';
     }
+  }
+
+  /**
+   * リクエストからワークフローの状態を推定
+   * @param requests お伺いリクエスト一覧
+   * @returns ワークフロー状態
+   */
+  private _inferWorkflowStatus(requests: Array<{ status: string }>): string {
+    if (!requests || requests.length === 0) {
+      return 'planning';
+    }
+
+    const hasAccepted = requests.some((r) => r.status === 'ACCEPTED');
+    if (hasAccepted) {
+      return 'completed';
+    }
+
+    const hasPending = requests.some((r) => r.status === 'PENDING');
+    if (hasPending) {
+      return 'requesting';
+    }
+
+    const hasWaiting = requests.some((r) => r.status === 'WAITING');
+    if (hasWaiting) {
+      return 'planning';
+    }
+
+    return 'cancelled';
   }
 
   /**

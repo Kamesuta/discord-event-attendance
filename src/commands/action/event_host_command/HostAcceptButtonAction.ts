@@ -7,7 +7,10 @@ import {
   ComponentType,
 } from 'discord.js';
 import { MessageComponentActionInteraction } from '../../base/action_base.js';
-import { hostRequestManager, HostRequestWithRelations } from '../../../event/HostRequestManager.js';
+import {
+  hostRequestManager,
+  HostRequestWithRelations,
+} from '../../../event/HostRequestManager.js';
 import { hostWorkflowManager } from '../../../event/HostWorkflowManager.js';
 import { config } from '../../../utils/config.js';
 import { client } from '../../../utils/client.js';
@@ -46,7 +49,10 @@ export class HostAcceptButtonAction extends MessageComponentActionInteraction<Co
    * @param _params URLSearchParams（未使用）
    * @returns Promise<void>
    */
-  async onCommand(interaction: ButtonInteraction<'cached'>, _params: URLSearchParams): Promise<void> {
+  async onCommand(
+    interaction: ButtonInteraction<'cached'>,
+    _params: URLSearchParams,
+  ): Promise<void> {
     await interaction.deferReply({ ephemeral: true });
 
     try {
@@ -71,7 +77,7 @@ export class HostAcceptButtonAction extends MessageComponentActionInteraction<Co
       }
 
       // 既に回答済みかチェック
-      if (hostRequest.status !== 'pending') {
+      if (hostRequest.status !== 'PENDING') {
         await interaction.editReply({
           content: `この依頼は既に${this._getStatusText(hostRequest.status)}済みです。`,
         });
@@ -95,11 +101,11 @@ export class HostAcceptButtonAction extends MessageComponentActionInteraction<Co
       }
 
       // お伺いリクエストを受諾状態に更新
-      await hostRequestManager.updateRequestStatus(hostRequestId, 'accepted');
+      await hostRequestManager.updateRequestStatus(hostRequestId, 'ACCEPTED');
 
       // ワークフローを完了
       await hostWorkflowManager.completeWorkflow(
-        hostRequest.eventId,
+        hostRequest.workflow.event.id,
         hostRequest.userId,
       );
 
@@ -113,8 +119,8 @@ export class HostAcceptButtonAction extends MessageComponentActionInteraction<Co
       const embed = new EmbedBuilder()
         .setTitle('✅ 主催受諾完了')
         .setDescription(
-          `**${hostRequest.event.name}** の主催を受諾いたしました。\n\n` +
-          '管理者に通知が送信されました。詳細は管理チャンネルでご確認ください。'
+          `**${hostRequest.workflow.event.name}** の主催を受諾いたしました。\n\n` +
+            '管理者に通知が送信されました。詳細は管理チャンネルでご確認ください。',
         )
         .setColor(0x00ff00)
         .setTimestamp();
@@ -124,9 +130,8 @@ export class HostAcceptButtonAction extends MessageComponentActionInteraction<Co
       });
 
       logger.info(
-        `主催受諾が完了しました: User=${interaction.user.username}, Event=${hostRequest.event.name}`,
+        `主催受諾が完了しました: User=${interaction.user.username}, Event=${hostRequest.workflow.event.name}`,
       );
-
     } catch (error) {
       logger.error('主催受諾処理でエラー:', error);
       await interaction.editReply({
@@ -151,17 +156,22 @@ export class HostAcceptButtonAction extends MessageComponentActionInteraction<Co
       const embed = new EmbedBuilder()
         .setTitle('🎯 イベント主催のお伺い')
         .setDescription(
-          `**${hostRequest.event.name}** の主催をお願いできませんでしょうか？\n\n` +
-          (hostRequest.message || 'よろしくお願いいたします。') + '\n\n' +
-          `**✅ 受諾済み** (${new Date().toLocaleString('ja-JP')})`
+          `**${hostRequest.workflow.event.name}** の主催をお願いできませんでしょうか？\n\n` +
+            (hostRequest.message || 'よろしくお願いいたします。') +
+            '\n\n' +
+            `**✅ 受諾済み** (${new Date().toLocaleString('ja-JP')})`,
         )
         .addFields(
           {
             name: 'イベント情報',
-            value: 
-              `📅 **開催予定**: ${hostRequest.event.scheduleTime ? 
-                new Date(hostRequest.event.scheduleTime).toLocaleString('ja-JP') : '未定'}\n` +
-              `🆔 **イベントID**: ${hostRequest.event.id}`,
+            value:
+              `📅 **開催予定**: ${
+                hostRequest.workflow.event.scheduleTime
+                  ? new Date(
+                      hostRequest.workflow.event.scheduleTime,
+                    ).toLocaleString('ja-JP')
+                  : '未定'
+              }\n` + `🆔 **イベントID**: ${hostRequest.workflow.event.id}`,
             inline: false,
           },
           {
@@ -177,13 +187,13 @@ export class HostAcceptButtonAction extends MessageComponentActionInteraction<Co
         )
         .setColor(0x00ff00)
         .setFooter({
-          text: `HostRequest:${hostRequest.id} | Event:${hostRequest.eventId} | User:${hostRequest.userId}`,
+          text: `HostRequest:${hostRequest.id} | Event:${hostRequest.workflow.event.id} | User:${hostRequest.userId}`,
         })
         .setTimestamp();
 
       // ボタンを無効化
-      const disabledButtons = new ActionRowBuilder<ButtonBuilder>()
-        .addComponents(
+      const disabledButtons =
+        new ActionRowBuilder<ButtonBuilder>().addComponents(
           new ButtonBuilder()
             .setCustomId('disabled_accept')
             .setLabel('受諾済み')
@@ -208,7 +218,6 @@ export class HostAcceptButtonAction extends MessageComponentActionInteraction<Co
         embeds: [embed],
         components: [disabledButtons],
       });
-
     } catch (error) {
       logger.error('元DMメッセージの更新でエラー:', error);
     }
@@ -225,29 +234,38 @@ export class HostAcceptButtonAction extends MessageComponentActionInteraction<Co
     _status: string,
   ): Promise<void> {
     try {
-      const managementChannel = client.channels.cache.get(config.host_request_channel_id);
+      const managementChannel = client.channels.cache.get(
+        config.host_request_channel_id,
+      );
       if (!managementChannel?.isTextBased() || !('send' in managementChannel)) {
-        logger.warn('管理チャンネルが見つからないか、テキストチャンネルではありません');
+        logger.warn(
+          '管理チャンネルが見つからないか、テキストチャンネルではありません',
+        );
         return;
       }
 
       const embed = new EmbedBuilder()
         .setTitle('✅ 主催受諾通知')
         .setDescription(
-          `${hostRequest.user.username || 'Unknown User'} さんが **${hostRequest.event.name}** の主催を受諾しました。`
+          `${hostRequest.user.username || 'Unknown User'} さんが **${hostRequest.workflow.event.name}** の主催を受諾しました。`,
         )
         .addFields(
           {
             name: 'イベント情報',
-            value: `📅 **開催予定**: ${hostRequest.event.scheduleTime ? 
-              new Date(hostRequest.event.scheduleTime).toLocaleString('ja-JP') : '未定'}`,
+            value: `📅 **開催予定**: ${
+              hostRequest.workflow.event.scheduleTime
+                ? new Date(
+                    hostRequest.workflow.event.scheduleTime,
+                  ).toLocaleString('ja-JP')
+                : '未定'
+            }`,
             inline: false,
           },
           {
             name: 'ユーザー情報',
             value: `👤 **ユーザー**: ${hostRequest.user.username || 'Unknown User'}\n📋 **優先順位**: 第${hostRequest.priority}候補`,
             inline: false,
-          }
+          },
         )
         .setColor(0x00ff00)
         .setTimestamp();
@@ -255,7 +273,6 @@ export class HostAcceptButtonAction extends MessageComponentActionInteraction<Co
       await managementChannel.send({
         embeds: [embed],
       });
-
     } catch (error) {
       logger.error('管理チャンネル通知の送信でエラー:', error);
     }
@@ -268,16 +285,18 @@ export class HostAcceptButtonAction extends MessageComponentActionInteraction<Co
    */
   private _getStatusText(status: string): string {
     switch (status) {
-      case 'accepted':
+      case 'WAITING':
+        return '順番待ち';
+      case 'PENDING':
+        return '待機中';
+      case 'ACCEPTED':
         return '受諾';
-      case 'declined':
+      case 'DECLINED':
         return '辞退';
-      case 'expired':
-        return '期限切れ';
       default:
         return '処理';
     }
   }
 }
 
-export default new HostAcceptButtonAction(); 
+export default new HostAcceptButtonAction();

@@ -56,12 +56,12 @@ async function handleDMMessage(message: Message): Promise<void> {
     await dmRelayManager.relayDMToChannel(
       message,
       hostRequest.id,
-      hostRequest.event.name,
+      hostRequest.workflow.event.name,
       hostRequest.user.username || 'Unknown User',
     );
 
     logger.info(
-      `お伺い関連DMを転送しました: User=${message.author.username}, Event=${hostRequest.event.name}`,
+      `お伺い関連DMを転送しました: User=${message.author.username}, Event=${hostRequest.workflow.event.name}`,
     );
   } catch (error) {
     logger.error('DM処理でエラー:', error);

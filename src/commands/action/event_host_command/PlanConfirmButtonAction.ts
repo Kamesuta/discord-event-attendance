@@ -104,22 +104,25 @@ class PlanConfirmButtonAction extends MessageComponentActionInteraction<Componen
         // 既存ワークフローを更新
         await this._updateExistingWorkflow(existingWorkflow, setupData);
 
-        // 既存の候補者リクエストを削除
+        // 既存の候補者リクエストを削除（WAITINGとPENDINGのみ）
         await prisma.hostRequest.deleteMany({
           where: {
-            eventId: eventIdNum,
-            status: 'pending', // pendingのもののみ削除
+            workflowId: existingWorkflow.id,
+            status: {
+              in: ['WAITING', 'PENDING'],
+            },
           },
         });
 
-        // 新しい候補者のHostRequestを作成
+        // 新しい候補者のHostRequestを作成（WAITING状態で）
         for (let i = 0; i < setupData.candidates.length; i++) {
           const candidate = setupData.candidates[i];
           await hostRequestManager.createRequest(
-            eventIdNum,
+            existingWorkflow.id, // workflowIdを使用
             candidate.id, // Userテーブルのid（数値）を使用
             i + 1, // priority: 1番手、2番手、3番手
             setupData.customMessage,
+            // expiresAtは指定しないのでWAITING状態になる
           );
         }
 
@@ -132,20 +135,20 @@ class PlanConfirmButtonAction extends MessageComponentActionInteraction<Componen
         });
       } else {
         // 新規ワークフローを作成
-        await hostWorkflowManager.createWorkflow(
+        const newWorkflow = await hostWorkflowManager.createWorkflow(
           eventIdNum,
           setupData.allowPublicApply,
-          setupData.customMessage,
         );
 
-        // 候補者のHostRequestを作成
+        // 候補者のHostRequestを作成（WAITING状態で）
         for (let i = 0; i < setupData.candidates.length; i++) {
           const candidate = setupData.candidates[i];
           await hostRequestManager.createRequest(
-            eventIdNum,
+            newWorkflow.id, // workflowIdを使用
             candidate.id, // Userテーブルのid（数値）を使用
             i + 1, // priority: 1番手、2番手、3番手
             setupData.customMessage,
+            // expiresAtは指定しないのでWAITING状態になる
           );
         }
 
@@ -191,8 +194,6 @@ class PlanConfirmButtonAction extends MessageComponentActionInteraction<Componen
         where: { id: existingWorkflow.id },
         data: {
           allowPublicApply: setupData.allowPublicApply,
-          customMessage: setupData.customMessage,
-          // ステータスは現状維持
         },
       });
     } catch (error) {

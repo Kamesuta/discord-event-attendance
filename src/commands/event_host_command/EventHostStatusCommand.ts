@@ -83,17 +83,20 @@ class EventHostStatusCommand extends SubcommandInteraction {
       return;
     }
 
+    // ワークフローの状態を推定
+    const workflowStatus = this._inferWorkflowStatus(progress.requests);
+
     const embed = new EmbedBuilder()
       .setTitle(`📊 ワークフロー進捗詳細`)
       .setDescription(`イベント: **${progress.workflow.event.name}**`)
-      .setColor(this._getStatusColor(progress.workflow.status))
+      .setColor(this._getStatusColor(workflowStatus))
       .setTimestamp();
 
     // 基本情報
     embed.addFields(
       {
         name: 'ステータス',
-        value: this._getStatusText(progress.workflow.status),
+        value: this._getStatusText(workflowStatus),
         inline: true,
       },
       {
@@ -188,12 +191,13 @@ class EventHostStatusCommand extends SubcommandInteraction {
       const workflowList = await Promise.all(
         activeWorkflows.map(async (workflow) => {
           const progress = await hostWorkflowManager.getWorkflowProgress(
-            workflow.eventId,
+            workflow.event.id,
           );
-          const statusText = this._getStatusText(workflow.status);
+          const workflowStatus = this._inferWorkflowStatus(progress.requests);
+          const statusText = this._getStatusText(workflowStatus);
 
           return (
-            `**${workflow.event.name}** (ID: ${workflow.eventId})\n` +
+            `**${workflow.event.name}** (ID: ${workflow.event.id})\n` +
             `└ ${statusText} - ${progress.currentPosition}/${progress.totalCandidates}人`
           );
         }),
@@ -234,6 +238,35 @@ class EventHostStatusCommand extends SubcommandInteraction {
       embeds: [embed],
       components: [buttons],
     });
+  }
+
+  /**
+   * リクエストからワークフローの状態を推定
+   * @param requests お伺いリクエスト一覧
+   * @returns ワークフロー状態
+   */
+  private _inferWorkflowStatus(requests: Array<{ status: string }>): string {
+    if (!requests || requests.length === 0) {
+      return 'planning';
+    }
+
+    const hasAccepted = requests.some((r) => r.status === 'ACCEPTED');
+    if (hasAccepted) {
+      return 'completed';
+    }
+
+    const hasPending = requests.some((r) => r.status === 'PENDING');
+    if (hasPending) {
+      return 'requesting';
+    }
+
+    const hasWaiting = requests.some((r) => r.status === 'WAITING');
+    if (hasWaiting) {
+      return 'planning';
+    }
+
+    // 全てDECLINEDの場合
+    return 'cancelled';
   }
 
   /**
@@ -283,14 +316,14 @@ class EventHostStatusCommand extends SubcommandInteraction {
    */
   private _getRequestStatusEmoji(status: string): string {
     switch (status) {
-      case 'pending':
+      case 'WAITING':
         return '⏳';
-      case 'accepted':
+      case 'PENDING':
+        return '📬';
+      case 'ACCEPTED':
         return '✅';
-      case 'declined':
+      case 'DECLINED':
         return '❌';
-      case 'expired':
-        return '⏰';
       default:
         return '❓';
     }
