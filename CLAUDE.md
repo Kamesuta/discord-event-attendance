@@ -150,3 +150,18 @@ src/commands/action/<command_group>_command/
 - メタデータ追跡用Embedフッター
 - 会話整理用スレッドベース
 - 返信チェーン用メッセージID参照
+
+## Claude Code設定
+
+### Hooksとコミットメッセージ
+Claude Codeは`.claude/hooks.json`および`.claude/settings.json`で設定されています：
+
+**コミットメッセージガイドライン**:
+- **1行で完結**: 72文字以内で簡潔に
+- **動詞で開始**: `fix:`, `add:`, `update:`, `refactor:`, `remove:`, `docs:`
+- **日本語で記述**: 分かりやすい日本語で説明
+- **例**: `fix: HostWorkflowの状態推定バグを修正`, `add: 新しいenum値WAITING追加`
+
+設定ファイル：
+- `.claude/hooks.json` - コミット前にガイドラインを表示
+- `.claude/settings.json` - コミットメッセージの詳細設定

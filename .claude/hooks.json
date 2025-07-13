@@ -1,0 +1,8 @@
+{
+  "task_complete": {
+    "suggest_commit_message": true,
+    "message_format": "{type}: {description}",
+    "max_length": 72,
+    "language": "ja"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "behavior": {
+    "suggest_commit_after_task": true,
+    "commit_message_style": {
+      "format": "conventional",
+      "max_length": 72,
+      "language": "japanese",
+      "template": "{type}: {description}",
+      "types": ["fix", "add", "update", "refactor", "remove", "docs"],
+      "examples": [
+        "fix: バグを修正",
+        "add: 新機能を追加", 
+        "update: 設定を更新",
+        "refactor: コードを整理",
+        "remove: 不要なコードを削除",
+        "docs: ドキュメントを更新"
+      ]
+    }
+  },
+  "instructions": "作業完了時に、変更内容に基づいた1行のコミットメッセージ案を提案してください。"
+}
