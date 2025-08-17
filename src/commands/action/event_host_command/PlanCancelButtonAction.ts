@@ -37,22 +37,24 @@ class PlanCancelButtonAction extends MessageComponentActionInteraction<Component
     interaction: ButtonInteraction,
     _params: URLSearchParams,
   ): Promise<void> {
-    await interaction.deferReply({ ephemeral: true });
-
     try {
-      await interaction.editReply({
-        content: '計画作成をキャンセルしました。',
-      });
-
-      // 元のメッセージを削除（可能であれば）
+      // 元のメッセージを削除（パネル削除）
       try {
         await interaction.message.delete();
+        // パネルが削除されたら、確認メッセージも不要
+        await interaction.deferReply({ ephemeral: true });
+        await interaction.deleteReply();
       } catch (error) {
-        // 削除に失敗した場合は無視（権限がない場合等）
+        // 削除に失敗した場合は通常のreplyで対応
         logger.debug('メッセージの削除に失敗しました:', error);
+        await interaction.deferReply({ ephemeral: true });
+        await interaction.editReply({
+          content: 'キャンセルしました。',
+        });
       }
     } catch (error) {
       logger.error('キャンセル処理でエラー:', error);
+      await interaction.deferReply({ ephemeral: true });
       await interaction.editReply({
         content: 'エラーが発生しました。',
       });

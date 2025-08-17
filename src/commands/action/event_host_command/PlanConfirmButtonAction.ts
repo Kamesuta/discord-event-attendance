@@ -126,13 +126,8 @@ class PlanConfirmButtonAction extends MessageComponentActionInteraction<Componen
           );
         }
 
-        await interaction.editReply({
-          content:
-            `⚙️ イベント「${event.name}」のワークフローを更新しました。\n` +
-            `候補者: ${setupData.candidates.map((user, index) => `${index + 1}.${user.userId}`).join(' ')}\n` +
-            `並行公募: ${setupData.allowPublicApply ? 'あり' : 'なし'}\n` +
-            `メッセージ: ${setupData.customMessage}`,
-        });
+        // パネル更新のみで確認メッセージは不要
+        await interaction.deferUpdate();
       } else {
         // 新規ワークフローを作成
         const newWorkflow = await hostWorkflowManager.createWorkflow(
@@ -152,13 +147,8 @@ class PlanConfirmButtonAction extends MessageComponentActionInteraction<Componen
           );
         }
 
-        await interaction.editReply({
-          content:
-            `✅ イベント「${event.name}」の主催者お伺いワークフローを作成しました。\n` +
-            `候補者: ${setupData.candidates.map((user, index) => `${index + 1}.${user.userId}`).join(' ')}\n` +
-            `並行公募: ${setupData.allowPublicApply ? 'あり' : 'なし'}\n` +
-            `メッセージ: ${setupData.customMessage}`,
-        });
+        // パネル更新のみで確認メッセージは不要
+        await interaction.deferUpdate();
       }
 
       // 設定データをクリア

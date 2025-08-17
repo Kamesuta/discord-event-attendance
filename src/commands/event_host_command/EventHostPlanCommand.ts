@@ -251,7 +251,7 @@ class EventHostPlanCommand extends SubcommandInteraction {
         availableUsers: [],
         candidates: [],
         allowPublicApply: existingWorkflow?.allowPublicApply ?? false,
-        customMessage: 'よろしくお願いいたします。',
+        customMessage: '',
       };
     }
 
@@ -263,7 +263,7 @@ class EventHostPlanCommand extends SubcommandInteraction {
       setupData.eventId = eventId;
       setupData.candidates = [];
       setupData.allowPublicApply = existingWorkflow?.allowPublicApply ?? false;
-      setupData.customMessage = 'よろしくお願いいたします。';
+      setupData.customMessage = '';
 
       // 既存ワークフローの候補者を読み込み
       if (existingWorkflow && existingWorkflow.requests) {
@@ -393,12 +393,14 @@ class EventHostPlanCommand extends SubcommandInteraction {
       inline: true,
     });
 
-    // 依頼メッセージを表示
-    embed.addFields({
-      name: '依頼メッセージ',
-      value: setupData.customMessage || '（デフォルト）',
-      inline: false,
-    });
+    // 依頼メッセージを表示（空の場合は非表示）
+    if (setupData.customMessage && setupData.customMessage.trim() !== '') {
+      embed.addFields({
+        name: '依頼メッセージ',
+        value: setupData.customMessage,
+        inline: false,
+      });
+    }
 
     return embed;
   }
@@ -531,12 +533,11 @@ class EventHostPlanCommand extends SubcommandInteraction {
 
     const publicApply = setupData.allowPublicApply ? '公募ON' : '公募OFF';
     const message =
-      setupData.customMessage &&
-      setupData.customMessage !== 'よろしくお願いいたします。'
+      setupData.customMessage && setupData.customMessage.trim() !== ''
         ? setupData.customMessage.length > 15
           ? setupData.customMessage.substring(0, 15) + '...'
           : setupData.customMessage
-        : 'デフォルト';
+        : '未設定';
 
     return `[${candidates}] ${publicApply} "${message}"`;
   }

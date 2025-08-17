@@ -53,8 +53,7 @@ class PlanMessageEditModalAction extends ModalActionInteraction {
 
       // 入力されたメッセージを取得
       const customMessage =
-        interaction.fields.getTextInputValue('custom_message') ||
-        'よろしくお願いいたします。';
+        interaction.fields.getTextInputValue('custom_message') || '';
 
       // 設定データを取得
       const setupData = await eventHostPlanCommand.getSetupData(
@@ -83,12 +82,6 @@ class PlanMessageEditModalAction extends ModalActionInteraction {
 
       // 計画作成パネルも更新
       await eventHostPlanCommand.updatePlanningPanelFromAction(interaction);
-
-      // 成功メッセージを表示
-      await interaction.followUp({
-        content: '依頼メッセージを更新しました。',
-        ephemeral: true,
-      });
     } catch (error) {
       logger.error('依頼メッセージ編集モーダル処理でエラー:', error);
       await interaction.followUp({

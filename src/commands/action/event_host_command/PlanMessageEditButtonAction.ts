@@ -88,7 +88,7 @@ class PlanMessageEditButtonAction extends MessageComponentActionInteraction<Comp
         .setCustomId('custom_message')
         .setLabel('依頼メッセージ')
         .setStyle(TextInputStyle.Paragraph)
-        .setPlaceholder('よろしくお願いいたします。')
+        .setPlaceholder('↑のイベント主催お願いしていい～？')
         .setValue(setupData.customMessage)
         .setRequired(false)
         .setMaxLength(1000);
