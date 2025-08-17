@@ -6,7 +6,7 @@ import {
   VoiceBasedChannel,
 } from 'discord.js';
 import { prisma } from '../utils/prisma.js';
-import { Event, Prisma, User } from '@prisma/client';
+import { Event, Prisma } from '@prisma/client';
 import userManager from './UserManager.js';
 import { logger } from '../utils/log.js';
 
@@ -302,18 +302,18 @@ class EventManager {
   /**
    * Discordイベントの説明文を更新します
    * @param scheduledEvent Discordイベント
-   * @param host 主催者
+   * @param event イベント
    * @returns 更新に成功したかどうか
    */
   async updateEventDescription(
     scheduledEvent: GuildScheduledEvent,
-    host?: User,
+    event?: EventWithHost,
   ): Promise<void> {
     try {
       // 新しい説明文を生成
       const newDescription = this.formatEventDescription(
         scheduledEvent.description,
-        host,
+        event,
       );
 
       // 説明文が同じ場合はスキップ
@@ -331,10 +331,13 @@ class EventManager {
   /**
    * イベントの説明文を加工します
    * @param description 元の説明文
-   * @param host 主催者
+   * @param event イベント
    * @returns 加工後の説明文
    */
-  formatEventDescription(description: string | null, host?: User): string {
+  formatEventDescription(
+    description: string | null,
+    event?: EventWithHost,
+  ): string {
     // 説明文を作成
     const lines = (description ?? '').split('\n');
 
@@ -348,12 +351,31 @@ class EventManager {
       lines[0] = lines[0].replace(/^≪.*?主催≫\s*/, '');
     }
 
+    // 末尾から既存のイベントID情報を削除
+    const eventIdRegex = /\s*\(イベントID:\s*\d+\)$/;
+    if (lines.length > 0) {
+      lines[lines.length - 1] = lines[lines.length - 1].replace(
+        eventIdRegex,
+        '',
+      );
+    }
+
     // 主催者の文言を先頭の行に統合
-    if (host) {
+    if (event?.host) {
       if (lines.length > 0) {
-        lines[0] = `≪${userManager.getUserName(host)}主催≫ ${lines[0]}`;
+        lines[0] = `≪${userManager.getUserName(event.host)}主催≫ ${lines[0]}`;
       } else {
-        lines.push(`≪${userManager.getUserName(host)}主催≫`);
+        lines.push(`≪${userManager.getUserName(event.host)}主催≫`);
+      }
+    }
+
+    // イベントIDを末尾に追加
+    if (event) {
+      if (lines.length > 0) {
+        lines[lines.length - 1] =
+          `${lines[lines.length - 1]} (イベントID: ${event.id})`;
+      } else {
+        lines.push(`(イベントID: ${event.id})`);
       }
     }
 

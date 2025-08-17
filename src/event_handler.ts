@@ -64,10 +64,7 @@ export async function onCreateScheduledEvent(
     });
 
     // Discordイベントの説明文を更新
-    await eventManager.updateEventDescription(
-      scheduledEvent,
-      event.host ?? undefined,
-    );
+    await eventManager.updateEventDescription(scheduledEvent, event);
 
     logger.info(
       `イベントを作成しました: ID=${event.id}, Name=${scheduledEvent.name}`,
@@ -138,10 +135,7 @@ export async function onStartScheduledEvent(
       });
 
       // Discordイベントの説明文を更新
-      await eventManager.updateEventDescription(
-        scheduledEvent,
-        event.host ?? undefined,
-      );
+      await eventManager.updateEventDescription(scheduledEvent, event);
     }
     logger.info(
       `イベントを開始しました: ID=${event.id}, Name=${scheduledEvent.name}`,
@@ -211,10 +205,7 @@ export async function onUpdateScheduledEvent(
     }
 
     // Discordイベントを更新
-    await eventManager.updateEventDescription(
-      scheduledEvent,
-      event.host ?? undefined,
-    );
+    await eventManager.updateEventDescription(scheduledEvent, event);
 
     await prisma.event.update({
       where: {
@@ -227,6 +218,7 @@ export async function onUpdateScheduledEvent(
         channelId: scheduledEvent.channel.id,
         description: eventManager.formatEventDescription(
           scheduledEvent.description,
+          event,
         ),
         coverImage: scheduledEvent.coverImageURL({ size: coverImageSize }),
         scheduleTime: scheduledEvent.scheduledStartAt,

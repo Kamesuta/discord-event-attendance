@@ -106,7 +106,7 @@ class SetupUserSelectAction extends MessageComponentActionInteraction<ComponentT
       .fetch(eventId)
       .catch(() => undefined);
     if (scheduledEvent) {
-      await eventManager.updateEventDescription(scheduledEvent, hostUser);
+      await eventManager.updateEventDescription(scheduledEvent, updatedEvent);
     }
 
     // イベントに関連する全メッセージを更新

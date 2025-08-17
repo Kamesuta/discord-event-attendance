@@ -78,7 +78,7 @@ class EventCreatorScheduleCopyCommand extends SubcommandInteraction {
       // 説明文を作成
       const formattedDescription = eventManager.formatEventDescription(
         event.description,
-        event.host ?? undefined,
+        event,
       );
 
       return [

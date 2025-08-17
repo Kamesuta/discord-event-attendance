@@ -13,8 +13,7 @@ import { parseSearch } from '../../event/searchParser.js';
 import statusEventListCommand, {
   EventDetail,
 } from '../status_command/StatusEventListCommand.js';
-import eventManager from '../../event/EventManager.js';
-import { Event } from '@prisma/client';
+import eventManager, { EventWithHost } from '../../event/EventManager.js';
 import { parseDate } from '../../event/periodParser.js';
 import eventCreatorCommand from './EventCreatorCommand.js';
 import userManager from '../../event/UserManager.js';
@@ -59,7 +58,7 @@ class EventCreatorCreateCommand extends SubcommandInteraction {
     // 検索条件
     const search = interaction.options.getString('search');
     const eventId = Number(search);
-    let event: Event | undefined;
+    let event: EventWithHost | undefined;
     if (!isNaN(eventId)) {
       // イベントIDからイベントを取得
       event = (await eventManager.getEventFromId(eventId)) ?? undefined;
@@ -122,7 +121,7 @@ class EventCreatorCreateCommand extends SubcommandInteraction {
         name: event.name,
         description: eventManager.formatEventDescription(
           event.description,
-          host,
+          event,
         ),
         scheduledStartTime: date,
         privacyLevel: GuildScheduledEventPrivacyLevel.GuildOnly,

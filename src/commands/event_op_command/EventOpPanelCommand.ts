@@ -92,7 +92,7 @@ class EventOpPanelCommand extends SubcommandInteraction {
         .fetch(event.eventId)
         .catch(() => undefined);
       if (scheduledEvent) {
-        await eventManager.updateEventDescription(scheduledEvent, hostUser);
+        await eventManager.updateEventDescription(scheduledEvent, event);
       }
 
       // イベントに関連する全メッセージを更新
