@@ -1,4 +1,5 @@
 import sharp, { OverlayOptions } from 'sharp';
+import twemoji from '@twemoji/api';
 
 /**
  * バナー画像生成などの共通処理ユーティリティ
@@ -48,18 +49,24 @@ export class BannerImageUtil {
   }
 
   /**
-   * Discordのカスタム絵文字から画像URLを取得する
+   * Discordの絵文字（カスタムまたはUnicode）から画像URLを取得する
    * @param emoji 絵文字文字列
-   * @returns 画像URL（カスタム絵文字の場合）、またはnull（Unicode絵文字の場合）
+   * @returns 画像URL
    */
   static getEmojiImageUrl(emoji: string): string | null {
-    // Discordのカスタム絵文字の形式: <:name:id>
-    const match = emoji.match(/<:([^:]+):(\d+)>/);
-    if (match) {
-      const [, _name, id] = match;
+    // Discordのカスタム絵文字の形式: <:name:id> または <a:name:id>
+    const customEmojiMatch = emoji.match(/<a?:[^:]+:(\d+)>/);
+    if (customEmojiMatch) {
+      const id = customEmojiMatch[1];
       return `https://cdn.discordapp.com/emojis/${id}.png`;
     }
-    return null;
+
+    // Unicode絵文字の場合、twemojiを使って画像URLに変換する
+    const cp = twemoji.convert.toCodePoint(emoji).split('-')[0];
+    if (cp === '') {
+      return null; // twemojiにない文字
+    }
+    return `${twemoji.base}/svg/${cp}.svg`;
   }
 
   /**
@@ -90,7 +97,6 @@ export class BannerImageUtil {
 
     // 絵文字サイズを定数化（整数にキャスト）
     const actualEmojiSize = Math.floor(emojiSize * 0.8);
-    const emojiFontSize = Math.floor(emojiSize * 0.6);
     const emojiCircleSize = actualEmojiSize + 4;
 
     let backgroundImage: Buffer;
@@ -124,7 +130,7 @@ export class BannerImageUtil {
     // 合成用の要素を準備
     const compositeElements: OverlayOptions[] = [];
 
-    // 絵文字画像を処理（カスタム絵文字の場合）
+    // 絵文字画像を処理（カスタム絵文字またはUnicode絵文字の場合）
     let emojiImageBuffer: Buffer | null = null;
     if (emoji) {
       const emojiImageUrl = this.getEmojiImageUrl(emoji);
@@ -163,26 +169,6 @@ export class BannerImageUtil {
         
         <!-- 下に行くほど濃くなる黒のグラデーションオーバーレイ -->
         <rect width="100%" height="100%" fill="url(#black-gradient)" />
-        
-        <!-- 絵文字（Unicode絵文字の場合） -->
-        ${
-          emoji && !emojiImageBuffer
-            ? `<circle 
-          cx="${emojiPadding + actualEmojiSize / 2}" 
-          cy="${outputHeight - emojiPadding - actualEmojiSize / 2}" 
-          r="${actualEmojiSize / 2 + 2}" 
-          fill="white" 
-        />
-        <text 
-          x="${emojiPadding + actualEmojiSize / 2}" 
-          y="${outputHeight - emojiPadding - actualEmojiSize / 2 + 2}" 
-          font-size="${emojiFontSize}" 
-          text-anchor="middle" 
-          fill="#333333" 
-          dominant-baseline="central"
-        >${emoji}</text>`
-            : ''
-        }
         
         <!-- イベント名テキスト -->
         <text 
