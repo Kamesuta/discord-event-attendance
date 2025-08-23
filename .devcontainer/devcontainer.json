@@ -1,0 +1,17 @@
+{
+  "name": "discord-event-attendance",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:22",
+  "forwardPorts": [3306],
+  "remoteUser": "node",
+  "postCreateCommand": "bash -lc 'set -euo pipefail; sudo apt-get update && sudo apt-get install -y --no-install-recommends mariadb-client && (npm install -g @google/gemini-cli || true) && (gemini --version || true) && echo Done'",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "Prisma.prisma",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "mhutchie.git-graph"
+      ]
+    }
+  }
+}

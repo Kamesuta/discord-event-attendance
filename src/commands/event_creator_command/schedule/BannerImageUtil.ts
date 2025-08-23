@@ -188,7 +188,7 @@ export class BannerImageUtil {
         <text 
           x="${emoji ? emojiPadding + actualEmojiSize + padding : emojiPadding + padding}" 
           y="${outputHeight - emojiPadding - fontSize / 2}" 
-          font-family="Arial, sans-serif" 
+          font-family="keifont, Arial, sans-serif" 
           font-size="${fontSize}" 
           font-weight="bold"
           fill="${textColor}" 

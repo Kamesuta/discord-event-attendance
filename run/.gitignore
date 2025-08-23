@@ -1,3 +1,5 @@
 *
 !.gitignore
 !config.default.toml
+!fonts/
+!fonts/*
