@@ -3,7 +3,7 @@
   "image": "mcr.microsoft.com/devcontainers/javascript-node:22",
   "forwardPorts": [3306],
   "remoteUser": "node",
-  "postCreateCommand": "bash -lc 'set -euo pipefail; sudo apt-get update && sudo apt-get install -y --no-install-recommends mariadb-client && (npm install -g @google/gemini-cli || true) && (gemini --version || true) && echo Done'",
+  "postCreateCommand": "bash -lc 'set -euo pipefail; ln -sf /run/user/1000/gnupg/S.gpg-agent ~/.gnupg/S.gpg-agent && sudo apt-get update && sudo apt-get install -y --no-install-recommends mariadb-client && (npm install -g @google/gemini-cli || true) && (gemini --version || true) && echo Done'",
   "customizations": {
     "vscode": {
       "extensions": [
@@ -13,5 +13,8 @@
         "mhutchie.git-graph"
       ]
     }
-  }
+  },
+  "mounts": [
+    "source=/run/user/1000/gnupg,target=/run/user/1000/gnupg,type=bind"
+  ]
 }
