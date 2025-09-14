@@ -11,6 +11,7 @@ import { Prisma } from '@prisma/client';
 import splitStrings from '../../event/splitStrings.js';
 import { parsePeriod } from '../../event/periodParser.js';
 import { parseSearch } from '../../event/searchParser.js';
+import { eventIncludeHost } from '../../event/EventManager.js';
 
 /**
  * イベントの取得条件
@@ -23,7 +24,7 @@ export const eventIncludeDetail = {
       },
     },
     games: true,
-    host: true,
+    ...eventIncludeHost.include,
   },
 };
 /**

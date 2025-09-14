@@ -14,7 +14,7 @@ import {
   TextBasedChannel,
   ThreadAutoArchiveDuration,
 } from 'discord.js';
-import { EventWithHost } from '../event/EventManager.js';
+import { eventIncludeHost, EventWithHost } from '../event/EventManager.js';
 import { MessageUpdater, MessageUpdateContext } from './MessageUpdater.js';
 import { config } from '../utils/config.js';
 import { client } from '../utils/client.js';
@@ -74,7 +74,7 @@ class EventInfoMessageUpdater implements MessageUpdater {
     // イベント情報を取得
     const event = await prisma.event.findUnique({
       where: { id: eventId },
-      include: { host: true },
+      ...eventIncludeHost,
     });
     if (!event) {
       throw new Error('イベントが見つかりませんでした');

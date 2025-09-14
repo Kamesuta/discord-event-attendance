@@ -20,6 +20,7 @@ model Event {
   description String? @db.VarChar(4096)
   coverImage  String? @db.VarChar(512)
   hostId      Int?
+  preparerId  Int?
   messageId   String?
 
   active       Int       @default(1)
@@ -32,7 +33,8 @@ model Event {
   games       GameResult[]
   gameResults UserGameResult[]
   userMutes   UserMute[]
-  host        User?            @relation(fields: [hostId], references: [id])
+  host        User?            @relation("EventToHost", fields: [hostId], references: [id])
+  preparer    User?            @relation("EventToPreparer", fields: [preparerId], references: [id])
 }
 
 model User {
@@ -47,11 +49,12 @@ model User {
   updatedAt       DateTime @updatedAt
 
   // 関連
-  voiceLogs    VoiceLog[]
-  stats        UserStat[]
-  gameResults  UserGameResult[]
-  userMutes    UserMute[]
-  hostedEvents Event[]
+  voiceLogs      VoiceLog[]
+  stats          UserStat[]
+  gameResults    UserGameResult[]
+  userMutes      UserMute[]
+  hostedEvents   Event[]          @relation("EventToHost")
+  preparedEvents Event[]          @relation("EventToPreparer")
 }
 
 model VoiceLog {

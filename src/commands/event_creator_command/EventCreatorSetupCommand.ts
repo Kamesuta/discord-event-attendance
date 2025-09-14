@@ -14,6 +14,7 @@ import {
 import { SubcommandInteraction } from '../base/command_base.js';
 import { config } from '../../utils/config.js';
 import setupUserSelectAction from '../action/event_setup_command/SetupUserSelectAction.js';
+import setupPreparerSelectAction from '../action/event_setup_command/SetupPreparerSelectAction.js';
 import setupEventSelectAction from '../action/event_setup_command/SetupEventSelectAction.js';
 import { prisma } from '../../utils/prisma.js';
 import eventCreatorCommand from './EventCreatorCommand.js';
@@ -49,7 +50,7 @@ class EventCreatorSetupCommand extends SubcommandInteraction {
 
   command = new SlashCommandSubcommandBuilder()
     .setName('setup')
-    .setDescription('1週間分のイベントの主催者を設定します');
+    .setDescription('1週間分のイベントの主催者と準備者を設定します');
 
   async onCommand(interaction: ChatInputCommandInteraction): Promise<void> {
     await interaction.deferReply({ ephemeral: true });
@@ -127,12 +128,14 @@ class EventCreatorSetupCommand extends SubcommandInteraction {
           ? `<t:${Math.floor(date.getTime() / 1000)}:D>`
           : '未定';
         const eventInfo = `${dateStr} [「${event?.name ?? scheduledEvent?.name ?? '？'}」(ID: ${event?.id ?? '？'})](https://discord.com/events/${config.guild_id}/${scheduledEvent.id})`;
-        const hostInfo = event
-          ? event.host?.userId
-            ? `<@${event.host.userId}>`
-            : '主催者なし'
-          : 'イベント未生成';
-        return `${eventInfo}: ${hostInfo}`;
+        const hostName = event?.host?.userId
+          ? `<@${event.host.userId}>`
+          : 'なし';
+        const preparerDisplay = event?.preparer?.userId
+          ? ` / 準備者: <@${event.preparer.userId}>`
+          : '';
+
+        return `${eventInfo}: 主催者: ${hostName}${preparerDisplay}`;
       })
       .join('\n');
 
@@ -165,6 +168,9 @@ class EventCreatorSetupCommand extends SubcommandInteraction {
         ),
         new ActionRowBuilder<UserSelectMenuBuilder>().addComponents(
           setupUserSelectAction.create(selectedEvent),
+        ),
+        new ActionRowBuilder<UserSelectMenuBuilder>().addComponents(
+          setupPreparerSelectAction.create(selectedEvent),
         ),
       ],
     };
