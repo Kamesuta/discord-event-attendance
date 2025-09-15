@@ -1,10 +1,17 @@
-import { Message, GuildScheduledEventStatus, EmbedBuilder } from 'discord.js';
+import {
+  Message,
+  GuildScheduledEventStatus,
+  EmbedBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+} from 'discord.js';
 import { EventWithHost, eventIncludeHost } from '../event/EventManager.js';
 import { MessageUpdater, MessageUpdateContext } from './MessageUpdater.js';
 import { config } from '../utils/config.js';
 import { client } from '../utils/client.js';
 import { prisma } from '../utils/prisma.js';
 import messageEditor from '../event/MessageEditor.js';
+import preparationStatusReportButtonAction from '../commands/action/preparation_status_command/PreparationStatusReportButtonAction.js';
 
 /**
  * 準備状況メッセージ用のMessageUpdater実装
@@ -36,6 +43,7 @@ class PreparationStatusMessageUpdater implements MessageUpdater {
     return await messageEditor.editMessage(message, {
       content: content,
       embeds: [embed],
+      components: this.createPreparationStatusComponents(),
       allowedMentions: { users: [] },
     });
   }
@@ -126,6 +134,18 @@ class PreparationStatusMessageUpdater implements MessageUpdater {
       .setColor('#ff8c00');
 
     return { content: headerContent, embed: embed };
+  }
+
+  /**
+   * 準備状況パネル下部のコンポーネント群を生成
+   * @returns コンポーネント群
+   */
+  createPreparationStatusComponents(): ActionRowBuilder<ButtonBuilder>[] {
+    return [
+      new ActionRowBuilder<ButtonBuilder>().addComponents(
+        preparationStatusReportButtonAction.create(),
+      ),
+    ];
   }
 }
 
