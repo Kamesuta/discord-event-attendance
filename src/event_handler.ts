@@ -1,5 +1,7 @@
 import { Event, PrismaClient, User } from '@prisma/client';
 import {
+  ActionRowBuilder,
+  ButtonBuilder,
   GuildScheduledEvent,
   GuildScheduledEventStatus,
   PartialGuildScheduledEvent,
@@ -19,6 +21,7 @@ import eventOpPanelCommand from './commands/event_op_command/EventOpPanelCommand
 import groupBy from 'lodash/groupBy.js';
 import userManager from './event/UserManager.js';
 import eventOpTodayCommand from './commands/event_op_command/EventOpTodayCommand.js';
+import PreparationStatusReportButtonAction from './commands/action/preparation_status_command/PreparationStatusReportButtonAction.js';
 
 const prisma = new PrismaClient();
 
@@ -625,6 +628,121 @@ export async function updateSchedules(): Promise<void> {
 
     // ログを出力
     loggerSchedule.info('↑スケジュールを更新しました');
+
+    // 準備リマインドのスケジュールを登録
+    const preparerReminderJob = scheduleJob(
+      { rule: '0 18 * * *', tz: 'Asia/Tokyo' },
+      async (fireDate) => {
+        loggerSchedule.info('準備リマインドのジョブを実行します');
+        try {
+          const contactChannel = await guild.channels
+            .fetch(config.event_contact_channel_id)
+            .catch(() => undefined);
+          if (!contactChannel?.isTextBased()) {
+            loggerSchedule.warn('リマインドを出すチャンネルが見つかりません');
+            return;
+          }
+
+          // 4日前と3日前のリマインド
+          for (const days of [4, 3]) {
+            const reminderTargetDate = new Date(fireDate);
+            reminderTargetDate.setDate(reminderTargetDate.getDate() + days);
+            const reminderStart = new Date(reminderTargetDate);
+            reminderStart.setHours(0, 0, 0, 0);
+            const reminderEnd = new Date(reminderTargetDate);
+            reminderEnd.setHours(23, 59, 59, 999);
+
+            const reminderEvents = await prisma.event.findMany({
+              where: {
+                active: GuildScheduledEventStatus.Scheduled,
+                prepareStatus: false,
+                preparerId: { not: null },
+                scheduleTime: {
+                  gte: reminderStart,
+                  lte: reminderEnd,
+                },
+              },
+              include: {
+                preparer: true,
+              },
+            });
+
+            loggerSchedule.info(
+              `${days}日前リマインド対象: ${reminderEvents.length}件`,
+            );
+            for (const event of reminderEvents) {
+              if (!event.preparer) continue;
+              const unixTime = Math.floor(
+                (event.scheduleTime?.getTime() ?? 0) / 1000,
+              );
+              const message = `<@${event.preparer.userId}> さん、「${event.name}」(ID: ${event.id}, 日付: <t:${unixTime}:D>) の準備状況が未完了です。(${days}日前のリマインドです)`;
+              await contactChannel.send({
+                content: message,
+                allowedMentions: { users: [event.preparer.userId] },
+                components: [
+                  new ActionRowBuilder<ButtonBuilder>().addComponents(
+                    PreparationStatusReportButtonAction.create(),
+                  ),
+                ],
+              });
+              loggerSchedule.info(
+                `準備リマインド(${days}日前)を送信しました: EventID=${event.id}, PreparerID=${event.preparer.userId}`,
+              );
+            }
+          }
+
+          // 2日前と1日前のエスカレーション
+          for (const days of [2, 1]) {
+            const escalationTargetDate = new Date(fireDate);
+            escalationTargetDate.setDate(escalationTargetDate.getDate() + days);
+            const escalationStart = new Date(escalationTargetDate);
+            escalationStart.setHours(0, 0, 0, 0);
+            const escalationEnd = new Date(escalationTargetDate);
+            escalationEnd.setHours(23, 59, 59, 999);
+
+            const escalationEvents = await prisma.event.findMany({
+              where: {
+                active: GuildScheduledEventStatus.Scheduled,
+                prepareStatus: false,
+                preparerId: { not: null },
+                scheduleTime: {
+                  gte: escalationStart,
+                  lte: escalationEnd,
+                },
+              },
+            });
+
+            loggerSchedule.info(
+              `${days}日前エスカレーション対象: ${escalationEvents.length}件`,
+            );
+            for (const event of escalationEvents) {
+              const unixTime = Math.floor(
+                (event.scheduleTime?.getTime() ?? 0) / 1000,
+              );
+              const message = `<@&${config.remind_admin_role_id}> 「${event.name}」(ID: ${event.id}, 日付: <t:${unixTime}:D>) の準備が未完了です。(${days}日前のリマインドです) \n対応をご確認ください。`;
+              await contactChannel.send({
+                content: message,
+                allowedMentions: { roles: [config.remind_admin_role_id] },
+                components: [
+                  new ActionRowBuilder<ButtonBuilder>().addComponents(
+                    PreparationStatusReportButtonAction.create(),
+                  ),
+                ],
+              });
+              loggerSchedule.info(
+                `準備エスカレーション(${days}日前)を送信しました: EventID=${event.id}`,
+              );
+            }
+          }
+        } catch (error) {
+          loggerSchedule.error('準備リマインドの送信に失敗しました:', error);
+        }
+      },
+    );
+    schedules['preparer-reminder'] = [preparerReminderJob];
+    loggerSchedule.info(
+      `準備リマインドのスケジュールを登録しました: ${preparerReminderJob.nextInvocation()?.toLocaleString()}`,
+    );
   } catch (error) {
     loggerSchedule.error('スケジュールの更新に失敗しました:', error);
   }

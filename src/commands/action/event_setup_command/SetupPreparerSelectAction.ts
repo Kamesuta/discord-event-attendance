@@ -17,7 +17,7 @@ import userManager from '../../../event/UserManager.js';
 import { messageUpdateManager } from '../../../utils/client.js';
 import { logger } from '../../../utils/log.js';
 
-class SetupUserSelectAction extends MessageComponentActionInteraction<ComponentType.UserSelect> {
+class SetupPreparerSelectAction extends MessageComponentActionInteraction<ComponentType.UserSelect> {
   /**
    * ボタンを作成
    * @param event イベント
@@ -32,12 +32,12 @@ class SetupUserSelectAction extends MessageComponentActionInteraction<ComponentT
     // ダイアログを作成
     const userSelect = new UserSelectMenuBuilder()
       .setCustomId(customId)
-      .setPlaceholder('主催者を選択してください')
+      .setPlaceholder('準備者を選択してください')
       .setMinValues(0)
       .setMaxValues(1);
 
-    if (event?.event?.host?.userId) {
-      userSelect.setDefaultUsers([event.event.host.userId]);
+    if (event?.event?.preparer?.userId) {
+      userSelect.setDefaultUsers([event.event.preparer.userId]);
     }
 
     return userSelect;
@@ -65,10 +65,10 @@ class SetupUserSelectAction extends MessageComponentActionInteraction<ComponentT
       return;
     }
 
-    // ホストユーザーを取得
-    const hostUserMember = interaction.members.first();
-    const hostUser = hostUserMember
-      ? await userManager.getOrCreateUser(hostUserMember)
+    // 準備者ユーザーを取得
+    const preparerUserMember = interaction.members.first();
+    const preparerUser = preparerUserMember
+      ? await userManager.getOrCreateUser(preparerUserMember)
       : undefined;
 
     // イベントを取得
@@ -97,17 +97,12 @@ class SetupUserSelectAction extends MessageComponentActionInteraction<ComponentT
     // イベントを更新
     const updatedEvent = await prisma.event.update({
       where: { id: event.id },
-      data: { hostId: hostUser?.id ?? null },
+      data: {
+        preparerId: preparerUser?.id ?? null,
+        prepareStatus: preparerUser?.id ? undefined : false,
+      },
       ...eventIncludeHost,
     });
-
-    // Discordイベントの説明文を更新
-    const scheduledEvent = await interaction.guild?.scheduledEvents
-      .fetch(eventId)
-      .catch(() => undefined);
-    if (scheduledEvent) {
-      await eventManager.updateEventDescription(scheduledEvent, updatedEvent);
-    }
 
     // イベントに関連する全メッセージを更新
     if (updatedEvent) {
@@ -115,7 +110,7 @@ class SetupUserSelectAction extends MessageComponentActionInteraction<ComponentT
         const updatedMessages =
           await messageUpdateManager.updateRelatedMessages(updatedEvent);
         logger.info(
-          `主催者変更によりイベント ${updatedEvent.id} の関連メッセージ ${updatedMessages.length} 件を更新`,
+          `準備者変更によりイベント ${updatedEvent.id} の関連メッセージ ${updatedMessages.length} 件を更新`,
         );
       } catch (error) {
         logger.error(
@@ -143,4 +138,7 @@ class SetupUserSelectAction extends MessageComponentActionInteraction<ComponentT
   }
 }
 
-export default new SetupUserSelectAction('setupus', ComponentType.UserSelect);
+export default new SetupPreparerSelectAction(
+  'setuppr',
+  ComponentType.UserSelect,
+);

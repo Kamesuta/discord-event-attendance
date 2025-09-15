@@ -16,6 +16,7 @@ import { logger } from '../utils/log.js';
 export const eventIncludeHost = {
   include: {
     host: true,
+    preparer: true,
   },
 };
 
