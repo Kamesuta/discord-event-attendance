@@ -39,25 +39,14 @@ class DetailMessageUpdater implements MessageUpdater {
    * @returns 判定結果
    */
   canParseMessage(message: Message): boolean {
-    // バナー画像が一致するか比較
-    const mediaGallery = message.components[0];
-    if (mediaGallery?.type !== ComponentType.MediaGallery) return false;
-
-    const mediaUrl = mediaGallery.items?.[0].media.url;
-    const bannerUrl = config.event_banner_url;
-    if (!mediaUrl || !bannerUrl) return false;
-
-    // URLのパス部分を比較 (query stringは無視)
-    const mediaPath = new URL(mediaUrl).pathname;
-    const bannerPath = new URL(bannerUrl).pathname;
-    if (mediaPath !== bannerPath) return false;
-
-    // アナウンスメッセージを取得
-    const announceMessage = message.components[1];
+    // アナウンスメッセージを取得 (0番目か1番目にある想定)
+    const announceMessage = message.components
+      .slice(0, 2)
+      .find((component) => component.type === ComponentType.TextDisplay);
     if (announceMessage?.type !== ComponentType.TextDisplay) return false;
 
     // 期間情報の正規表現にマッチするかチェック
-    return /<t:\d+:D> 〜 <t:\d+:D>/.test(announceMessage.content);
+    return /<t:\d+:D> 〜 <t:\d+:D> の予定一覧/.test(announceMessage.content);
   }
 
   /**
@@ -121,12 +110,14 @@ class DetailMessageUpdater implements MessageUpdater {
     if (!this.canParseMessage(message)) return null;
 
     // アナウンスメッセージを取得
-    const announceMessage = message.components[1];
+    const announceMessage = message.components
+      .slice(0, 2)
+      .find((component) => component.type === ComponentType.TextDisplay);
     if (announceMessage?.type !== ComponentType.TextDisplay) return null;
 
     // 期間情報を抽出（例: <t:1234567890:D> 〜 <t:1234567891:D>）
     const timeMatch = announceMessage.content.match(
-      /<t:(\d+):D> 〜 <t:(\d+):D>/,
+      /<t:(\d+):D> 〜 <t:(\d+):D> の予定一覧/,
     );
     if (!timeMatch) return null;
     const start = new Date(parseInt(timeMatch[1]) * 1000);
