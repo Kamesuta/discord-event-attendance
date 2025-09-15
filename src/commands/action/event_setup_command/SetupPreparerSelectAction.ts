@@ -101,14 +101,6 @@ class SetupPreparerSelectAction extends MessageComponentActionInteraction<Compon
       ...eventIncludeHost,
     });
 
-    // Discordイベントの説明文を更新
-    const scheduledEvent = await interaction.guild?.scheduledEvents
-      .fetch(eventId)
-      .catch(() => undefined);
-    if (scheduledEvent) {
-      await eventManager.updateEventDescription(scheduledEvent, updatedEvent);
-    }
-
     // イベントに関連する全メッセージを更新
     if (updatedEvent) {
       try {
