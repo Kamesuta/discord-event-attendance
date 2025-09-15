@@ -49,6 +49,9 @@ export interface Config {
   /** 本日の主催者ロールID */
   host_role_id: string;
 
+  /** リマインド管理者ロールID */
+  remind_admin_role_id: string;
+
   /** 絵文字リスト */
   emojis: Record<string, string>;
 
@@ -137,6 +140,12 @@ assert(
 assert(
   config.host_role_id && typeof config.host_role_id === 'string',
   'host_role_id is required and must be a string.',
+);
+
+assert(
+  config.remind_admin_role_id &&
+    typeof config.remind_admin_role_id === 'string',
+  'remind_admin_role_id is required and must be a string.',
 );
 
 assert(
