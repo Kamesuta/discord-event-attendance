@@ -156,18 +156,9 @@ class PanelStopButtonAction extends MessageComponentActionInteraction<ComponentT
       await onEndEvent(eventAfterStop, scheduledEvent.channel);
     }
 
-    // イベントに関連する全メッセージを汎用的に更新
-    try {
-      const updatedMessages =
-        await messageUpdateManager.updateRelatedMessages(event);
-      logger.info(
-        `イベント ${event.id} の関連メッセージ ${updatedMessages.length} 件を更新`,
-      );
-    } catch (error) {
-      logger.error(
-        `関連メッセージ更新中にエラーが発生しました: ${String(error)}`,
-      );
-    }
+    // イベントに関連する全メッセージの更新をスケジュール
+    messageUpdateManager.enqueue(event.id);
+    logger.info(`イベント ${event.id} の関連メッセージ更新をスケジュール`);
 
     // アナウンスチャンネルのスレッド処理
     if (

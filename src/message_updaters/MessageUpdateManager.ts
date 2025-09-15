@@ -2,6 +2,7 @@ import { Message } from 'discord.js';
 import { MessageUpdater, MessageUpdateContext } from './MessageUpdater.js';
 import { EventWithHost } from '../event/EventManager.js';
 import { logger } from '../utils/log.js';
+import { MessageUpdateScheduler } from './MessageUpdateScheduler.js';
 
 /**
  * メッセージ更新マネージャー
@@ -12,7 +13,14 @@ class MessageUpdateManager {
    * MessageUpdateManagerを作成
    * @param _updaters 登録するMessageUpdaterの配列
    */
-  constructor(private _updaters: MessageUpdater[]) {}
+  constructor(private _updaters: MessageUpdater[]) {
+    this._scheduler = new MessageUpdateScheduler(this, 60_000);
+  }
+
+  /**
+   * 非同期更新スケジューラ
+   */
+  private _scheduler: MessageUpdateScheduler;
 
   /**
    * メッセージを解析して適切なUpdaterを見つける
@@ -91,6 +99,22 @@ class MessageUpdateManager {
       `イベント ${event.id} の関連メッセージ ${updatedMessages.length} 件を更新`,
     );
     return updatedMessages;
+  }
+
+  /**
+   * 更新要求をバッチ実行としてスケジュール
+   * @param eventOrId イベントまたはイベントID
+   */
+  enqueue(eventOrId: number | EventWithHost): void {
+    this._scheduler.enqueue(eventOrId);
+  }
+
+  /**
+   * 保留分を即時実行
+   * @returns なし
+   */
+  flushNow(): Promise<void> {
+    return this._scheduler.flushNow();
   }
 }
 
