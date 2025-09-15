@@ -28,13 +28,14 @@ model Event {
   startTime    DateTime?
   endTime      DateTime?
 
-  voiceLogs   VoiceLog[]
-  stats       UserStat[]
-  games       GameResult[]
-  gameResults UserGameResult[]
-  userMutes   UserMute[]
-  host        User?            @relation("EventToHost", fields: [hostId], references: [id])
-  preparer    User?            @relation("EventToPreparer", fields: [preparerId], references: [id])
+  voiceLogs     VoiceLog[]
+  stats         UserStat[]
+  games         GameResult[]
+  gameResults   UserGameResult[]
+  userMutes     UserMute[]
+  host          User?            @relation("EventToHost", fields: [hostId], references: [id])
+  preparer      User?            @relation("EventToPreparer", fields: [preparerId], references: [id])
+  prepareStatus Boolean          @default(false)
 }
 
 model User {

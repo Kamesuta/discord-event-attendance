@@ -11,6 +11,7 @@ import eventCreatorCommand from './EventCreatorCommand.js';
 import { eventIncludeHost, EventWithHost } from '../../event/EventManager.js';
 import { logger } from '../../utils/log.js';
 import calendarMessageUpdater from '../../message_updaters/CalendarMessageUpdater.js';
+import preparationStatusMessageUpdater from '../../message_updaters/PreparationStatusMessageUpdater.js';
 import detailMessageUpdater from '../../message_updaters/DetailMessageUpdater.js';
 import { parseDate } from '../../event/periodParser.js';
 
@@ -49,6 +50,17 @@ class EventCreatorScheduleCommand extends SubcommandInteraction {
       return;
     }
 
+    // 準備状況パネルチャンネルを取得
+    const eventPanelChannel = await interaction.guild?.channels.fetch(
+      config.event_panel_channel_id,
+    );
+    if (!eventPanelChannel?.isTextBased()) {
+      await interaction.editReply(
+        '準備状況パネルチャンネルが見つかりませんでした。',
+      );
+      return;
+    }
+
     // 期間を計算 (水曜日で次の週になるようにする)
     // 現在:11/19(火) → 11/17(日)～11/23(土)
     // 現在:11/20(水) → 11/24(日)～11/30(土)
@@ -80,6 +92,25 @@ class EventCreatorScheduleCommand extends SubcommandInteraction {
       ...eventIncludeHost,
     });
 
+    // カレンダーメッセージを作成
+    const calendarText = calendarMessageUpdater.createCalendarText(
+      events,
+      start,
+      end,
+    );
+
+    // 詳細メッセージを作成
+    const { components, attachments } =
+      await detailMessageUpdater.createDetailComponents(events, start, end);
+
+    // 準備状況パネルメッセージを作成
+    const preparationStatusText =
+      preparationStatusMessageUpdater.createPreparationStatusText(
+        events,
+        start,
+        end,
+      );
+
     if (show) {
       // 古いメッセージを削除
       const messages = await scheduleChannel.messages.fetch({ limit: 100 });
@@ -97,20 +128,23 @@ class EventCreatorScheduleCommand extends SubcommandInteraction {
           await oldestMessage.delete();
         }
       }
-    }
 
-    // カレンダーメッセージを作成
-    const calendarText = calendarMessageUpdater.createCalendarText(
-      events,
-      start,
-      end,
-    );
+      // 古い準備状況パネルメッセージを削除
+      const panelMessages = await eventPanelChannel.messages.fetch({
+        limit: 100,
+      });
+      const oldPanelMessages = panelMessages.filter((msg) => {
+        return (
+          msg.author.id === interaction.client.user.id &&
+          msg.content.startsWith('## 📝 準備状況パネル')
+        );
+      });
 
-    // 詳細メッセージを作成
-    const { components, attachments } =
-      await detailMessageUpdater.createDetailComponents(events, start, end);
+      // 全て削除
+      for (const [, msg] of oldPanelMessages) {
+        await msg.delete();
+      }
 
-    if (show) {
       await scheduleChannel.send({
         content: calendarText,
         flags: MessageFlags.SuppressEmbeds,
@@ -120,13 +154,22 @@ class EventCreatorScheduleCommand extends SubcommandInteraction {
         files: attachments,
         flags: MessageFlags.IsComponentsV2 | MessageFlags.SuppressEmbeds,
       });
+      await eventPanelChannel.send({
+        content: preparationStatusText,
+        flags: MessageFlags.SuppressEmbeds,
+      });
 
       // メッセージを公開
       await detailMessage?.crosspost().catch((e) => {
         // エラーが発生した場合はログを出力して続行
-        logger.error('メッセージの公開に失敗しました。', e);
+        logger.error(
+          'メッセージの公開に失敗しました。しかし、処理は続行します。',
+          e,
+        );
       });
-      await interaction.editReply('イベント予定を投稿しました！');
+      await interaction.editReply(
+        'イベント予定と準備状況パネルを投稿しました！',
+      );
     } else {
       await interaction.followUp({
         content: calendarText,
