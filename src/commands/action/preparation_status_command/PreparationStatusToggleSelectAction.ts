@@ -11,6 +11,7 @@ import {
 import { prisma } from '../../../utils/prisma.js';
 import { checkCommandPermission } from '../../../event/checkCommandPermission.js';
 import { messageUpdateManager } from '../../../utils/client.js';
+import { logger } from '../../../utils/log.js';
 
 class PreparationStatusToggleSelectAction extends MessageComponentActionInteraction<ComponentType.StringSelect> {
   override create(events: EventWithHost[]): StringSelectMenuBuilder {
@@ -95,9 +96,33 @@ class PreparationStatusToggleSelectAction extends MessageComponentActionInteract
 
     // パネルなど関連メッセージを更新
     try {
-      await messageUpdateManager.updateRelatedMessages(updated);
-    } catch {
-      // 続行（失敗してもOK）
+      const updatedMessages =
+        await messageUpdateManager.updateRelatedMessages(updated);
+      logger.info(
+        `準備状況変更によりイベント ${event.id} の関連メッセージ ${updatedMessages.length} 件を更新`,
+      );
+    } catch (error) {
+      logger.error(
+        `関連メッセージ更新中にエラーが発生しました: ${String(error)}`,
+      );
+    }
+
+    // 連絡チャンネルに通知
+    const contactChannelId = (await import('../../../utils/config.js')).config
+      .event_contact_channel_id;
+    const contactChannel =
+      interaction.guild?.channels.cache.get(contactChannelId);
+    if (contactChannel?.isTextBased()) {
+      const statusText = updated.prepareStatus
+        ? '準備を完了しました。'
+        : '準備の完了を解除しました。';
+      const dateStr = updated.scheduleTime
+        ? `<t:${Math.floor(updated.scheduleTime.getTime() / 1000)}:D>`
+        : '未定';
+      await contactChannel.send({
+        content: `<@${interaction.user.id}> が ${dateStr} 「${updated.name}」(ID: ${updated.id}) の${statusText}`,
+        allowedMentions: { users: [] },
+      });
     }
 
     await interaction.editReply({
