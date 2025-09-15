@@ -97,7 +97,10 @@ class SetupPreparerSelectAction extends MessageComponentActionInteraction<Compon
     // イベントを更新
     const updatedEvent = await prisma.event.update({
       where: { id: event.id },
-      data: { preparerId: preparerUser?.id ?? null },
+      data: {
+        preparerId: preparerUser?.id ?? null,
+        prepareStatus: preparerUser?.id ? undefined : false,
+      },
       ...eventIncludeHost,
     });
 

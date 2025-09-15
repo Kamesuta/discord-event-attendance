@@ -88,6 +88,15 @@ class PreparationStatusToggleSelectAction extends MessageComponentActionInteract
       return;
     }
 
+    // 準備者がいないイベントは完了にできない
+    if (!event.preparerId) {
+      await interaction.editReply({
+        content:
+          'このイベントには準備者が設定されていないため、準備完了にできません。',
+      });
+      return;
+    }
+
     const updated = await prisma.event.update({
       where: { id: event.id },
       data: { prepareStatus: !event.prepareStatus },

@@ -50,6 +50,7 @@ class PreparationStatusReportButtonAction extends MessageComponentActionInteract
       events = await prisma.event.findMany({
         where: {
           active: GuildScheduledEventStatus.Scheduled,
+          preparerId: { not: null },
         },
         orderBy: [{ scheduleTime: 'asc' }],
         ...eventIncludeHost,
