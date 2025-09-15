@@ -1,4 +1,9 @@
-import { Message, GuildScheduledEventStatus, MessageFlags } from 'discord.js';
+import {
+  Message,
+  GuildScheduledEventStatus,
+  MessageFlags,
+  EmbedBuilder,
+} from 'discord.js';
 import { EventWithHost, eventIncludeHost } from '../event/EventManager.js';
 import { MessageUpdater, MessageUpdateContext } from './MessageUpdater.js';
 import { config } from '../utils/config.js';
@@ -37,14 +42,17 @@ class PreparationStatusMessageUpdater implements MessageUpdater {
     if (!data) {
       throw new Error('このメッセージは準備状況メッセージではありません');
     }
-    const preparationStatusText = this.createPreparationStatusText(
+    const { content, embed } = this.createPreparationStatusText(
       data.events,
       data.start,
       data.end,
     );
+
     return await messageEditor.editMessage(message, {
-      content: preparationStatusText,
+      content: content,
+      embeds: [embed],
       flags: MessageFlags.SuppressEmbeds,
+      allowedMentions: { users: [] },
     });
   }
 
@@ -114,10 +122,11 @@ class PreparationStatusMessageUpdater implements MessageUpdater {
     events: EventWithHost[],
     start: Date,
     end: Date,
-  ): string {
+  ): { content: string; embed: EmbedBuilder } {
     const startUnix = Math.floor(start.getTime() / 1000);
     const endUnix = Math.floor(end.getTime() / 1000 - 1);
     const dateLine = `-# <t:${startUnix}:D> 〜 <t:${endUnix}:D>`;
+    const headerContent = `## 📝 準備状況パネル\n${dateLine}\n\n`;
 
     let eventListText = '';
     if (events.length === 0) {
@@ -125,6 +134,13 @@ class PreparationStatusMessageUpdater implements MessageUpdater {
     } else {
       eventListText = events
         .map((event) => {
+          const dateStr = event.scheduleTime
+            ? `<t:${Math.floor(event.scheduleTime.getTime() / 1000)}:D>`
+            : '未定';
+          const eventLink = `https://discord.com/events/${config.guild_id}/${event.eventId}`;
+          const hostName = event.host?.userId
+            ? `<@${event.host.userId}>`
+            : 'なし';
           const preparer = event.preparer?.userId
             ? `<@${event.preparer?.userId}>`
             : 'なし';
@@ -133,13 +149,21 @@ class PreparationStatusMessageUpdater implements MessageUpdater {
               ? '✅ 準備完了'
               : '❌ 未完了'
             : '準備不要';
-          const eventName = event.name;
-          return `- ${eventName} (準備者: ${preparer}, 状況: ${status})`;
+
+          return (
+            `- ${dateStr} [「${event.name}」](${eventLink})(ID: ${event.id})\n` +
+            `    - 主催者: ${hostName}, 準備者: ${preparer}, 状況: ${status}`
+          );
         })
         .join('\n');
     }
 
-    return `## 📝 準備状況パネル\n${dateLine}\n\n${eventListText}`;
+    const embed = new EmbedBuilder()
+      .setTitle('🥳イベント準備状況')
+      .setDescription(eventListText)
+      .setColor('#ff8c00');
+
+    return { content: headerContent, embed: embed };
   }
 }
 

@@ -104,7 +104,7 @@ class EventCreatorScheduleCommand extends SubcommandInteraction {
       await detailMessageUpdater.createDetailComponents(events, start, end);
 
     // 準備状況パネルメッセージを作成
-    const preparationStatusText =
+    const { content: preparationContent, embed: preparationEmbed } =
       preparationStatusMessageUpdater.createPreparationStatusText(
         events,
         start,
@@ -155,8 +155,10 @@ class EventCreatorScheduleCommand extends SubcommandInteraction {
         flags: MessageFlags.IsComponentsV2 | MessageFlags.SuppressEmbeds,
       });
       await eventPanelChannel.send({
-        content: preparationStatusText,
+        content: preparationContent,
+        embeds: [preparationEmbed],
         flags: MessageFlags.SuppressEmbeds,
+        allowedMentions: { users: [] },
       });
 
       // メッセージを公開
@@ -182,6 +184,12 @@ class EventCreatorScheduleCommand extends SubcommandInteraction {
           MessageFlags.IsComponentsV2 |
           MessageFlags.SuppressEmbeds |
           MessageFlags.Ephemeral,
+      });
+      await interaction.followUp({
+        content: preparationContent,
+        embeds: [preparationEmbed],
+        flags: MessageFlags.SuppressEmbeds | MessageFlags.Ephemeral,
+        allowedMentions: { users: [] },
       });
     }
   }
