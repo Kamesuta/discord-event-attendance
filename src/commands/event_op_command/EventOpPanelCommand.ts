@@ -95,18 +95,11 @@ class EventOpPanelCommand extends SubcommandInteraction {
         await eventManager.updateEventDescription(scheduledEvent, event);
       }
 
-      // イベントに関連する全メッセージを更新
-      try {
-        const updatedMessages =
-          await messageUpdateManager.updateRelatedMessages(event);
-        logger.info(
-          `主催者変更によりイベント ${event.id} の関連メッセージ ${updatedMessages.length} 件を更新`,
-        );
-      } catch (error) {
-        logger.error(
-          `関連メッセージ更新中にエラーが発生しました: ${String(error)}`,
-        );
-      }
+      // イベントに関連する全メッセージの更新をスケジュール
+      messageUpdateManager.enqueue(event.id);
+      logger.info(
+        `主催者変更によりイベント ${event.id} の関連メッセージ更新をスケジュール`,
+      );
     }
 
     // パネルを表示

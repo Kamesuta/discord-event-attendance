@@ -103,18 +103,11 @@ class PreparationStatusToggleSelectAction extends MessageComponentActionInteract
       ...eventIncludeHost,
     });
 
-    // パネルなど関連メッセージを更新
-    try {
-      const updatedMessages =
-        await messageUpdateManager.updateRelatedMessages(updated);
-      logger.info(
-        `準備状況変更によりイベント ${event.id} の関連メッセージ ${updatedMessages.length} 件を更新`,
-      );
-    } catch (error) {
-      logger.error(
-        `関連メッセージ更新中にエラーが発生しました: ${String(error)}`,
-      );
-    }
+    // パネルなど関連メッセージの更新をスケジュール
+    messageUpdateManager.enqueue(updated.id);
+    logger.info(
+      `準備状況変更によりイベント ${event.id} の関連メッセージ更新をスケジュール`,
+    );
 
     // 連絡チャンネルに通知
     const contactChannelId = (await import('../../../utils/config.js')).config

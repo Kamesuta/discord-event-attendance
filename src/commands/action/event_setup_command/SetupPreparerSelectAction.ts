@@ -104,19 +104,12 @@ class SetupPreparerSelectAction extends MessageComponentActionInteraction<Compon
       ...eventIncludeHost,
     });
 
-    // イベントに関連する全メッセージを更新
+    // イベントに関連する全メッセージの更新をスケジュール
     if (updatedEvent) {
-      try {
-        const updatedMessages =
-          await messageUpdateManager.updateRelatedMessages(updatedEvent);
-        logger.info(
-          `準備者変更によりイベント ${updatedEvent.id} の関連メッセージ ${updatedMessages.length} 件を更新`,
-        );
-      } catch (error) {
-        logger.error(
-          `関連メッセージ更新中にエラーが発生しました: ${String(error)}`,
-        );
-      }
+      messageUpdateManager.enqueue(updatedEvent.id);
+      logger.info(
+        `準備者変更によりイベント ${updatedEvent.id} の関連メッセージ更新をスケジュール`,
+      );
     }
 
     // パネルを表示

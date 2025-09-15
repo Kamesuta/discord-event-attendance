@@ -109,19 +109,12 @@ class SetupUserSelectAction extends MessageComponentActionInteraction<ComponentT
       await eventManager.updateEventDescription(scheduledEvent, updatedEvent);
     }
 
-    // イベントに関連する全メッセージを更新
+    // イベントに関連する全メッセージの更新をスケジュール
     if (updatedEvent) {
-      try {
-        const updatedMessages =
-          await messageUpdateManager.updateRelatedMessages(updatedEvent);
-        logger.info(
-          `主催者変更によりイベント ${updatedEvent.id} の関連メッセージ ${updatedMessages.length} 件を更新`,
-        );
-      } catch (error) {
-        logger.error(
-          `関連メッセージ更新中にエラーが発生しました: ${String(error)}`,
-        );
-      }
+      messageUpdateManager.enqueue(updatedEvent.id);
+      logger.info(
+        `主催者変更によりイベント ${updatedEvent.id} の関連メッセージ更新をスケジュール`,
+      );
     }
 
     // パネルを表示
