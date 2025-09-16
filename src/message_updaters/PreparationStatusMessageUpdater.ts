@@ -37,7 +37,7 @@ class PreparationStatusMessageUpdater implements MessageUpdater {
     message: Message,
     _context?: MessageUpdateContext,
   ): Promise<Message | undefined> {
-    const events = await this._fetchEvents();
+    const events = await this.fetchEvents();
     const { content, embed } = this.createPreparationStatusText(events);
 
     return await messageEditor.editMessage(message, {
@@ -71,7 +71,7 @@ class PreparationStatusMessageUpdater implements MessageUpdater {
    * メッセージからScheduleMessageDataをパース
    * @returns ScheduleMessageDataまたはnull
    */
-  private async _fetchEvents(): Promise<EventWithHost[]> {
+  async fetchEvents(): Promise<EventWithHost[]> {
     // イベント情報を取得 (期間フィルタなし)
     const events: EventWithHost[] = await prisma.event.findMany({
       where: {

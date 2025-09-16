@@ -11,9 +11,9 @@ import eventCreatorCommand from './EventCreatorCommand.js';
 import { eventIncludeHost, EventWithHost } from '../../event/EventManager.js';
 import { logger } from '../../utils/log.js';
 import calendarMessageUpdater from '../../message_updaters/CalendarMessageUpdater.js';
-import preparationStatusMessageUpdater from '../../message_updaters/PreparationStatusMessageUpdater.js';
 import detailMessageUpdater from '../../message_updaters/DetailMessageUpdater.js';
 import { parseDate } from '../../event/periodParser.js';
+import eventCreatorPreparationPanelCommand from './EventCreatorPreparationPanelCommand.js';
 
 class EventCreatorScheduleCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
@@ -46,17 +46,6 @@ class EventCreatorScheduleCommand extends SubcommandInteraction {
     if (!scheduleChannel?.isTextBased()) {
       await interaction.editReply(
         'イベント予定チャンネルが見つかりませんでした。',
-      );
-      return;
-    }
-
-    // 準備状況パネルチャンネルを取得
-    const eventPanelChannel = await interaction.guild?.channels.fetch(
-      config.event_panel_channel_id,
-    );
-    if (!eventPanelChannel?.isTextBased()) {
-      await interaction.editReply(
-        '準備状況パネルチャンネルが見つかりませんでした。',
       );
       return;
     }
@@ -103,12 +92,6 @@ class EventCreatorScheduleCommand extends SubcommandInteraction {
     const { components, attachments } =
       await detailMessageUpdater.createDetailComponents(events, start, end);
 
-    // 準備状況パネルメッセージを作成
-    const { content: preparationContent, embed: preparationEmbed } =
-      preparationStatusMessageUpdater.createPreparationStatusText(events);
-    const preparationComponents =
-      preparationStatusMessageUpdater.createPreparationStatusComponents();
-
     if (show) {
       // 古いメッセージを削除
       const messages = await scheduleChannel.messages.fetch({ limit: 100 });
@@ -127,22 +110,6 @@ class EventCreatorScheduleCommand extends SubcommandInteraction {
         }
       }
 
-      // 古い準備状況パネルメッセージを削除
-      const panelMessages = await eventPanelChannel.messages.fetch({
-        limit: 100,
-      });
-      const oldPanelMessages = panelMessages.filter((msg) => {
-        return (
-          msg.author.id === interaction.client.user.id &&
-          msg.content.startsWith('## 📝 準備状況パネル')
-        );
-      });
-
-      // 全て削除
-      for (const [, msg] of oldPanelMessages) {
-        await msg.delete();
-      }
-
       await scheduleChannel.send({
         content: calendarText,
         flags: MessageFlags.SuppressEmbeds,
@@ -152,12 +119,9 @@ class EventCreatorScheduleCommand extends SubcommandInteraction {
         files: attachments,
         flags: MessageFlags.IsComponentsV2 | MessageFlags.SuppressEmbeds,
       });
-      await eventPanelChannel.send({
-        content: preparationContent,
-        embeds: [preparationEmbed],
-        components: preparationComponents,
-        allowedMentions: { users: [] },
-      });
+
+      // 準備状況パネルを投稿（独立コマンド経由）
+      await eventCreatorPreparationPanelCommand.outputPanel(interaction, true);
 
       // メッセージを公開
       await detailMessage?.crosspost().catch((e) => {
@@ -183,13 +147,8 @@ class EventCreatorScheduleCommand extends SubcommandInteraction {
           MessageFlags.SuppressEmbeds |
           MessageFlags.Ephemeral,
       });
-      await interaction.followUp({
-        content: preparationContent,
-        embeds: [preparationEmbed],
-        components: preparationComponents,
-        flags: MessageFlags.Ephemeral,
-        allowedMentions: { users: [] },
-      });
+      // 準備状況パネルをプレビュー（独立コマンド経由）
+      await eventCreatorPreparationPanelCommand.outputPanel(interaction, false);
     }
   }
 }
