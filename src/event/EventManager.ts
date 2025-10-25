@@ -317,8 +317,8 @@ class EventManager {
         event,
       );
 
-      // 説明文が同じ場合はスキップ
-      if (scheduledEvent.description !== newDescription) {
+      // 説明文が同じ場合はスキップ（Discord側のトリミング動作に対応）
+      if (scheduledEvent.description?.trim() !== newDescription.trim()) {
         // 説明文を更新
         await scheduledEvent.edit({
           description: newDescription,
