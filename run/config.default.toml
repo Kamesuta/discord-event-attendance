@@ -34,6 +34,9 @@ host_role_id = "0000000000000000000"
 # リマインド管理者ロールID
 remind_admin_role_id = "0000000000000000000"
 
+# テキストイベント用のデフォルトチャンネルID
+text_event_channel_id = "0000000000000000000"
+
 # イベントバナー画像URL（オプション）
 # event_banner_url = "https://example.com/banner.png"
 

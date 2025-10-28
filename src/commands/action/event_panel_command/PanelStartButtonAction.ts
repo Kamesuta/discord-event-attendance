@@ -88,11 +88,13 @@ class PanelStartButtonAction extends MessageComponentActionInteraction<Component
     await eventOpAnnounceCommand.showAnnounceMessage(interaction, event);
 
     // チャンネルのステータスを削除
-    await client.rest.put(`${Routes.channel(event.channelId)}/voice-status`, {
-      body: {
-        status: '',
-      },
-    });
+    if (scheduledEvent.channel?.isVoiceBased()) {
+      await client.rest.put(`${Routes.channel(event.channelId)}/voice-status`, {
+        body: {
+          status: '',
+        },
+      });
+    }
 
     // ログに残す
     logger.info(

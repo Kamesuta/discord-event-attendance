@@ -40,12 +40,8 @@ export async function onCreateScheduledEvent(
   scheduledEvent: GuildScheduledEvent,
   host?: User,
 ): Promise<EventWithHost | undefined> {
-  if (!scheduledEvent.channel?.isVoiceBased()) {
-    logger.warn(
-      `VCが指定されていないイベントは無視します: ${scheduledEvent.name}`,
-    );
-    return;
-  }
+  // VCイベントまたは外部イベント（テキストイベント）を受け入れる
+  const channelId = scheduledEvent.channel?.id ?? config.text_event_channel_id;
 
   try {
     const event = await prisma.event.create({
@@ -55,7 +51,7 @@ export async function onCreateScheduledEvent(
         active: scheduledEvent.status,
 
         name: scheduledEvent.name,
-        channelId: scheduledEvent.channel.id,
+        channelId: channelId,
         description: eventManager.formatEventDescription(
           scheduledEvent.description,
         ),
@@ -89,12 +85,8 @@ export async function onCreateScheduledEvent(
 export async function onStartScheduledEvent(
   scheduledEvent: GuildScheduledEvent,
 ): Promise<Event | undefined> {
-  if (!scheduledEvent.channel?.isVoiceBased()) {
-    logger.warn(
-      `VCが指定されていないイベントは無視します: ${scheduledEvent.name}`,
-    );
-    return;
-  }
+  // VCイベントまたは外部イベント（テキストイベント）を受け入れる
+  const channelId = scheduledEvent.channel?.id ?? config.text_event_channel_id;
 
   try {
     // イベント情報を取得
@@ -108,7 +100,7 @@ export async function onStartScheduledEvent(
           startTime: new Date(),
 
           name: scheduledEvent.name,
-          channelId: scheduledEvent.channel.id,
+          channelId: channelId,
           description: eventManager.formatEventDescription(
             scheduledEvent.description,
           ),
@@ -127,7 +119,7 @@ export async function onStartScheduledEvent(
           startTime: new Date(),
 
           name: scheduledEvent.name,
-          channelId: scheduledEvent.channel.id,
+          channelId: channelId,
           description: eventManager.formatEventDescription(
             scheduledEvent.description,
           ),
@@ -153,29 +145,32 @@ export async function onStartScheduledEvent(
     }
 
     // VCに既に参加しているユーザーに対してもログを記録する (Botは無視)
-    const members = Array.from(scheduledEvent.channel.members.values()).filter(
-      (member) => !member.user.bot,
-    );
-    // ユーザーを作成
-    const users = await Promise.all(
-      members.map((member) => userManager.getOrCreateUser(member)),
-    );
-    // ユーザーStatを初期化
-    await prisma.userStat.createMany({
-      data: users.map((user) => ({
-        eventId: event.id,
-        userId: user.id,
-        duration: 0,
-      })),
-    });
-    // VC参加ログを記録する
-    await prisma.voiceLog.createMany({
-      data: users.map((user) => ({
-        eventId: event.id,
-        userId: user.id,
-        join: true,
-      })),
-    });
+    // テキストイベントの場合はチャンネルがないのでスキップ
+    if (scheduledEvent.channel?.isVoiceBased()) {
+      const members = Array.from(
+        scheduledEvent.channel.members.values(),
+      ).filter((member) => !member.user.bot);
+      // ユーザーを作成
+      const users = await Promise.all(
+        members.map((member) => userManager.getOrCreateUser(member)),
+      );
+      // ユーザーStatを初期化
+      await prisma.userStat.createMany({
+        data: users.map((user) => ({
+          eventId: event.id,
+          userId: user.id,
+          duration: 0,
+        })),
+      });
+      // VC参加ログを記録する
+      await prisma.voiceLog.createMany({
+        data: users.map((user) => ({
+          eventId: event.id,
+          userId: user.id,
+          join: true,
+        })),
+      });
+    }
 
     return event;
   } catch (error) {
@@ -193,12 +188,8 @@ export async function onStartScheduledEvent(
 export async function onUpdateScheduledEvent(
   scheduledEvent: GuildScheduledEvent,
 ): Promise<void> {
-  if (!scheduledEvent.channel?.isVoiceBased()) {
-    logger.warn(
-      `VCが指定されていないイベントは無視します: ${scheduledEvent.name}`,
-    );
-    return;
-  }
+  // VCイベントまたは外部イベント（テキストイベント）を受け入れる
+  const channelId = scheduledEvent.channel?.id ?? config.text_event_channel_id;
 
   try {
     // イベント情報を取得
@@ -218,7 +209,7 @@ export async function onUpdateScheduledEvent(
         active: scheduledEvent.status,
 
         name: scheduledEvent.name,
-        channelId: scheduledEvent.channel.id,
+        channelId: channelId,
         description: eventManager.formatEventDescription(
           scheduledEvent.description,
           event,

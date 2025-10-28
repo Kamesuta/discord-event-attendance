@@ -58,6 +58,9 @@ export interface Config {
   /** イベントバナー画像URL */
   event_banner_url?: string;
 
+  /** テキストイベント用チャンネルID */
+  text_event_channel_id: string;
+
   /* eslint-enable @typescript-eslint/naming-convention */
 }
 
@@ -151,4 +154,10 @@ assert(
 assert(
   config.emojis && typeof config.emojis === 'object',
   'emojis is required and must be an object.',
+);
+
+assert(
+  config.text_event_channel_id &&
+    typeof config.text_event_channel_id === 'string',
+  'text_event_channel_id is required and must be a string.',
 );

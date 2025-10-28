@@ -39,6 +39,14 @@ class EventCreatorCreateCommand extends SubcommandInteraction {
     .addUserOption((option) =>
       option.setName('host').setDescription('主催者').setRequired(true),
     )
+    .addChannelOption((option) =>
+      option
+        .setName('channel')
+        .setDescription(
+          'イベントのチャンネル (省略時はコピー元のチャンネルを使用)',
+        )
+        .setRequired(false),
+    )
     .addBooleanOption((option) =>
       option
         .setName('show')
@@ -104,13 +112,39 @@ class EventCreatorCreateCommand extends SubcommandInteraction {
       return;
     }
 
-    // チャンネルを取得
-    const channel = await interaction.guild?.channels
-      .fetch(event.channelId)
-      .catch(() => undefined);
-    if (!channel?.isVoiceBased()) {
+    // チャンネルを取得 (オプションで指定されている場合はそれを使用、なければコピー元から取得)
+    const channelOption = interaction.options.getChannel('channel');
+    const channel = channelOption
+      ? channelOption
+      : await interaction.guild?.channels
+          .fetch(event.channelId)
+          .catch(() => undefined);
+
+    // チャンネル種類による分岐処理
+    let entityType: GuildScheduledEventEntityType;
+    let entityMetadata: { location?: string } | undefined;
+
+    if (!channel) {
       await interaction.editReply({
-        content: 'VCチャンネルが見つかりませんでした',
+        content: 'チャンネルが見つかりませんでした',
+      });
+      return;
+    }
+
+    if (channel.isVoiceBased()) {
+      // VCチャンネル or ステージチャンネル
+      if (channel.type === ChannelType.GuildStageVoice) {
+        entityType = GuildScheduledEventEntityType.StageInstance;
+      } else {
+        entityType = GuildScheduledEventEntityType.Voice;
+      }
+    } else if (channel.isTextBased()) {
+      // テキストチャンネル: External イベントとして作成
+      entityType = GuildScheduledEventEntityType.External;
+      entityMetadata = { location: channel.name };
+    } else {
+      await interaction.editReply({
+        content: '対応していないチャンネルタイプです',
       });
       return;
     }
@@ -124,12 +158,14 @@ class EventCreatorCreateCommand extends SubcommandInteraction {
           event,
         ),
         scheduledStartTime: date,
+        scheduledEndTime:
+          entityType === GuildScheduledEventEntityType.External
+            ? new Date(date.getTime() + 7 * 24 * 60 * 60 * 1000) // 外部イベントは終了時刻が必須なので1週間後に設定
+            : undefined,
         privacyLevel: GuildScheduledEventPrivacyLevel.GuildOnly,
-        entityType:
-          channel.type === ChannelType.GuildStageVoice
-            ? GuildScheduledEventEntityType.StageInstance
-            : GuildScheduledEventEntityType.Voice,
-        channel,
+        entityType,
+        channel: channel.isVoiceBased() ? channel : undefined,
+        entityMetadata,
         image: event.coverImage,
         reason: 'イベントを再利用して作成',
       })
