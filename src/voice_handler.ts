@@ -6,7 +6,7 @@ import {
 } from 'discord.js';
 import { prisma } from './utils/prisma.js';
 import { config } from './utils/config.js';
-import { tallyAttendanceTime } from './event/attendance_time.js';
+import { attendanceService } from './services/AttendanceService.js';
 import { logger } from './utils/log.js';
 import userManager from './event/UserManager.js';
 
@@ -72,7 +72,7 @@ async function createVoiceLog(
     );
     if (!join) {
       // 参加時間を集計する
-      await tallyAttendanceTime(event.id, user, new Date());
+      await attendanceService.tallyAttendanceTime(event.id, user, new Date());
     }
   } catch (error) {
     logger.error('ログの記録に失敗しました。', error);

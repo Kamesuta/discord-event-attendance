@@ -24,7 +24,7 @@ import statusGameMenuAction from '../commands/action/StatusGameMenuAction.js';
 import userManager from '../event/UserManager.js';
 import { gameResultInclude } from '../event/game.js';
 import { logger } from '../utils/log.js';
-import { updateAttendanceTime } from '../event/attendance_time.js';
+import { attendanceService } from '../services/AttendanceService.js';
 import { getWebhookFromInteraction } from '../utils/discord/getWebhook.js';
 import messageEditor from '../utils/discord/MessageEditor.js';
 
@@ -403,7 +403,7 @@ class EventInfoMessageUpdater implements MessageUpdater {
   ): Promise<Message | undefined> {
     // 集計
     if (event.active === (GuildScheduledEventStatus.Active as number)) {
-      await updateAttendanceTime(event, new Date());
+      await attendanceService.updateAttendanceTime(event, new Date());
     }
 
     // Webhookを取得

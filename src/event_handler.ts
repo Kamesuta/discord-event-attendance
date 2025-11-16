@@ -8,7 +8,7 @@ import {
   VoiceBasedChannel,
 } from 'discord.js';
 import { config } from './utils/config.js';
-import { tallyAttendanceTime } from './event/attendance_time.js';
+import { attendanceService } from './services/AttendanceService.js';
 import { logger } from './utils/log.js';
 import eventManager, {
   eventIncludeHost,
@@ -316,7 +316,7 @@ export async function onEndEvent(
         },
       });
       // 参加時間を集計する
-      await tallyAttendanceTime(event.id, user, new Date());
+      await attendanceService.tallyAttendanceTime(event.id, user, new Date());
 
       // 最新のミュート状態を取得
       const latestMute = await prisma.userMute.findFirst({

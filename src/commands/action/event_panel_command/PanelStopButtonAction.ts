@@ -19,7 +19,7 @@ import { onEndEvent } from '../../../event_handler.js';
 import { checkEventOperationPermission } from '../../../utils/permissions/checkCommandPermission.js';
 import { messageUpdateManager } from '../../../utils/client.js';
 import eventInfoMessageUpdater from '../../../message_updaters/EventInfoMessageUpdater.js';
-import { syncRoleByCondition } from '../../../event/roleManager.js';
+import { roleManagementService } from '../../../services/RoleManagementService.js';
 import messageEditor from '../../../utils/discord/MessageEditor.js';
 import { client } from '../../../utils/client.js';
 import { prisma } from '../../../utils/prisma.js';
@@ -194,7 +194,7 @@ class PanelStopButtonAction extends MessageComponentActionInteraction<ComponentT
 
     // ロールを同期 (非同期で実行)
     if (interaction.guild) {
-      void syncRoleByCondition(interaction.guild);
+      void roleManagementService.syncRoleByCondition(interaction.guild);
     }
 
     // パネルのメッセージ削除

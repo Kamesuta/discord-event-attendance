@@ -4,7 +4,7 @@ import {
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
 import eventAdminCommand from './EventAdminCommand.js';
-import { syncRoleByCondition } from '../../event/roleManager.js';
+import { roleManagementService } from '../../services/RoleManagementService.js';
 
 class EventAdminSyncRoleCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
@@ -23,7 +23,9 @@ class EventAdminSyncRoleCommand extends SubcommandInteraction {
     }
 
     // ロールを同期
-    const result = await syncRoleByCondition(interaction.guild);
+    const result = await roleManagementService.syncRoleByCondition(
+      interaction.guild,
+    );
 
     await interaction.editReply({
       content: result,

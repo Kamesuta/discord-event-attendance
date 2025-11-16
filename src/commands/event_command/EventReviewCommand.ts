@@ -12,7 +12,7 @@ import {
 import { SubcommandInteraction } from '../base/command_base.js';
 import eventCommand from './EventCommand.js';
 import eventManager from '../../event/EventManager.js';
-import { updateAttendanceTime } from '../../event/attendance_time.js';
+import { attendanceService } from '../../services/AttendanceService.js';
 import { prisma } from '../../utils/prisma.js';
 import { config } from '../../utils/config.js';
 import { Event } from '@prisma/client';
@@ -132,7 +132,7 @@ class EventReviewCommand extends SubcommandInteraction {
   ): Promise<InteractionEditReplyOptions> {
     // 集計
     if (event.active === (GuildScheduledEventStatus.Active as number)) {
-      await updateAttendanceTime(event, new Date());
+      await attendanceService.updateAttendanceTime(event, new Date());
     }
 
     // イベントの出欠状況を表示

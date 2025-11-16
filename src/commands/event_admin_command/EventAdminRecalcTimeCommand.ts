@@ -5,7 +5,7 @@ import {
 import { SubcommandInteraction } from '../base/command_base.js';
 import eventManager from '../../event/EventManager.js';
 import eventAdminCommand from './EventAdminCommand.js';
-import { updateAttendanceTime } from '../../event/attendance_time.js';
+import { attendanceService } from '../../services/AttendanceService.js';
 import { prisma } from '../../utils/prisma.js';
 
 class EventAdminRecalcTimeCommand extends SubcommandInteraction {
@@ -58,7 +58,7 @@ class EventAdminRecalcTimeCommand extends SubcommandInteraction {
     });
 
     // 参加者のVC参加時間を再計算
-    await updateAttendanceTime(event, event.endTime);
+    await attendanceService.updateAttendanceTime(event, event.endTime);
 
     await interaction.editReply({
       content: `イベント「${event.name}」(ID: ${event.id})のVC参加時間を再計算しました`,
