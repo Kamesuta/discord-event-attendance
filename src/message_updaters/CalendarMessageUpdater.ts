@@ -8,7 +8,7 @@ import { MessageUpdater, MessageUpdateContext } from './MessageUpdater.js';
 import { config } from '../utils/config.js';
 import { client } from '../utils/client.js';
 import { prisma } from '../utils/prisma.js';
-import messageEditor from '../event/MessageEditor.js';
+import messageEditor from '../utils/discord/MessageEditor.js';
 import { ScheduleMessageData } from '../commands/event_creator_command/schedule/types.js';
 
 /**

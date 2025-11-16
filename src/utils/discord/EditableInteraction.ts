@@ -5,7 +5,7 @@ import {
   MessagePayload,
   RepliableInteraction,
 } from 'discord.js';
-import { logger } from '../utils/log.js';
+import { logger } from '../log.js';
 
 /**
  * 編集可能なインタラクション

@@ -5,8 +5,8 @@ import {
   ThreadChannel,
   TextBasedChannel,
 } from 'discord.js';
-import { client } from '../utils/client.js';
-import { logger } from '../utils/log.js';
+import { client } from '../client.js';
+import { logger } from '../log.js';
 
 /**
  * Webhookを取得/作成します

@@ -16,7 +16,7 @@ import { updateAttendanceTime } from '../../event/attendance_time.js';
 import { prisma } from '../../utils/prisma.js';
 import { config } from '../../utils/config.js';
 import { Event } from '@prisma/client';
-import { EditableInteraction } from '../../event/EditableInteraction.js';
+import { EditableInteraction } from '../../utils/discord/EditableInteraction.js';
 import reviewMarkUserSelectAction from '../action/event_review_command/ReviewMarkUserSelectAction.js';
 import reviewMarkClearButtonAction from '../action/event_review_command/ReviewMarkClearButtonAction.js';
 import reviewMarkUndoButtonAction from '../action/event_review_command/ReviewMarkUndoButtonAction.js';

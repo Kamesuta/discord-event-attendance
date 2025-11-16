@@ -20,7 +20,7 @@ import {
 } from '../../event/game.js';
 import eventManager from '../../event/EventManager.js';
 import { prisma } from '../../utils/prisma.js';
-import splitStrings from '../../event/splitStrings.js';
+import splitStrings from '../../utils/string/splitStrings.js';
 import { Event, GameResult, Prisma, User } from '@prisma/client';
 import omit from 'lodash/omit';
 import gameEditButtonAction from '../action/event_game_command/GameEditButtonAction.js';

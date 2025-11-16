@@ -9,7 +9,7 @@ import {
 import eventManager from '../../../event/EventManager.js';
 import { MessageComponentActionInteraction } from '../../base/action_base.js';
 import { logger } from '../../../utils/log.js';
-import { checkEventOperationPermission } from '../../../event/checkCommandPermission.js';
+import { checkEventOperationPermission } from '../../../utils/permissions/checkCommandPermission.js';
 import eventOpAnnounceCommand from '../../event_op_command/EventOpAnnounceCommand.js';
 import { client } from '../../../utils/client.js';
 

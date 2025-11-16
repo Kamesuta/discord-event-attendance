@@ -25,7 +25,7 @@ import { prisma } from '../utils/prisma.js';
 import { ScheduleMessageData } from '../commands/event_creator_command/schedule/types.js';
 import { BannerImageUtil } from '../commands/event_creator_command/schedule/BannerImageUtil.js';
 import userManager from '../event/UserManager.js';
-import messageEditor from '../event/MessageEditor.js';
+import messageEditor from '../utils/discord/MessageEditor.js';
 import statusCommand from '../commands/status_command/StatusCommand.js';
 
 /**

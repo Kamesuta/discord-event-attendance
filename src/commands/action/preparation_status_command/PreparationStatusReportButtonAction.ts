@@ -13,7 +13,7 @@ import {
   eventIncludeHost,
   EventWithHost,
 } from '../../../event/EventManager.js';
-import { checkCommandPermission } from '../../../event/checkCommandPermission.js';
+import { checkCommandPermission } from '../../../utils/permissions/checkCommandPermission.js';
 import userManager from '../../../event/UserManager.js';
 import preparationStatusToggleSelectAction from './PreparationStatusToggleSelectAction.js';
 

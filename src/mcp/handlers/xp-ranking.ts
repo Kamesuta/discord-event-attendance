@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { createMCPJSONResult, MCPToolResult } from '../types.js';
-import { parsePeriod } from '../../event/periodParser.js';
+import { parsePeriod } from '../../utils/parsers/periodParser.js';
 import { prisma } from '../../utils/prisma.js';
 
 /**
@@ -33,7 +33,7 @@ export const getXpRankingTool = {
     },
   },
 };
-import { parseSearch } from '../../event/searchParser.js';
+import { parseSearch } from '../../utils/parsers/searchParser.js';
 import { GuildScheduledEventStatus } from 'discord.js';
 
 const getXpRankingSchema = z.object({

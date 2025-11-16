@@ -4,7 +4,7 @@ import {
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
 import { messageUpdateManager } from '../../utils/client.js';
-import messageEditor from '../../event/MessageEditor.js';
+import messageEditor from '../../utils/discord/MessageEditor.js';
 import { MessageUpdateContext } from '../../message_updaters/MessageUpdater.js';
 import eventOpCommand from './EventOpCommand.js';
 

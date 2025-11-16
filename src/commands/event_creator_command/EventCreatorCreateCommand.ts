@@ -9,12 +9,12 @@ import {
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
 import { onCreateScheduledEvent } from '../../event_handler.js';
-import { parseSearch } from '../../event/searchParser.js';
+import { parseSearch } from '../../utils/parsers/searchParser.js';
 import statusEventListCommand, {
   EventDetail,
 } from '../status_command/StatusEventListCommand.js';
 import eventManager, { EventWithHost } from '../../event/EventManager.js';
-import { parseDate } from '../../event/periodParser.js';
+import { parseDate } from '../../utils/parsers/periodParser.js';
 import eventCreatorCommand from './EventCreatorCommand.js';
 import userManager from '../../event/UserManager.js';
 

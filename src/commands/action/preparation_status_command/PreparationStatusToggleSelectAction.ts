@@ -9,7 +9,7 @@ import {
   EventWithHost,
 } from '../../../event/EventManager.js';
 import { prisma } from '../../../utils/prisma.js';
-import { checkCommandPermission } from '../../../event/checkCommandPermission.js';
+import { checkCommandPermission } from '../../../utils/permissions/checkCommandPermission.js';
 import { messageUpdateManager } from '../../../utils/client.js';
 import { logger } from '../../../utils/log.js';
 
