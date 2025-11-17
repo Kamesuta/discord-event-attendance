@@ -3,7 +3,7 @@ import {
   StringSelectMenuBuilder,
   StringSelectMenuInteraction,
 } from 'discord.js';
-import { MessageComponentActionInteraction } from '../base/action_base.js';
+import { MessageComponentActionInteraction } from '../base/actionBase.js';
 import { Event } from '@prisma/client';
 import { gameService } from '../../services/GameService.js';
 import { GameResultData } from '../../domain/queries/gameQueries.js';

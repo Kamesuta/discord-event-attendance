@@ -1,4 +1,4 @@
-import { InteractionBase } from '../base/interaction_base.js';
+import { InteractionBase } from '../base/interactionBase.js';
 import { statusUserMenu } from './StatusUserMenu.js';
 import { markShowUserMenu } from './MarkShowUserMenu.js';
 import { markHideUserMenu } from './MarkHideUserMenu.js';

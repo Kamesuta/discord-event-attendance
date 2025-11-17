@@ -7,7 +7,7 @@ import {
   User,
 } from 'discord.js';
 import { eventManager } from '../../domain/services/EventManager.js';
-import { ModalActionInteraction } from '../base/action_base.js';
+import { ModalActionInteraction } from '../base/actionBase.js';
 import { Event } from '@prisma/client';
 import { prisma } from '../../utils/prisma.js';
 import { userManager } from '../../domain/services/UserManager.js';

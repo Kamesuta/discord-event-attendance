@@ -3,7 +3,7 @@ import {
   PermissionFlagsBits,
   UserContextMenuCommandInteraction,
 } from 'discord.js';
-import { UserContextMenuInteraction } from '../base/contextmenu_base.js';
+import { UserContextMenuInteraction } from '../base/contextmenuBase.js';
 import { eventManager } from '../../domain/services/EventManager.js';
 import { prisma } from '../../utils/prisma.js';
 import { setMemoAction } from '../action/SetMemoAction.js';

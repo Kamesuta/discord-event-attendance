@@ -1,11 +1,11 @@
-import { InteractionBase } from '../base/interaction_base.js';
+import { InteractionBase } from '../base/interactionBase.js';
 import { setMemoAction } from './SetMemoAction.js';
-import { eventGameActions } from './event_game_command/commands.js';
-import { eventReviewActions } from './event_review_command/commands.js';
+import { eventGameActions } from './eventGameCommand/commands.js';
+import { eventReviewActions } from './eventReviewCommand/commands.js';
 import { statusGameMenuAction } from './StatusGameMenuAction.js';
-import { eventPanelActions } from './event_panel_command/commands.js';
-import { eventSetupActions } from './event_setup_command/commands.js';
-import { preparationStatusActions } from './preparation_status_command/commands.js';
+import { eventPanelActions } from './eventPanelCommand/commands.js';
+import { eventSetupActions } from './eventSetupCommand/commands.js';
+import { preparationStatusActions } from './preparationStatusCommand/commands.js';
 import { addRoleButtonAction } from './AddRoleButtonAction.js';
 
 /**

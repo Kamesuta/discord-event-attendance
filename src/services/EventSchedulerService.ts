@@ -7,10 +7,10 @@ import {
 import { config } from '../bot/config.js';
 import { Job, scheduleJob } from 'node-schedule';
 import log4js from 'log4js';
-import { eventOpPanelCommand } from '../commands/event_op_command/EventOpPanelCommand.js';
+import { eventOpPanelCommand } from '../commands/eventOpCommand/EventOpPanelCommand.js';
 import groupBy from 'lodash/groupBy.js';
-import { eventOpTodayCommand } from '../commands/event_op_command/EventOpTodayCommand.js';
-import { preparationStatusReportButtonAction } from '../commands/action/preparation_status_command/PreparationStatusReportButtonAction.js';
+import { eventOpTodayCommand } from '../commands/eventOpCommand/EventOpTodayCommand.js';
+import { preparationStatusReportButtonAction } from '../commands/action/preparationStatusCommand/PreparationStatusReportButtonAction.js';
 import { client } from '../bot/client.js';
 import { eventManager } from '../domain/services/EventManager.js';
 import {

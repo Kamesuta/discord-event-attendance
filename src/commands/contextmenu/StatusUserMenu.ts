@@ -2,8 +2,8 @@ import {
   ContextMenuCommandBuilder,
   UserContextMenuCommandInteraction,
 } from 'discord.js';
-import { UserContextMenuInteraction } from '../base/contextmenu_base.js';
-import { statusUserCommand } from '../status_command/StatusUserCommand.js';
+import { UserContextMenuInteraction } from '../base/contextmenuBase.js';
+import { statusUserCommand } from '../statusCommand/StatusUserCommand.js';
 
 class StatusUserMenu extends UserContextMenuInteraction {
   command = new ContextMenuCommandBuilder().setName('イベントの参加状況を確認');
