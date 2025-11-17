@@ -4,7 +4,7 @@ import {
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
 import { eventManager } from '../../domain/services/EventManager.js';
-import { onEndScheduledEvent } from '../../event_handler.js';
+import { onEndScheduledEvent } from '../../handlers/event_handler.js';
 import { eventAdminCommand } from './EventAdminCommand.js';
 
 class EventAdminStopCommand extends SubcommandInteraction {

@@ -4,11 +4,11 @@ import {
   VoiceBasedChannel,
   VoiceState,
 } from 'discord.js';
-import { prisma } from './utils/prisma.js';
-import { config } from './utils/config.js';
-import { attendanceService } from './services/AttendanceService.js';
-import { logger } from './utils/log.js';
-import { userManager } from './domain/services/UserManager.js';
+import { prisma } from '../utils/prisma.js';
+import { config } from '../utils/config.js';
+import { attendanceService } from '../services/AttendanceService.js';
+import { logger } from '../utils/log.js';
+import { userManager } from '../domain/services/UserManager.js';
 
 // 入退室ログを記録します
 async function createVoiceLog(

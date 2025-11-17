@@ -10,7 +10,7 @@ import { prisma } from '../../../utils/prisma.js';
 import {
   onCreateScheduledEvent,
   updateSchedules,
-} from '../../../event_handler.js';
+} from '../../../handlers/event_handler.js';
 import {
   eventCreatorSetupCommand,
   EventSpec,

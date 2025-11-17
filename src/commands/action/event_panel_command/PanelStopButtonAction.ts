@@ -16,7 +16,7 @@ import { EventWithHost } from '../../../domain/queries/eventQueries.js';
 import { MessageComponentActionInteraction } from '../../base/action_base.js';
 import { config } from '../../../utils/config.js';
 import { logger } from '../../../utils/log.js';
-import { onEndEvent } from '../../../event_handler.js';
+import { onEndEvent } from '../../../handlers/event_handler.js';
 import { checkEventOperationPermission } from '../../../utils/permissions/checkCommandPermission.js';
 import { messageUpdateManager } from '../../../utils/client.js';
 import { eventInfoMessageUpdater } from '../../../message_updaters/EventInfoMessageUpdater.js';

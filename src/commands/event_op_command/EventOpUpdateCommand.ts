@@ -4,7 +4,7 @@ import {
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
 import { eventManager } from '../../domain/services/EventManager.js';
-import { onUpdateScheduledEvent } from '../../event_handler.js';
+import { onUpdateScheduledEvent } from '../../handlers/event_handler.js';
 import { eventOpCommand } from './EventOpCommand.js';
 
 class EventOpUpdateCommand extends SubcommandInteraction {

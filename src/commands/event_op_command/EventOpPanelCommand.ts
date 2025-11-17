@@ -12,7 +12,7 @@ import {
   eventIncludeHost,
   EventWithHost,
 } from '../../domain/queries/eventQueries.js';
-import { onUpdateScheduledEvent } from '../../event_handler.js';
+import { onUpdateScheduledEvent } from '../../handlers/event_handler.js';
 import { prisma } from '../../utils/prisma.js';
 import { panelStartButtonAction } from '../action/event_panel_command/PanelStartButtonAction.js';
 import { panelReviewButtonAction } from '../action/event_panel_command/PanelReviewButtonAction.js';
