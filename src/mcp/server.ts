@@ -7,20 +7,20 @@ import {
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 // ハンドラーとツール定義のインポート
-import { getEventStatus, getEventStatusTool } from './handlers/event-status.js';
-import { getEventList, getEventListTool } from './handlers/event-list.js';
-import { getUserStatus, getUserStatusTool } from './handlers/user-status.js';
-import { getGameStatus, getGameStatusTool } from './handlers/game-status.js';
+import { getEventStatus, getEventStatusTool } from './handlers/eventStatus.js';
+import { getEventList, getEventListTool } from './handlers/eventList.js';
+import { getUserStatus, getUserStatusTool } from './handlers/userStatus.js';
+import { getGameStatus, getGameStatusTool } from './handlers/gameStatus.js';
 import {
   getParticipationRanking,
   getParticipationRankingTool,
-} from './handlers/participation-ranking.js';
-import { getHostRanking, getHostRankingTool } from './handlers/host-ranking.js';
-import { getXpRanking, getXpRankingTool } from './handlers/xp-ranking.js';
+} from './handlers/participationRanking.js';
+import { getHostRanking, getHostRankingTool } from './handlers/hostRanking.js';
+import { getXpRanking, getXpRankingTool } from './handlers/xpRanking.js';
 import {
   getHostPerformanceRanking,
   getHostPerformanceRankingTool,
-} from './handlers/host-performance-ranking.js';
+} from './handlers/hostPerformanceRanking.js';
 import { logger } from '../utils/log.js';
 import { fileURLToPath } from 'url';
 
