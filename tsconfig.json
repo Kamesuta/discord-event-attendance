@@ -1,5 +1,10 @@
 {
   "compilerOptions": {
+    /* Enable @ alias. */
+    "baseUrl": "./",
+    "paths": {
+      "@/*": ["src/*"]
+    },
     /* Set the JavaScript language version for emitted JavaScript and include compatible library declarations. */
     "target": "es2022",
     /* Specify what module code is generated. */
@@ -22,10 +27,5 @@
     "noImplicitOverride": true,
     /* Require explicit return types on functions and class methods. */
     "noImplicitAny": true,
-  },
-  /* ts-node */
-  "ts-node": {
-    "esm": true,
-    "require": ["tsconfig-paths/register"]
   }
 }

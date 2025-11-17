@@ -1,13 +1,13 @@
 // eslint.config.js
 
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable jsdoc/require-jsdoc */
 /* eslint-disable @typescript-eslint/naming-convention */
 
-import tseslint from 'typescript-eslint';
-import jsdoc from 'eslint-plugin-jsdoc';
 import eslint from '@eslint/js';
 import eslintConfigPrettier from 'eslint-config-prettier';
+import importPlugin from 'eslint-plugin-import';
+import jsdoc from 'eslint-plugin-jsdoc';
+import tseslint from 'typescript-eslint';
 
 export default [
     // Plugins
@@ -17,6 +17,15 @@ export default [
     eslintConfigPrettier,
     // /Plugins
     {
+        plugins: {
+            import: importPlugin,
+        },
+        settings: {
+            'import/resolver': {
+                typescript: true,
+                node: true,
+            },
+        },
         languageOptions: {
             parser: tseslint.parser,
             parserOptions: {
@@ -54,6 +63,24 @@ export default [
                     skipRegExps: true,
                     skipTemplates: true,
                 }
+            ],
+            // Import rules
+            'import/no-unresolved': 'error',
+            'import/extensions': [
+                'error',
+                'never',
+                {
+                    json: 'always',
+                },
+            ],
+            'no-restricted-imports': [
+                'error',
+                {
+                    patterns: [{
+                        group: ['../*'],
+                        message: 'Parent directory imports are not allowed. Use @/ alias instead (e.g., import { foo } from \'@/utils/foo\').',
+                    }],
+                },
             ],
             '@typescript-eslint/naming-convention': [
                 'error',
