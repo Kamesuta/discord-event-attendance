@@ -10,8 +10,8 @@ import { MessageUpdater, MessageUpdateContext } from './MessageUpdater.js';
 import { config } from '../utils/config.js';
 import { client } from '../utils/client.js';
 import { prisma } from '../utils/prisma.js';
-import messageEditor from '../utils/discord/MessageEditor.js';
-import preparationStatusReportButtonAction from '../commands/action/preparation_status_command/PreparationStatusReportButtonAction.js';
+import { messageEditor } from '../utils/discord/MessageEditor.js';
+import { preparationStatusReportButtonAction } from '../commands/action/preparation_status_command/PreparationStatusReportButtonAction.js';
 
 /**
  * 準備状況メッセージ用のMessageUpdater実装
@@ -149,4 +149,8 @@ class PreparationStatusMessageUpdater implements MessageUpdater {
   }
 }
 
-export default new PreparationStatusMessageUpdater();
+/**
+ * PreparationStatusMessageUpdaterのインスタンス
+ */
+export const preparationStatusMessageUpdater =
+  new PreparationStatusMessageUpdater();

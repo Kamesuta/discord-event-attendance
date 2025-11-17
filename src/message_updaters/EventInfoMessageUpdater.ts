@@ -19,14 +19,14 @@ import { MessageUpdater, MessageUpdateContext } from './MessageUpdater.js';
 import { config } from '../utils/config.js';
 import { client } from '../utils/client.js';
 import { prisma } from '../utils/prisma.js';
-import splitStrings from '../utils/string/splitStrings.js';
-import statusGameMenuAction from '../commands/action/StatusGameMenuAction.js';
-import userManager from '../event/UserManager.js';
+import { splitStrings } from '../utils/string/splitStrings.js';
+import { statusGameMenuAction } from '../commands/action/StatusGameMenuAction.js';
+import { userManager } from '../event/UserManager.js';
 import { gameResultInclude } from '../event/game.js';
 import { logger } from '../utils/log.js';
 import { attendanceService } from '../services/AttendanceService.js';
 import { getWebhookFromInteraction } from '../utils/discord/getWebhook.js';
-import messageEditor from '../utils/discord/MessageEditor.js';
+import { messageEditor } from '../utils/discord/MessageEditor.js';
 
 /**
  * イベント情報メッセージ用のMessageUpdater実装
@@ -527,4 +527,7 @@ class EventInfoMessageUpdater implements MessageUpdater {
   }
 }
 
-export default new EventInfoMessageUpdater();
+/**
+ * EventInfoMessageUpdaterのインスタンス
+ */
+export const eventInfoMessageUpdater = new EventInfoMessageUpdater();

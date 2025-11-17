@@ -6,9 +6,9 @@ import {
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
 import { config } from '../../utils/config.js';
-import eventInfoMessageUpdater from '../../message_updaters/EventInfoMessageUpdater.js';
-import eventManager, { EventWithHost } from '../../event/EventManager.js';
-import eventOpCommand from './EventOpCommand.js';
+import { eventInfoMessageUpdater } from '../../message_updaters/EventInfoMessageUpdater.js';
+import { eventManager, EventWithHost } from '../../event/EventManager.js';
+import { eventOpCommand } from './EventOpCommand.js';
 
 class EventOpAnnounceCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
@@ -79,4 +79,9 @@ class EventOpAnnounceCommand extends SubcommandInteraction {
   }
 }
 
-export default new EventOpAnnounceCommand(eventOpCommand);
+/**
+ * EventOpAnnounceCommandのインスタンス
+ */
+export const eventOpAnnounceCommand = new EventOpAnnounceCommand(
+  eventOpCommand,
+);

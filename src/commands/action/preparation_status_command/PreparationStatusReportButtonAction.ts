@@ -14,8 +14,8 @@ import {
   EventWithHost,
 } from '../../../event/EventManager.js';
 import { checkCommandPermission } from '../../../utils/permissions/checkCommandPermission.js';
-import userManager from '../../../event/UserManager.js';
-import preparationStatusToggleSelectAction from './PreparationStatusToggleSelectAction.js';
+import { userManager } from '../../../event/UserManager.js';
+import { preparationStatusToggleSelectAction } from './PreparationStatusToggleSelectAction.js';
 
 class PreparationStatusReportButtonAction extends MessageComponentActionInteraction<ComponentType.Button> {
   override create(): ButtonBuilder {
@@ -89,7 +89,8 @@ class PreparationStatusReportButtonAction extends MessageComponentActionInteract
   }
 }
 
-export default new PreparationStatusReportButtonAction(
-  'prep_report',
-  ComponentType.Button,
-);
+/**
+ * PreparationStatusReportButtonActionのインスタンス
+ */
+export const preparationStatusReportButtonAction =
+  new PreparationStatusReportButtonAction('prep_report', ComponentType.Button);

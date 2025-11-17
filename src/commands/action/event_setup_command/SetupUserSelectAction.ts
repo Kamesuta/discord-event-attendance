@@ -3,17 +3,18 @@ import {
   UserSelectMenuBuilder,
   UserSelectMenuInteraction,
 } from 'discord.js';
-import eventManager, { eventIncludeHost } from '../../../event/EventManager.js';
+import { eventManager, eventIncludeHost } from '../../../event/EventManager.js';
 import { MessageComponentActionInteraction } from '../../base/action_base.js';
 import { prisma } from '../../../utils/prisma.js';
 import {
   onCreateScheduledEvent,
   updateSchedules,
 } from '../../../event_handler.js';
-import eventCreatorSetupCommand, {
+import {
+  eventCreatorSetupCommand,
   EventSpec,
 } from '../../event_creator_command/EventCreatorSetupCommand.js';
-import userManager from '../../../event/UserManager.js';
+import { userManager } from '../../../event/UserManager.js';
 import { messageUpdateManager } from '../../../utils/client.js';
 import { logger } from '../../../utils/log.js';
 
@@ -136,4 +137,10 @@ class SetupUserSelectAction extends MessageComponentActionInteraction<ComponentT
   }
 }
 
-export default new SetupUserSelectAction('setupus', ComponentType.UserSelect);
+/**
+ * SetupUserSelectActionのインスタンス
+ */
+export const setupUserSelectAction = new SetupUserSelectAction(
+  'setupus',
+  ComponentType.UserSelect,
+);

@@ -135,7 +135,11 @@ class PreparationStatusToggleSelectAction extends MessageComponentActionInteract
   }
 }
 
-export default new PreparationStatusToggleSelectAction(
-  'prep_tgl',
-  ComponentType.StringSelect,
-);
+/**
+ * PreparationStatusToggleSelectActionのインスタンス
+ */
+export const preparationStatusToggleSelectAction =
+  new PreparationStatusToggleSelectAction(
+    'prep_tgl',
+    ComponentType.StringSelect,
+  );

@@ -4,12 +4,13 @@ import {
   ButtonStyle,
   ComponentType,
 } from 'discord.js';
-import eventManager from '../../../event/EventManager.js';
+import { eventManager } from '../../../event/EventManager.js';
 import { MessageComponentActionInteraction } from '../../base/action_base.js';
-import eventGameCommand, {
+import {
+  eventGameCommand,
   EditData,
 } from '../../event_command/EventGameCommand.js';
-import gameEditModalAction from './GameEditModalAction.js';
+import { gameEditModalAction } from './GameEditModalAction.js';
 
 class GameEditButtonAction extends MessageComponentActionInteraction<ComponentType.Button> {
   /**
@@ -66,4 +67,10 @@ class GameEditButtonAction extends MessageComponentActionInteraction<ComponentTy
   }
 }
 
-export default new GameEditButtonAction('gedit', ComponentType.Button);
+/**
+ * GameEditButtonActionのインスタンス
+ */
+export const gameEditButtonAction = new GameEditButtonAction(
+  'gedit',
+  ComponentType.Button,
+);

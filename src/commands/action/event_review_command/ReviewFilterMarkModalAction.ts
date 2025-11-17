@@ -5,11 +5,11 @@ import {
   TextInputBuilder,
   TextInputStyle,
 } from 'discord.js';
-import eventManager from '../../../event/EventManager.js';
+import { eventManager } from '../../../event/EventManager.js';
 import { ModalActionInteraction } from '../../base/action_base.js';
 import { Event } from '@prisma/client';
 import { prisma } from '../../../utils/prisma.js';
-import eventReviewCommand from '../../event_command/EventReviewCommand.js';
+import { eventReviewCommand } from '../../event_command/EventReviewCommand.js';
 import { config } from '../../../utils/config.js';
 
 class ReviewFilterMarkModalAction extends ModalActionInteraction {
@@ -115,4 +115,9 @@ class ReviewFilterMarkModalAction extends ModalActionInteraction {
   }
 }
 
-export default new ReviewFilterMarkModalAction('rfadd');
+/**
+ * ReviewFilterMarkModalActionのインスタンス
+ */
+export const reviewFilterMarkModalAction = new ReviewFilterMarkModalAction(
+  'rfadd',
+);

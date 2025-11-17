@@ -4,9 +4,9 @@ import {
   ButtonStyle,
   ComponentType,
 } from 'discord.js';
-import eventManager from '../../../event/EventManager.js';
+import { eventManager } from '../../../event/EventManager.js';
 import { MessageComponentActionInteraction } from '../../base/action_base.js';
-import eventReviewCommand from '../../event_command/EventReviewCommand.js';
+import { eventReviewCommand } from '../../event_command/EventReviewCommand.js';
 
 class PanelReviewButtonAction extends MessageComponentActionInteraction<ComponentType.Button> {
   /**
@@ -66,4 +66,10 @@ class PanelReviewButtonAction extends MessageComponentActionInteraction<Componen
   }
 }
 
-export default new PanelReviewButtonAction('preview', ComponentType.Button);
+/**
+ * PanelReviewButtonActionのインスタンス
+ */
+export const panelReviewButtonAction = new PanelReviewButtonAction(
+  'preview',
+  ComponentType.Button,
+);

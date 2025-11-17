@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { createMCPJSONResult, MCPToolResult } from '../types.js';
-import eventManager from '../../event/EventManager.js';
+import { eventManager } from '../../event/EventManager.js';
 import { GuildScheduledEventStatus } from 'discord.js';
 import { prisma } from '../../utils/prisma.js';
 

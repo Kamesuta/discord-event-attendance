@@ -5,10 +5,10 @@ import {
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
-import statusCommand from './StatusCommand.js';
+import { statusCommand } from './StatusCommand.js';
 import { prisma } from '../../utils/prisma.js';
 import { Prisma } from '@prisma/client';
-import splitStrings from '../../utils/string/splitStrings.js';
+import { splitStrings } from '../../utils/string/splitStrings.js';
 import { parsePeriod } from '../../utils/parsers/periodParser.js';
 import { parseSearch } from '../../utils/parsers/searchParser.js';
 import { eventIncludeHost } from '../../event/EventManager.js';
@@ -219,4 +219,7 @@ class StatusEventListCommand extends SubcommandInteraction {
   }
 }
 
-export default new StatusEventListCommand(statusCommand);
+/**
+ * StatusEventListCommandのインスタンス
+ */
+export const statusEventListCommand = new StatusEventListCommand(statusCommand);

@@ -3,9 +3,9 @@ import {
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
-import eventManager from '../../event/EventManager.js';
+import { eventManager } from '../../event/EventManager.js';
 import { onUpdateScheduledEvent } from '../../event_handler.js';
-import eventOpCommand from './EventOpCommand.js';
+import { eventOpCommand } from './EventOpCommand.js';
 
 class EventOpUpdateCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
@@ -33,4 +33,7 @@ class EventOpUpdateCommand extends SubcommandInteraction {
   }
 }
 
-export default new EventOpUpdateCommand(eventOpCommand);
+/**
+ * EventOpUpdateCommandのインスタンス
+ */
+export const eventOpUpdateCommand = new EventOpUpdateCommand(eventOpCommand);

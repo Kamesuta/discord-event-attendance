@@ -10,18 +10,18 @@ import {
   UserSelectMenuBuilder,
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
-import eventCommand from './EventCommand.js';
-import eventManager from '../../event/EventManager.js';
+import { eventCommand } from './EventCommand.js';
+import { eventManager } from '../../event/EventManager.js';
 import { attendanceService } from '../../services/AttendanceService.js';
 import { prisma } from '../../utils/prisma.js';
 import { config } from '../../utils/config.js';
 import { Event } from '@prisma/client';
 import { EditableInteraction } from '../../utils/discord/EditableInteraction.js';
-import reviewMarkUserSelectAction from '../action/event_review_command/ReviewMarkUserSelectAction.js';
-import reviewMarkClearButtonAction from '../action/event_review_command/ReviewMarkClearButtonAction.js';
-import reviewMarkUndoButtonAction from '../action/event_review_command/ReviewMarkUndoButtonAction.js';
-import reviewFilterMarkButtonAction from '../action/event_review_command/ReviewFilterMarkButtonAction.js';
-import reviewPasteButtonAction from '../action/event_review_command/ReviewPasteButtonAction.js';
+import { reviewMarkUserSelectAction } from '../action/event_review_command/ReviewMarkUserSelectAction.js';
+import { reviewMarkClearButtonAction } from '../action/event_review_command/ReviewMarkClearButtonAction.js';
+import { reviewMarkUndoButtonAction } from '../action/event_review_command/ReviewMarkUndoButtonAction.js';
+import { reviewFilterMarkButtonAction } from '../action/event_review_command/ReviewFilterMarkButtonAction.js';
+import { reviewPasteButtonAction } from '../action/event_review_command/ReviewPasteButtonAction.js';
 
 /**
  * 編集データ
@@ -300,4 +300,7 @@ class EventReviewCommand extends SubcommandInteraction {
   }
 }
 
-export default new EventReviewCommand(eventCommand);
+/**
+ * EventReviewCommandのインスタンス
+ */
+export const eventReviewCommand = new EventReviewCommand(eventCommand);

@@ -4,14 +4,14 @@ import {
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
-import eventCommand from './EventCommand.js';
-import eventManager from '../../event/EventManager.js';
+import { eventCommand } from './EventCommand.js';
+import { eventManager } from '../../event/EventManager.js';
 import { parse } from 'csv-parse';
 import { Event, User } from '@prisma/client';
-import eventGameCommand, { AddGameData } from './EventGameCommand.js';
+import { eventGameCommand, AddGameData } from './EventGameCommand.js';
 import { getGameResultNumbering, makeEmbed, xpMap } from '../../event/game.js';
 import { logger } from '../../utils/log.js';
-import userManager from '../../event/UserManager.js';
+import { userManager } from '../../event/UserManager.js';
 
 // 参加者の型定義
 interface Participant {
@@ -239,4 +239,7 @@ class EventGameCsvCommand extends SubcommandInteraction {
   }
 }
 
-export default new EventGameCsvCommand(eventCommand);
+/**
+ * EventGameCsvCommandのインスタンス
+ */
+export const eventGameCsvCommand = new EventGameCsvCommand(eventCommand);

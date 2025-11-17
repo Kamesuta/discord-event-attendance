@@ -3,7 +3,7 @@ import {
   UserContextMenuCommandInteraction,
 } from 'discord.js';
 import { UserContextMenuInteraction } from '../base/contextmenu_base.js';
-import statusUserCommand from '../status_command/StatusUserCommand.js';
+import { statusUserCommand } from '../status_command/StatusUserCommand.js';
 
 class StatusUserMenu extends UserContextMenuInteraction {
   command = new ContextMenuCommandBuilder().setName('イベントの参加状況を確認');
@@ -19,4 +19,7 @@ class StatusUserMenu extends UserContextMenuInteraction {
   }
 }
 
-export default new StatusUserMenu();
+/**
+ * StatusUserMenuのインスタンス
+ */
+export const statusUserMenu = new StatusUserMenu();

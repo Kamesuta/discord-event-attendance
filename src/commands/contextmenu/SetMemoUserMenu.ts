@@ -4,10 +4,10 @@ import {
   UserContextMenuCommandInteraction,
 } from 'discord.js';
 import { UserContextMenuInteraction } from '../base/contextmenu_base.js';
-import eventManager from '../../event/EventManager.js';
+import { eventManager } from '../../event/EventManager.js';
 import { prisma } from '../../utils/prisma.js';
-import setMemoAction from '../action/SetMemoAction.js';
-import userManager from '../../event/UserManager.js';
+import { setMemoAction } from '../action/SetMemoAction.js';
+import { userManager } from '../../event/UserManager.js';
 
 class SetMemoUserMenu extends UserContextMenuInteraction {
   command = new ContextMenuCommandBuilder()
@@ -46,4 +46,7 @@ class SetMemoUserMenu extends UserContextMenuInteraction {
   }
 }
 
-export default new SetMemoUserMenu();
+/**
+ * SetMemoUserMenuのインスタンス
+ */
+export const setMemoUserMenu = new SetMemoUserMenu();

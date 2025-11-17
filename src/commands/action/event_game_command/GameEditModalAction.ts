@@ -5,12 +5,12 @@ import {
   TextInputBuilder,
   TextInputStyle,
 } from 'discord.js';
-import eventManager from '../../../event/EventManager.js';
+import { eventManager } from '../../../event/EventManager.js';
 import { ModalActionInteraction } from '../../base/action_base.js';
-import eventGameCommand, {
+import {
+  eventGameCommand,
   EditData,
 } from '../../event_command/EventGameCommand.js';
-
 class GameEditModalAction extends ModalActionInteraction {
   /**
    * ゲーム編集モーダルを作成
@@ -94,4 +94,7 @@ class GameEditModalAction extends ModalActionInteraction {
   }
 }
 
-export default new GameEditModalAction('gedit');
+/**
+ * GameEditModalActionのインスタンス
+ */
+export const gameEditModalAction = new GameEditModalAction('gedit');

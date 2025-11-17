@@ -5,10 +5,9 @@ import {
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
-import eventManager from '../../event/EventManager.js';
-import EventManager from '../../event/EventManager.js';
-import statusEventListCommand from '../status_command/StatusEventListCommand.js';
-import eventOpCommand from './EventOpCommand.js';
+import { eventManager } from '../../event/EventManager.js';
+import { statusEventListCommand } from '../status_command/StatusEventListCommand.js';
+import { eventOpCommand } from './EventOpCommand.js';
 
 class EventOpSelectCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
@@ -42,7 +41,7 @@ class EventOpSelectCommand extends SubcommandInteraction {
 
     if (eventId === 0) {
       // 0が指定された場合はイベントを選択解除
-      EventManager.selectEvent(interaction.user.id, undefined);
+      eventManager.selectEvent(interaction.user.id, undefined);
       // デフォルト状態で選択されるイベントを取得
       const event = await eventManager.getEvent(interaction);
       // イベント情報を表示
@@ -57,7 +56,7 @@ class EventOpSelectCommand extends SubcommandInteraction {
       ? // イベントIDが指定された場合はそのイベントを取得
         await eventManager.getEventFromId(eventId)
       : // イベントIDが指定されなかった場合は開催中のイベントを取得
-        (await eventManager.getRecentEvent()) ??
+        ((await eventManager.getRecentEvent()) ??
         // 開催中のイベントがない場合は予定のイベントを取得
         (await eventManager.getRecentEvent(
           undefined,
@@ -69,7 +68,7 @@ class EventOpSelectCommand extends SubcommandInteraction {
           undefined,
           undefined,
           GuildScheduledEventStatus.Completed,
-        ));
+        )));
     if (!event) {
       await interaction.editReply({
         content:
@@ -80,7 +79,7 @@ class EventOpSelectCommand extends SubcommandInteraction {
     }
 
     // イベントを選択
-    EventManager.selectEvent(interaction.user.id, event.id);
+    eventManager.selectEvent(interaction.user.id, event.id);
     // イベント情報を表示
     await interaction.editReply({
       content: `選択中のイベントを 「${event.name}」 (ID: ${event.id}) に設定しました`,
@@ -138,4 +137,7 @@ class EventOpSelectCommand extends SubcommandInteraction {
   }
 }
 
-export default new EventOpSelectCommand(eventOpCommand);
+/**
+ * EventOpSelectCommandのインスタンス
+ */
+export const eventOpSelectCommand = new EventOpSelectCommand(eventOpCommand);

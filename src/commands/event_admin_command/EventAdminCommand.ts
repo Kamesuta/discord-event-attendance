@@ -8,4 +8,7 @@ class EventAdminCommand extends CommandGroupInteraction {
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageEvents);
 }
 
-export default new EventAdminCommand();
+/**
+ * EventAdminCommandのインスタンス
+ */
+export const eventAdminCommand = new EventAdminCommand();

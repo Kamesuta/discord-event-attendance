@@ -11,21 +11,21 @@ import {
   Message,
   RepliableInteraction,
 } from 'discord.js';
-import eventManager, { EventWithHost } from '../../../event/EventManager.js';
+import { eventManager, EventWithHost } from '../../../event/EventManager.js';
 import { MessageComponentActionInteraction } from '../../base/action_base.js';
 import { config } from '../../../utils/config.js';
 import { logger } from '../../../utils/log.js';
 import { onEndEvent } from '../../../event_handler.js';
 import { checkEventOperationPermission } from '../../../utils/permissions/checkCommandPermission.js';
 import { messageUpdateManager } from '../../../utils/client.js';
-import eventInfoMessageUpdater from '../../../message_updaters/EventInfoMessageUpdater.js';
+import { eventInfoMessageUpdater } from '../../../message_updaters/EventInfoMessageUpdater.js';
 import { roleManagementService } from '../../../services/RoleManagementService.js';
-import messageEditor from '../../../utils/discord/MessageEditor.js';
+import { messageEditor } from '../../../utils/discord/MessageEditor.js';
 import { client } from '../../../utils/client.js';
 import { prisma } from '../../../utils/prisma.js';
 import { makeGameResultEmbed } from '../../../event/game.js';
 import { Event, GameResult } from '@prisma/client';
-import panelStopConfirmModalAction from './PanelStopConfirmModalAction.js';
+import { panelStopConfirmModalAction } from './PanelStopConfirmModalAction.js';
 import { ThreadChannel } from 'discord.js';
 
 class PanelStopButtonAction extends MessageComponentActionInteraction<ComponentType.Button> {
@@ -286,4 +286,10 @@ class PanelStopButtonAction extends MessageComponentActionInteraction<ComponentT
   }
 }
 
-export default new PanelStopButtonAction('pstop', ComponentType.Button);
+/**
+ * PanelStopButtonActionのインスタンス
+ */
+export const panelStopButtonAction = new PanelStopButtonAction(
+  'pstop',
+  ComponentType.Button,
+);

@@ -4,10 +4,10 @@ import {
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
-import eventCommand from './EventCommand.js';
-import eventManager from '../../event/EventManager.js';
+import { eventCommand } from './EventCommand.js';
+import { eventManager } from '../../event/EventManager.js';
 import { prisma } from '../../utils/prisma.js';
-import userManager from '../../event/UserManager.js';
+import { userManager } from '../../event/UserManager.js';
 
 class EventUserListCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
@@ -74,4 +74,7 @@ class EventUserListCommand extends SubcommandInteraction {
   }
 }
 
-export default new EventUserListCommand(eventCommand);
+/**
+ * EventUserListCommandのインスタンス
+ */
+export const eventUserListCommand = new EventUserListCommand(eventCommand);

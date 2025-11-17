@@ -7,18 +7,19 @@ import {
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
-import eventManager, {
+import {
+  eventManager,
   eventIncludeHost,
   EventWithHost,
 } from '../../event/EventManager.js';
 import { onUpdateScheduledEvent } from '../../event_handler.js';
 import { prisma } from '../../utils/prisma.js';
-import panelStartButtonAction from '../action/event_panel_command/PanelStartButtonAction.js';
-import panelReviewButtonAction from '../action/event_panel_command/PanelReviewButtonAction.js';
-import panelStopButtonAction from '../action/event_panel_command/PanelStopButtonAction.js';
+import { panelStartButtonAction } from '../action/event_panel_command/PanelStartButtonAction.js';
+import { panelReviewButtonAction } from '../action/event_panel_command/PanelReviewButtonAction.js';
+import { panelStopButtonAction } from '../action/event_panel_command/PanelStopButtonAction.js';
 import { config } from '../../utils/config.js';
-import eventOpCommand from './EventOpCommand.js';
-import userManager from '../../event/UserManager.js';
+import { eventOpCommand } from './EventOpCommand.js';
+import { userManager } from '../../event/UserManager.js';
 import { messageUpdateManager } from '../../utils/client.js';
 import { logger } from '../../utils/log.js';
 
@@ -137,4 +138,7 @@ class EventOpPanelCommand extends SubcommandInteraction {
   }
 }
 
-export default new EventOpPanelCommand(eventOpCommand);
+/**
+ * EventOpPanelCommandのインスタンス
+ */
+export const eventOpPanelCommand = new EventOpPanelCommand(eventOpCommand);

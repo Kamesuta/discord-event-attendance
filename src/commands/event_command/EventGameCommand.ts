@@ -8,7 +8,7 @@ import {
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
-import eventCommand from './EventCommand.js';
+import { eventCommand } from './EventCommand.js';
 import {
   ALPHABET,
   Award,
@@ -18,15 +18,15 @@ import {
   makeEmbed,
   xpMap,
 } from '../../event/game.js';
-import eventManager from '../../event/EventManager.js';
+import { eventManager } from '../../event/EventManager.js';
 import { prisma } from '../../utils/prisma.js';
-import splitStrings from '../../utils/string/splitStrings.js';
+import { splitStrings } from '../../utils/string/splitStrings.js';
 import { Event, GameResult, Prisma, User } from '@prisma/client';
 import omit from 'lodash/omit';
-import gameEditButtonAction from '../action/event_game_command/GameEditButtonAction.js';
-import gameClearButtonAction from '../action/event_game_command/GameClearButtonAction.js';
-import gameDeleteButtonAction from '../action/event_game_command/GameDeleteButtonAction.js';
-import gameConfirmButtonAction from '../action/event_game_command/GameConfirmButtonAction.js';
+import { gameEditButtonAction } from '../action/event_game_command/GameEditButtonAction.js';
+import { gameClearButtonAction } from '../action/event_game_command/GameClearButtonAction.js';
+import { gameDeleteButtonAction } from '../action/event_game_command/GameDeleteButtonAction.js';
+import { gameConfirmButtonAction } from '../action/event_game_command/GameConfirmButtonAction.js';
 
 /**
  * ゲーム登録データ
@@ -587,4 +587,7 @@ class EventGameCommand extends SubcommandInteraction {
   }
 }
 
-export default new EventGameCommand(eventCommand);
+/**
+ * EventGameCommandのインスタンス
+ */
+export const eventGameCommand = new EventGameCommand(eventCommand);

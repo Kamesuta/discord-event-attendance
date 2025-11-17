@@ -1,12 +1,15 @@
 import { InteractionBase } from '../base/interaction_base.js';
-import statusCommand from './StatusCommand.js';
-import statusUserCommand from './StatusUserCommand.js';
-import statusEventCommand from './StatusEventCommand.js';
-import statusGameCommand from './StatusGameCommand.js';
-import statusEventListCommand from './StatusEventListCommand.js';
-import statusRankingCommand from './StatusRankingCommand.js';
+import { statusCommand } from './StatusCommand.js';
+import { statusUserCommand } from './StatusUserCommand.js';
+import { statusEventCommand } from './StatusEventCommand.js';
+import { statusGameCommand } from './StatusGameCommand.js';
+import { statusEventListCommand } from './StatusEventListCommand.js';
+import { statusRankingCommand } from './StatusRankingCommand.js';
 
-const commands: InteractionBase[] = [
+/**
+ * ステータスコマンドの配列
+ */
+export const statusCommands: InteractionBase[] = [
   statusCommand,
   statusUserCommand,
   statusEventCommand,
@@ -14,5 +17,3 @@ const commands: InteractionBase[] = [
   statusGameCommand,
   statusRankingCommand,
 ];
-
-export default commands;

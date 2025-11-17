@@ -64,7 +64,10 @@ class StatusGameMenuAction extends MessageComponentActionInteraction<ComponentTy
   }
 }
 
-export default new StatusGameMenuAction(
+/**
+ * StatusGameMenuActionのインスタンス
+ */
+export const statusGameMenuAction = new StatusGameMenuAction(
   'status_game',
   ComponentType.StringSelect,
 );

@@ -1,5 +1,5 @@
 import type { EventWithHost } from '../event/EventManager.js';
-import eventManager from '../event/EventManager.js';
+import { eventManager } from '../event/EventManager.js';
 import { logger } from '../utils/log.js';
 import type { MessageUpdateManager } from './MessageUpdateManager.js';
 

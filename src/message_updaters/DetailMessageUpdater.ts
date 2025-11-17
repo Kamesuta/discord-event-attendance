@@ -24,9 +24,9 @@ import { client } from '../utils/client.js';
 import { prisma } from '../utils/prisma.js';
 import { ScheduleMessageData } from '../commands/event_creator_command/schedule/types.js';
 import { BannerImageUtil } from '../commands/event_creator_command/schedule/BannerImageUtil.js';
-import userManager from '../event/UserManager.js';
-import messageEditor from '../utils/discord/MessageEditor.js';
-import statusCommand from '../commands/status_command/StatusCommand.js';
+import { userManager } from '../event/UserManager.js';
+import { messageEditor } from '../utils/discord/MessageEditor.js';
+import { statusCommand } from '../commands/status_command/StatusCommand.js';
 
 /**
  * 詳細メッセージ用のMessageUpdater実装
@@ -262,4 +262,7 @@ class DetailMessageUpdater implements MessageUpdater {
   }
 }
 
-export default new DetailMessageUpdater();
+/**
+ * DetailMessageUpdaterのインスタンス
+ */
+export const detailMessageUpdater = new DetailMessageUpdater();

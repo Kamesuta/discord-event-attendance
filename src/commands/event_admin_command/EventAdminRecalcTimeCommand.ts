@@ -3,8 +3,8 @@ import {
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
-import eventManager from '../../event/EventManager.js';
-import eventAdminCommand from './EventAdminCommand.js';
+import { eventManager } from '../../event/EventManager.js';
+import { eventAdminCommand } from './EventAdminCommand.js';
 import { attendanceService } from '../../services/AttendanceService.js';
 import { prisma } from '../../utils/prisma.js';
 
@@ -66,4 +66,9 @@ class EventAdminRecalcTimeCommand extends SubcommandInteraction {
   }
 }
 
-export default new EventAdminRecalcTimeCommand(eventAdminCommand);
+/**
+ * EventAdminRecalcTimeCommandのインスタンス
+ */
+export const eventAdminRecalcTimeCommand = new EventAdminRecalcTimeCommand(
+  eventAdminCommand,
+);

@@ -7,9 +7,9 @@ import {
 import { SubcommandInteraction } from '../base/command_base.js';
 import { config } from '../../utils/config.js';
 import { prisma } from '../../utils/prisma.js';
-import eventCreatorCommand from './EventCreatorCommand.js';
+import { eventCreatorCommand } from './EventCreatorCommand.js';
 import { eventIncludeHost, EventWithHost } from '../../event/EventManager.js';
-import eventManager from '../../event/EventManager.js';
+import { eventManager } from '../../event/EventManager.js';
 
 class EventCreatorScheduleCopyCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
@@ -119,4 +119,8 @@ ${eventMessages.join('')}
   }
 }
 
-export default new EventCreatorScheduleCopyCommand(eventCreatorCommand);
+/**
+ * EventCreatorScheduleCopyCommandのインスタンス
+ */
+export const eventCreatorScheduleCopyCommand =
+  new EventCreatorScheduleCopyCommand(eventCreatorCommand);

@@ -7,7 +7,7 @@ import {
 } from 'discord.js';
 import { prisma } from '../utils/prisma.js';
 import { Event, Prisma } from '@prisma/client';
-import userManager from './UserManager.js';
+import { userManager } from './UserManager.js';
 import { logger } from '../utils/log.js';
 
 /**
@@ -384,4 +384,7 @@ class EventManager {
   }
 }
 
-export default new EventManager();
+/**
+ * イベントマネージャーのインスタンス
+ */
+export const eventManager = new EventManager();

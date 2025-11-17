@@ -5,9 +5,9 @@ import {
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
 import { config } from '../../utils/config.js';
-import eventCreatorCommand from './EventCreatorCommand.js';
+import { eventCreatorCommand } from './EventCreatorCommand.js';
 import { EventWithHost } from '../../event/EventManager.js';
-import preparationStatusMessageUpdater from '../../message_updaters/PreparationStatusMessageUpdater.js';
+import { preparationStatusMessageUpdater } from '../../message_updaters/PreparationStatusMessageUpdater.js';
 
 class EventCreatorPreparationPanelCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
@@ -78,4 +78,8 @@ class EventCreatorPreparationPanelCommand extends SubcommandInteraction {
   }
 }
 
-export default new EventCreatorPreparationPanelCommand(eventCreatorCommand);
+/**
+ * EventCreatorPreparationPanelCommandのインスタンス
+ */
+export const eventCreatorPreparationPanelCommand =
+  new EventCreatorPreparationPanelCommand(eventCreatorCommand);

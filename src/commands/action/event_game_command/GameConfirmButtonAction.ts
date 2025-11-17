@@ -5,9 +5,10 @@ import {
   ComponentType,
   EmbedBuilder,
 } from 'discord.js';
-import eventManager from '../../../event/EventManager.js';
+import { eventManager } from '../../../event/EventManager.js';
 import { MessageComponentActionInteraction } from '../../base/action_base.js';
-import eventGameCommand, {
+import {
+  eventGameCommand,
   EditData,
 } from '../../event_command/EventGameCommand.js';
 import { makeEmbed } from '../../../event/game.js';
@@ -85,4 +86,10 @@ class GameConfirmButtonAction extends MessageComponentActionInteraction<Componen
   }
 }
 
-export default new GameConfirmButtonAction('gcfrm', ComponentType.Button);
+/**
+ * GameConfirmButtonActionのインスタンス
+ */
+export const gameConfirmButtonAction = new GameConfirmButtonAction(
+  'gcfrm',
+  ComponentType.Button,
+);

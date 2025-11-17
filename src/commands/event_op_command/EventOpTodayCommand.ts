@@ -9,9 +9,9 @@ import {
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
 import { config } from '../../utils/config.js';
-import eventManager, { EventWithHost } from '../../event/EventManager.js';
-import eventOpCommand from './EventOpCommand.js';
-import addRoleButtonAction from '../action/AddRoleButtonAction.js';
+import { eventManager, EventWithHost } from '../../event/EventManager.js';
+import { eventOpCommand } from './EventOpCommand.js';
+import { addRoleButtonAction } from '../action/AddRoleButtonAction.js';
 import { logger } from '../../utils/log.js';
 import { client } from '../../utils/client.js';
 
@@ -122,4 +122,7 @@ ${eventListText}
   }
 }
 
-export default new EventOpTodayCommand(eventOpCommand);
+/**
+ * EventOpTodayCommandのインスタンス
+ */
+export const eventOpTodayCommand = new EventOpTodayCommand(eventOpCommand);

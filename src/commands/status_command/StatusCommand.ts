@@ -7,4 +7,7 @@ class StatusCommand extends CommandGroupInteraction {
     .setDescription('イベント参加状況を確認');
 }
 
-export default new StatusCommand();
+/**
+ * StatusCommandのインスタンス
+ */
+export const statusCommand = new StatusCommand();

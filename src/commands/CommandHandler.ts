@@ -8,7 +8,7 @@ import { CommandBasedInteraction } from './base/command_base.js';
 /**
  * コマンドハンドラー
  */
-export default class CommandHandler {
+export class CommandHandler {
   /**
    * コマンドハンドラーを初期化します
    * @param _commands コマンドリスト

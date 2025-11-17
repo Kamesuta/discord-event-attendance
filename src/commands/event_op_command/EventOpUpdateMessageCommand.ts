@@ -4,9 +4,9 @@ import {
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
 import { messageUpdateManager } from '../../utils/client.js';
-import messageEditor from '../../utils/discord/MessageEditor.js';
+import { messageEditor } from '../../utils/discord/MessageEditor.js';
 import { MessageUpdateContext } from '../../message_updaters/MessageUpdater.js';
-import eventOpCommand from './EventOpCommand.js';
+import { eventOpCommand } from './EventOpCommand.js';
 
 class EventOpUpdateMessageCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
@@ -86,4 +86,9 @@ class EventOpUpdateMessageCommand extends SubcommandInteraction {
   }
 }
 
-export default new EventOpUpdateMessageCommand(eventOpCommand);
+/**
+ * EventOpUpdateMessageCommandのインスタンス
+ */
+export const eventOpUpdateMessageCommand = new EventOpUpdateMessageCommand(
+  eventOpCommand,
+);

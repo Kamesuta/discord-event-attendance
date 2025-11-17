@@ -68,4 +68,10 @@ class AddRoleButtonAction extends MessageComponentActionInteraction<ComponentTyp
   }
 }
 
-export default new AddRoleButtonAction('addrole', ComponentType.Button);
+/**
+ * AddRoleButtonActionのインスタンス
+ */
+export const addRoleButtonAction = new AddRoleButtonAction(
+  'addrole',
+  ComponentType.Button,
+);

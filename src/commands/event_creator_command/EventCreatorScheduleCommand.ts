@@ -7,13 +7,13 @@ import {
 import { SubcommandInteraction } from '../base/command_base.js';
 import { config } from '../../utils/config.js';
 import { prisma } from '../../utils/prisma.js';
-import eventCreatorCommand from './EventCreatorCommand.js';
+import { eventCreatorCommand } from './EventCreatorCommand.js';
 import { eventIncludeHost, EventWithHost } from '../../event/EventManager.js';
 import { logger } from '../../utils/log.js';
-import calendarMessageUpdater from '../../message_updaters/CalendarMessageUpdater.js';
-import detailMessageUpdater from '../../message_updaters/DetailMessageUpdater.js';
+import { calendarMessageUpdater } from '../../message_updaters/CalendarMessageUpdater.js';
+import { detailMessageUpdater } from '../../message_updaters/DetailMessageUpdater.js';
 import { parseDate } from '../../utils/parsers/periodParser.js';
-import eventCreatorPreparationPanelCommand from './EventCreatorPreparationPanelCommand.js';
+import { eventCreatorPreparationPanelCommand } from './EventCreatorPreparationPanelCommand.js';
 
 class EventCreatorScheduleCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
@@ -153,4 +153,9 @@ class EventCreatorScheduleCommand extends SubcommandInteraction {
   }
 }
 
-export default new EventCreatorScheduleCommand(eventCreatorCommand);
+/**
+ * EventCreatorScheduleCommandのインスタンス
+ */
+export const eventCreatorScheduleCommand = new EventCreatorScheduleCommand(
+  eventCreatorCommand,
+);

@@ -1,4 +1,4 @@
-import { Event, PrismaClient, User } from '@prisma/client';
+import { Event, User } from '@prisma/client';
 import {
   GuildScheduledEvent,
   GuildScheduledEventStatus,
@@ -8,12 +8,13 @@ import {
 import { config } from '../utils/config.js';
 import { attendanceService } from './AttendanceService.js';
 import { logger } from '../utils/log.js';
-import eventManager, {
+import {
+  eventManager,
   eventIncludeHost,
   EventWithHost,
 } from '../event/EventManager.js';
 import { client } from '../utils/client.js';
-import userManager from '../event/UserManager.js';
+import { userManager } from '../event/UserManager.js';
 import { prisma } from '../utils/prisma.js';
 
 /**

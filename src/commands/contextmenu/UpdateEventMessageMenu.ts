@@ -34,4 +34,7 @@ class UpdateEventMessageMenu extends MessageContextMenuInteraction {
   }
 }
 
-export default new UpdateEventMessageMenu();
+/**
+ * UpdateEventMessageMenuのインスタンス
+ */
+export const updateEventMessageMenu = new UpdateEventMessageMenu();

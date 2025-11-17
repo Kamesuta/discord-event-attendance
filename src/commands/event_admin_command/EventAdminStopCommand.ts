@@ -3,9 +3,9 @@ import {
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
-import eventManager from '../../event/EventManager.js';
+import { eventManager } from '../../event/EventManager.js';
 import { onEndScheduledEvent } from '../../event_handler.js';
-import eventAdminCommand from './EventAdminCommand.js';
+import { eventAdminCommand } from './EventAdminCommand.js';
 
 class EventAdminStopCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
@@ -33,4 +33,9 @@ class EventAdminStopCommand extends SubcommandInteraction {
   }
 }
 
-export default new EventAdminStopCommand(eventAdminCommand);
+/**
+ * EventAdminStopCommandのインスタンス
+ */
+export const eventAdminStopCommand = new EventAdminStopCommand(
+  eventAdminCommand,
+);

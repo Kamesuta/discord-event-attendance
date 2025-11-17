@@ -3,7 +3,7 @@ import {
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
-import statusCommand from './StatusCommand.js';
+import { statusCommand } from './StatusCommand.js';
 import { prisma } from '../../utils/prisma.js';
 import { showGameResults } from '../../event/game.js';
 
@@ -43,4 +43,7 @@ class StatusGameCommand extends SubcommandInteraction {
   }
 }
 
-export default new StatusGameCommand(statusCommand);
+/**
+ * StatusGameCommandのインスタンス
+ */
+export const statusGameCommand = new StatusGameCommand(statusCommand);

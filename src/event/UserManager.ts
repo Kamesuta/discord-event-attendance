@@ -96,4 +96,7 @@ class UserManager {
   }
 }
 
-export default new UserManager();
+/**
+ * ユーザーマネージャーのインスタンス
+ */
+export const userManager = new UserManager();

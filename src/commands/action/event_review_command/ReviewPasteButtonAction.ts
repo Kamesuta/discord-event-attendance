@@ -4,9 +4,9 @@ import {
   ButtonStyle,
   ComponentType,
 } from 'discord.js';
-import eventManager from '../../../event/EventManager.js';
+import { eventManager } from '../../../event/EventManager.js';
 import { MessageComponentActionInteraction } from '../../base/action_base.js';
-import reviewPasteModalAction from './ReviewPasteModalAction.js';
+import { reviewPasteModalAction } from './ReviewPasteModalAction.js';
 import { Event } from '@prisma/client';
 
 /**
@@ -57,4 +57,10 @@ class ReviewPasteButtonAction extends MessageComponentActionInteraction<Componen
   }
 }
 
-export default new ReviewPasteButtonAction('paste', ComponentType.Button);
+/**
+ * ReviewPasteButtonActionのインスタンス
+ */
+export const reviewPasteButtonAction = new ReviewPasteButtonAction(
+  'paste',
+  ComponentType.Button,
+);

@@ -139,4 +139,4 @@ class MessageEditor {
 /**
  * メッセージ編集を統一的に処理するシングルトンインスタンス
  */
-export default new MessageEditor();
+export const messageEditor = new MessageEditor();

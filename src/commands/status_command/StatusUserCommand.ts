@@ -7,10 +7,10 @@ import {
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
-import statusCommand from './StatusCommand.js';
-import splitStrings from '../../utils/string/splitStrings.js';
+import { statusCommand } from './StatusCommand.js';
+import { splitStrings } from '../../utils/string/splitStrings.js';
 import { prisma } from '../../utils/prisma.js';
-import userManager from '../../event/UserManager.js';
+import { userManager } from '../../event/UserManager.js';
 
 class StatusUserCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
@@ -244,4 +244,7 @@ class StatusUserCommand extends SubcommandInteraction {
   }
 }
 
-export default new StatusUserCommand(statusCommand);
+/**
+ * StatusUserCommandのインスタンス
+ */
+export const statusUserCommand = new StatusUserCommand(statusCommand);

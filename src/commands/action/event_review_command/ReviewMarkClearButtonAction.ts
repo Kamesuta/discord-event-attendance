@@ -4,10 +4,10 @@ import {
   ButtonStyle,
   ComponentType,
 } from 'discord.js';
-import eventManager from '../../../event/EventManager.js';
+import { eventManager } from '../../../event/EventManager.js';
 import { MessageComponentActionInteraction } from '../../base/action_base.js';
 import { Event } from '@prisma/client';
-import eventReviewCommand from '../../event_command/EventReviewCommand.js';
+import { eventReviewCommand } from '../../event_command/EventReviewCommand.js';
 import { prisma } from '../../../utils/prisma.js';
 
 class ReviewMarkClearButtonAction extends MessageComponentActionInteraction<ComponentType.Button> {
@@ -79,4 +79,10 @@ class ReviewMarkClearButtonAction extends MessageComponentActionInteraction<Comp
   }
 }
 
-export default new ReviewMarkClearButtonAction('rclr', ComponentType.Button);
+/**
+ * ReviewMarkClearButtonActionのインスタンス
+ */
+export const reviewMarkClearButtonAction = new ReviewMarkClearButtonAction(
+  'rclr',
+  ComponentType.Button,
+);

@@ -4,12 +4,12 @@ import {
   ButtonStyle,
   ComponentType,
 } from 'discord.js';
-import eventManager from '../../../event/EventManager.js';
+import { eventManager } from '../../../event/EventManager.js';
 import { MessageComponentActionInteraction } from '../../base/action_base.js';
-import eventGameCommand, {
+import {
+  eventGameCommand,
   EditData,
 } from '../../event_command/EventGameCommand.js';
-
 class GameClearButtonAction extends MessageComponentActionInteraction<ComponentType.Button> {
   /**
    * ボタンを作成
@@ -64,4 +64,10 @@ class GameClearButtonAction extends MessageComponentActionInteraction<ComponentT
   }
 }
 
-export default new GameClearButtonAction('gclr', ComponentType.Button);
+/**
+ * GameClearButtonActionのインスタンス
+ */
+export const gameClearButtonAction = new GameClearButtonAction(
+  'gclr',
+  ComponentType.Button,
+);

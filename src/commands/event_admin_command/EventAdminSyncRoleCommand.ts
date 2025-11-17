@@ -3,7 +3,7 @@ import {
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
-import eventAdminCommand from './EventAdminCommand.js';
+import { eventAdminCommand } from './EventAdminCommand.js';
 import { roleManagementService } from '../../services/RoleManagementService.js';
 
 class EventAdminSyncRoleCommand extends SubcommandInteraction {
@@ -33,4 +33,9 @@ class EventAdminSyncRoleCommand extends SubcommandInteraction {
   }
 }
 
-export default new EventAdminSyncRoleCommand(eventAdminCommand);
+/**
+ * EventAdminSyncRoleCommandのインスタンス
+ */
+export const eventAdminSyncRoleCommand = new EventAdminSyncRoleCommand(
+  eventAdminCommand,
+);

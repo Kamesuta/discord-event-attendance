@@ -3,9 +3,9 @@ import {
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
-import statusCommand from './StatusCommand.js';
-import eventManager from '../../event/EventManager.js';
-import eventInfoMessageUpdater from '../../message_updaters/EventInfoMessageUpdater.js';
+import { statusCommand } from './StatusCommand.js';
+import { eventManager } from '../../event/EventManager.js';
+import { eventInfoMessageUpdater } from '../../message_updaters/EventInfoMessageUpdater.js';
 
 class StatusEventCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
@@ -42,4 +42,7 @@ class StatusEventCommand extends SubcommandInteraction {
   }
 }
 
-export default new StatusEventCommand(statusCommand);
+/**
+ * StatusEventCommandのインスタンス
+ */
+export const statusEventCommand = new StatusEventCommand(statusCommand);

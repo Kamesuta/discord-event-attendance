@@ -6,11 +6,11 @@ import {
   VoiceChannel,
 } from 'discord.js';
 import { UserContextMenuInteraction } from '../base/contextmenu_base.js';
-import eventManager from '../../event/EventManager.js';
+import { eventManager } from '../../event/EventManager.js';
 import { logger } from '../../utils/log.js';
 import { prisma } from '../../utils/prisma.js';
 import { checkEventOperationPermission } from '../../utils/permissions/checkCommandPermission.js';
-import userManager from '../../event/UserManager.js';
+import { userManager } from '../../event/UserManager.js';
 
 class MuteUserMenu extends UserContextMenuInteraction {
   command = new ContextMenuCommandBuilder()
@@ -132,4 +132,7 @@ class MuteUserMenu extends UserContextMenuInteraction {
   }
 }
 
-export default new MuteUserMenu();
+/**
+ * MuteUserMenuのインスタンス
+ */
+export const muteUserMenu = new MuteUserMenu();

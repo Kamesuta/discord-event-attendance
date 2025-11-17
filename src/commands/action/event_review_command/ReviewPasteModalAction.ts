@@ -5,11 +5,11 @@ import {
   TextInputBuilder,
   TextInputStyle,
 } from 'discord.js';
-import eventManager from '../../../event/EventManager.js';
+import { eventManager } from '../../../event/EventManager.js';
 import { ModalActionInteraction } from '../../base/action_base.js';
 import { Event } from '@prisma/client';
 import { prisma } from '../../../utils/prisma.js';
-import eventReviewCommand from '../../event_command/EventReviewCommand.js';
+import { eventReviewCommand } from '../../event_command/EventReviewCommand.js';
 
 /**
  * IDをペーストするモーダルアクション
@@ -196,4 +196,7 @@ class ReviewPasteModalAction extends ModalActionInteraction {
   }
 }
 
-export default new ReviewPasteModalAction('paste');
+/**
+ * ReviewPasteModalActionのインスタンス
+ */
+export const reviewPasteModalAction = new ReviewPasteModalAction('paste');

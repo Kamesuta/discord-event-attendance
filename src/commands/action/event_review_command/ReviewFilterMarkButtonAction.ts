@@ -4,9 +4,9 @@ import {
   ButtonStyle,
   ComponentType,
 } from 'discord.js';
-import eventManager from '../../../event/EventManager.js';
+import { eventManager } from '../../../event/EventManager.js';
 import { MessageComponentActionInteraction } from '../../base/action_base.js';
-import reviewFilterMarkModalAction from './ReviewFilterMarkModalAction.js';
+import { reviewFilterMarkModalAction } from './ReviewFilterMarkModalAction.js';
 import { Event } from '@prisma/client';
 
 class ReviewFilterMarkButtonAction extends MessageComponentActionInteraction<ComponentType.Button> {
@@ -54,4 +54,10 @@ class ReviewFilterMarkButtonAction extends MessageComponentActionInteraction<Com
   }
 }
 
-export default new ReviewFilterMarkButtonAction('rfadd', ComponentType.Button);
+/**
+ * ReviewFilterMarkButtonActionのインスタンス
+ */
+export const reviewFilterMarkButtonAction = new ReviewFilterMarkButtonAction(
+  'rfadd',
+  ComponentType.Button,
+);

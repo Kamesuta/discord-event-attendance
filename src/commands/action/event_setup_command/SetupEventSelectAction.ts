@@ -4,10 +4,10 @@ import {
   StringSelectMenuInteraction,
 } from 'discord.js';
 import { MessageComponentActionInteraction } from '../../base/action_base.js';
-import eventCreatorSetupCommand, {
+import {
+  eventCreatorSetupCommand,
   EventSpec,
 } from '../../event_creator_command/EventCreatorSetupCommand.js';
-
 class SetupEventSelectAction extends MessageComponentActionInteraction<ComponentType.StringSelect> {
   /**
    * ボタンを作成
@@ -86,7 +86,10 @@ class SetupEventSelectAction extends MessageComponentActionInteraction<Component
   }
 }
 
-export default new SetupEventSelectAction(
+/**
+ * SetupEventSelectActionのインスタンス
+ */
+export const setupEventSelectAction = new SetupEventSelectAction(
   'setupes',
   ComponentType.StringSelect,
 );

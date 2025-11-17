@@ -5,7 +5,7 @@
  * @param delimiter メッセージの区切り文字
  * @returns 分割されたメッセージ
  */
-export default function splitStrings(
+export function splitStrings(
   lines: string[],
   maxLength: number,
   delimiter = '\n',

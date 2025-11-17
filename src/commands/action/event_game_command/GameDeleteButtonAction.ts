@@ -4,12 +4,12 @@ import {
   ButtonStyle,
   ComponentType,
 } from 'discord.js';
-import eventManager from '../../../event/EventManager.js';
+import { eventManager } from '../../../event/EventManager.js';
 import { MessageComponentActionInteraction } from '../../base/action_base.js';
-import eventGameCommand, {
+import {
+  eventGameCommand,
   EditData,
 } from '../../event_command/EventGameCommand.js';
-
 class GameDeleteButtonAction extends MessageComponentActionInteraction<ComponentType.Button> {
   /**
    * ボタンを作成
@@ -89,4 +89,10 @@ class GameDeleteButtonAction extends MessageComponentActionInteraction<Component
   }
 }
 
-export default new GameDeleteButtonAction('gdel', ComponentType.Button);
+/**
+ * GameDeleteButtonActionのインスタンス
+ */
+export const gameDeleteButtonAction = new GameDeleteButtonAction(
+  'gdel',
+  ComponentType.Button,
+);

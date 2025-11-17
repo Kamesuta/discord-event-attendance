@@ -4,10 +4,10 @@ import {
   ButtonStyle,
   ComponentType,
 } from 'discord.js';
-import eventManager from '../../../event/EventManager.js';
+import { eventManager } from '../../../event/EventManager.js';
 import { MessageComponentActionInteraction } from '../../base/action_base.js';
 import { Event } from '@prisma/client';
-import eventReviewCommand from '../../event_command/EventReviewCommand.js';
+import { eventReviewCommand } from '../../event_command/EventReviewCommand.js';
 import { prisma } from '../../../utils/prisma.js';
 
 class ReviewMarkUndoButtonAction extends MessageComponentActionInteraction<ComponentType.Button> {
@@ -96,4 +96,10 @@ class ReviewMarkUndoButtonAction extends MessageComponentActionInteraction<Compo
   }
 }
 
-export default new ReviewMarkUndoButtonAction('rundo', ComponentType.Button);
+/**
+ * ReviewMarkUndoButtonActionのインスタンス
+ */
+export const reviewMarkUndoButtonAction = new ReviewMarkUndoButtonAction(
+  'rundo',
+  ComponentType.Button,
+);

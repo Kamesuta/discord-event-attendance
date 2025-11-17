@@ -6,11 +6,11 @@ import {
   TextInputStyle,
   User,
 } from 'discord.js';
-import eventManager from '../../event/EventManager.js';
+import { eventManager } from '../../event/EventManager.js';
 import { ModalActionInteraction } from '../base/action_base.js';
 import { Event } from '@prisma/client';
 import { prisma } from '../../utils/prisma.js';
-import userManager from '../../event/UserManager.js';
+import { userManager } from '../../event/UserManager.js';
 
 class SetMemoModalAction extends ModalActionInteraction {
   /**
@@ -116,4 +116,7 @@ class SetMemoModalAction extends ModalActionInteraction {
   }
 }
 
-export default new SetMemoModalAction('memo');
+/**
+ * SetMemoModalActionのインスタンス
+ */
+export const setMemoAction = new SetMemoModalAction('memo');
