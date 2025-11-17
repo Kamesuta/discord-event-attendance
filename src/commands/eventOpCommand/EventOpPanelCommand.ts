@@ -6,22 +6,22 @@ import {
   GuildScheduledEvent,
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
-import { SubcommandInteraction } from '../base/commandBase.js';
-import { eventManager } from '../../domain/services/EventManager.js';
+import { SubcommandInteraction } from '@/commands/base/commandBase';
+import { eventManager } from '@/domain/services/EventManager';
 import {
   eventIncludeHost,
   EventWithHost,
-} from '../../domain/queries/eventQueries.js';
-import { onUpdateScheduledEvent } from '../../handlers/eventHandler.js';
-import { prisma } from '../../utils/prisma.js';
-import { panelStartButtonAction } from '../action/eventPanelCommand/PanelStartButtonAction.js';
-import { panelReviewButtonAction } from '../action/eventPanelCommand/PanelReviewButtonAction.js';
-import { panelStopButtonAction } from '../action/eventPanelCommand/PanelStopButtonAction.js';
-import { config } from '../../bot/config.js';
+} from '@/domain/queries/eventQueries';
+import { onUpdateScheduledEvent } from '@/handlers/eventHandler';
+import { prisma } from '@/utils/prisma';
+import { panelStartButtonAction } from '@/commands/action/eventPanelCommand/PanelStartButtonAction';
+import { panelReviewButtonAction } from '@/commands/action/eventPanelCommand/PanelReviewButtonAction';
+import { panelStopButtonAction } from '@/commands/action/eventPanelCommand/PanelStopButtonAction';
+import { config } from '@/bot/config';
 import { eventOpCommand } from './EventOpCommand.js';
-import { userManager } from '../../domain/services/UserManager.js';
-import { messageUpdateManager } from '../../bot/client.js';
-import { logger } from '../../utils/log.js';
+import { userManager } from '@/domain/services/UserManager';
+import { messageUpdateManager } from '@/bot/client';
+import { logger } from '@/utils/log';
 
 class EventOpPanelCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()

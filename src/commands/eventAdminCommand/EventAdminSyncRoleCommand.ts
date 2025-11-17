@@ -2,9 +2,9 @@ import {
   ChatInputCommandInteraction,
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
-import { SubcommandInteraction } from '../base/commandBase.js';
+import { SubcommandInteraction } from '@/commands/base/commandBase';
 import { eventAdminCommand } from './EventAdminCommand.js';
-import { roleManagementService } from '../../services/RoleManagementService.js';
+import { roleManagementService } from '@/services/RoleManagementService';
 
 class EventAdminSyncRoleCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()

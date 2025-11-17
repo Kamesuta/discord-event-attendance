@@ -1,4 +1,4 @@
-import { EventWithHost } from '../../../domain/queries/eventQueries.js';
+import { EventWithHost } from '@/domain/queries/eventQueries';
 
 /**
  * スケジュールメッセージのデータ構造体

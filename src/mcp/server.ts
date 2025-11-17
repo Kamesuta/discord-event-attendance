@@ -21,7 +21,7 @@ import {
   getHostPerformanceRanking,
   getHostPerformanceRankingTool,
 } from './handlers/hostPerformanceRanking.js';
-import { logger } from '../utils/log.js';
+import { logger } from '@/utils/log';
 import { fileURLToPath } from 'url';
 
 /**

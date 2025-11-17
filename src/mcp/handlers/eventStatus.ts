@@ -1,8 +1,8 @@
 import { z } from 'zod';
-import { createMCPJSONResult, MCPToolResult } from '../types.js';
-import { eventManager } from '../../domain/services/EventManager.js';
+import { createMCPJSONResult, MCPToolResult } from '@/mcp/types';
+import { eventManager } from '@/domain/services/EventManager';
 import { GuildScheduledEventStatus } from 'discord.js';
-import { prisma } from '../../utils/prisma.js';
+import { prisma } from '@/utils/prisma';
 
 /**
  * get-event-statusツールの定義

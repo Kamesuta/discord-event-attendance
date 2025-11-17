@@ -8,13 +8,13 @@ import {
 import {
   EventWithHost,
   eventIncludeHost,
-} from '../domain/queries/eventQueries.js';
+} from '@/domain/queries/eventQueries';
 import { MessageUpdater, MessageUpdateContext } from './MessageUpdater.js';
-import { config } from '../bot/config.js';
-import { client } from '../bot/client.js';
-import { prisma } from '../utils/prisma.js';
-import { messageEditor } from '../bot/interactions/MessageEditor.js';
-import { preparationStatusReportButtonAction } from '../commands/action/preparationStatusCommand/PreparationStatusReportButtonAction.js';
+import { config } from '@/bot/config';
+import { client } from '@/bot/client';
+import { prisma } from '@/utils/prisma';
+import { messageEditor } from '@/bot/interactions/MessageEditor';
+import { preparationStatusReportButtonAction } from '@/commands/action/preparationStatusCommand/PreparationStatusReportButtonAction';
 
 /**
  * 準備状況メッセージ用のMessageUpdater実装

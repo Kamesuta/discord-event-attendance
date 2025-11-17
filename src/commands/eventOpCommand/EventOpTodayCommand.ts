@@ -7,14 +7,14 @@ import {
   GuildScheduledEvent,
   GuildTextBasedChannel,
 } from 'discord.js';
-import { SubcommandInteraction } from '../base/commandBase.js';
-import { config } from '../../bot/config.js';
-import { eventManager } from '../../domain/services/EventManager.js';
-import { EventWithHost } from '../../domain/queries/eventQueries.js';
+import { SubcommandInteraction } from '@/commands/base/commandBase';
+import { config } from '@/bot/config';
+import { eventManager } from '@/domain/services/EventManager';
+import { EventWithHost } from '@/domain/queries/eventQueries';
 import { eventOpCommand } from './EventOpCommand.js';
-import { addRoleButtonAction } from '../action/AddRoleButtonAction.js';
-import { logger } from '../../utils/log.js';
-import { client } from '../../bot/client.js';
+import { addRoleButtonAction } from '@/commands/action/AddRoleButtonAction';
+import { logger } from '@/utils/log';
+import { client } from '@/bot/client';
 
 class EventOpTodayCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()

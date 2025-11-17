@@ -1,7 +1,7 @@
 import { Guild, GuildMember } from 'discord.js';
-import { prisma } from '../utils/prisma.js';
-import { config } from '../bot/config.js';
-import { logger } from '../utils/log.js';
+import { prisma } from '@/utils/prisma';
+import { config } from '@/bot/config';
+import { logger } from '@/utils/log';
 
 /**
  * ロール管理サービス

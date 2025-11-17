@@ -9,19 +9,19 @@ import {
   SlashCommandSubcommandBuilder,
   UserSelectMenuBuilder,
 } from 'discord.js';
-import { SubcommandInteraction } from '../base/commandBase.js';
+import { SubcommandInteraction } from '@/commands/base/commandBase';
 import { eventCommand } from './EventCommand.js';
-import { eventManager } from '../../domain/services/EventManager.js';
-import { attendanceService } from '../../services/AttendanceService.js';
-import { prisma } from '../../utils/prisma.js';
-import { config } from '../../bot/config.js';
+import { eventManager } from '@/domain/services/EventManager';
+import { attendanceService } from '@/services/AttendanceService';
+import { prisma } from '@/utils/prisma';
+import { config } from '@/bot/config';
 import { Event } from '@prisma/client';
-import { EditableInteraction } from '../../bot/interactions/EditableInteraction.js';
-import { reviewMarkUserSelectAction } from '../action/eventReviewCommand/ReviewMarkUserSelectAction.js';
-import { reviewMarkClearButtonAction } from '../action/eventReviewCommand/ReviewMarkClearButtonAction.js';
-import { reviewMarkUndoButtonAction } from '../action/eventReviewCommand/ReviewMarkUndoButtonAction.js';
-import { reviewFilterMarkButtonAction } from '../action/eventReviewCommand/ReviewFilterMarkButtonAction.js';
-import { reviewPasteButtonAction } from '../action/eventReviewCommand/ReviewPasteButtonAction.js';
+import { EditableInteraction } from '@/bot/interactions/EditableInteraction';
+import { reviewMarkUserSelectAction } from '@/commands/action/eventReviewCommand/ReviewMarkUserSelectAction';
+import { reviewMarkClearButtonAction } from '@/commands/action/eventReviewCommand/ReviewMarkClearButtonAction';
+import { reviewMarkUndoButtonAction } from '@/commands/action/eventReviewCommand/ReviewMarkUndoButtonAction';
+import { reviewFilterMarkButtonAction } from '@/commands/action/eventReviewCommand/ReviewFilterMarkButtonAction';
+import { reviewPasteButtonAction } from '@/commands/action/eventReviewCommand/ReviewPasteButtonAction';
 
 /**
  * 編集データ

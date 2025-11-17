@@ -1,4 +1,4 @@
-import { InteractionBase } from '../../base/interactionBase.js';
+import { InteractionBase } from '@/commands/base/interactionBase';
 import { setupEventSelectAction } from './SetupEventSelectAction.js';
 import { setupUserSelectAction } from './SetupUserSelectAction.js';
 import { setupPreparerSelectAction } from './SetupPreparerSelectAction.js';

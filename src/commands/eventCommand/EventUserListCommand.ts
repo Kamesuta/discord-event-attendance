@@ -3,11 +3,11 @@ import {
   EmbedBuilder,
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
-import { SubcommandInteraction } from '../base/commandBase.js';
+import { SubcommandInteraction } from '@/commands/base/commandBase';
 import { eventCommand } from './EventCommand.js';
-import { eventManager } from '../../domain/services/EventManager.js';
-import { prisma } from '../../utils/prisma.js';
-import { userManager } from '../../domain/services/UserManager.js';
+import { eventManager } from '@/domain/services/EventManager';
+import { prisma } from '@/utils/prisma';
+import { userManager } from '@/domain/services/UserManager';
 
 class EventUserListCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()

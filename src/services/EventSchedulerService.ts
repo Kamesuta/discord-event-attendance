@@ -4,20 +4,20 @@ import {
   GuildScheduledEvent,
   GuildScheduledEventStatus,
 } from 'discord.js';
-import { config } from '../bot/config.js';
+import { config } from '@/bot/config';
 import { Job, scheduleJob } from 'node-schedule';
 import log4js from 'log4js';
-import { eventOpPanelCommand } from '../commands/eventOpCommand/EventOpPanelCommand.js';
+import { eventOpPanelCommand } from '@/commands/eventOpCommand/EventOpPanelCommand';
 import groupBy from 'lodash/groupBy.js';
-import { eventOpTodayCommand } from '../commands/eventOpCommand/EventOpTodayCommand.js';
-import { preparationStatusReportButtonAction } from '../commands/action/preparationStatusCommand/PreparationStatusReportButtonAction.js';
-import { client } from '../bot/client.js';
-import { eventManager } from '../domain/services/EventManager.js';
+import { eventOpTodayCommand } from '@/commands/eventOpCommand/EventOpTodayCommand';
+import { preparationStatusReportButtonAction } from '@/commands/action/preparationStatusCommand/PreparationStatusReportButtonAction';
+import { client } from '@/bot/client';
+import { eventManager } from '@/domain/services/EventManager';
 import {
   eventIncludeHost,
   EventWithHost,
-} from '../domain/queries/eventQueries.js';
-import { prisma } from '../utils/prisma.js';
+} from '@/domain/queries/eventQueries';
+import { prisma } from '@/utils/prisma';
 
 /** スケジュール用ロガー */
 export const loggerSchedule = log4js.getLogger('schedule');

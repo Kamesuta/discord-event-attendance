@@ -4,12 +4,12 @@ import {
   ButtonStyle,
   ComponentType,
 } from 'discord.js';
-import { eventManager } from '../../../domain/services/EventManager.js';
-import { MessageComponentActionInteraction } from '../../base/actionBase.js';
+import { eventManager } from '@/domain/services/EventManager';
+import { MessageComponentActionInteraction } from '@/commands/base/actionBase';
 import {
   eventGameCommand,
   EditData,
-} from '../../eventCommand/EventGameCommand.js';
+} from '@/commands/eventCommand/EventGameCommand';
 import { gameEditModalAction } from './GameEditModalAction.js';
 
 class GameEditButtonAction extends MessageComponentActionInteraction<ComponentType.Button> {

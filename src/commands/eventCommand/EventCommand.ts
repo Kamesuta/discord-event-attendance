@@ -1,5 +1,5 @@
 import { PermissionFlagsBits, SlashCommandBuilder } from 'discord.js';
-import { CommandGroupInteraction } from '../base/commandBase.js';
+import { CommandGroupInteraction } from '@/commands/base/commandBase';
 
 class EventCommand extends CommandGroupInteraction {
   command = new SlashCommandBuilder()

@@ -3,11 +3,11 @@ import {
   StringSelectMenuBuilder,
   StringSelectMenuInteraction,
 } from 'discord.js';
-import { MessageComponentActionInteraction } from '../../base/actionBase.js';
+import { MessageComponentActionInteraction } from '@/commands/base/actionBase';
 import {
   eventCreatorSetupCommand,
   EventSpec,
-} from '../../eventCreatorCommand/EventCreatorSetupCommand.js';
+} from '@/commands/eventCreatorCommand/EventCreatorSetupCommand';
 class SetupEventSelectAction extends MessageComponentActionInteraction<ComponentType.StringSelect> {
   /**
    * ボタンを作成

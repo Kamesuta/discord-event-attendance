@@ -3,11 +3,11 @@ import {
   MessageFlags,
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
-import { SubcommandInteraction } from '../base/commandBase.js';
-import { config } from '../../bot/config.js';
+import { SubcommandInteraction } from '@/commands/base/commandBase';
+import { config } from '@/bot/config';
 import { eventCreatorCommand } from './EventCreatorCommand.js';
-import { EventWithHost } from '../../domain/queries/eventQueries.js';
-import { preparationStatusMessageUpdater } from '../../messageUpdaters/PreparationStatusMessageUpdater.js';
+import { EventWithHost } from '@/domain/queries/eventQueries';
+import { preparationStatusMessageUpdater } from '@/messageUpdaters/PreparationStatusMessageUpdater';
 
 class EventCreatorPreparationPanelCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()

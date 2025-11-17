@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { createMCPJSONResult, MCPToolResult } from '../types.js';
-import { prisma } from '../../utils/prisma.js';
+import { createMCPJSONResult, MCPToolResult } from '@/mcp/types';
+import { prisma } from '@/utils/prisma';
 
 /**
  * get-game-statusツールの定義
@@ -18,7 +18,7 @@ export const getGameStatusTool = {
     },
   },
 };
-import { gameResultInclude } from '../../domain/queries/gameQueries.js';
+import { gameResultInclude } from '@/domain/queries/gameQueries';
 
 /**
  * get-game-statusのスキーマ

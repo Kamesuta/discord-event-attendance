@@ -2,8 +2,8 @@ import {
   ChatInputCommandInteraction,
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
-import { SubcommandInteraction } from '../base/commandBase.js';
-import { onCreateScheduledEvent } from '../../handlers/eventHandler.js';
+import { SubcommandInteraction } from '@/commands/base/commandBase';
+import { onCreateScheduledEvent } from '@/handlers/eventHandler';
 import { eventCreatorCommand } from './EventCreatorCommand.js';
 
 class EventCreatorImportCommand extends SubcommandInteraction {

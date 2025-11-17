@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { createMCPJSONResult, MCPToolResult } from '../types.js';
+import { createMCPJSONResult, MCPToolResult } from '@/mcp/types';
 import { GuildScheduledEventStatus } from 'discord.js';
-import { prisma } from '../../utils/prisma.js';
+import { prisma } from '@/utils/prisma';
 
 /**
  * get-user-statusツールの定義

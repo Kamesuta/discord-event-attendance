@@ -1,4 +1,4 @@
-import { InteractionBase } from '../../base/interactionBase.js';
+import { InteractionBase } from '@/commands/base/interactionBase';
 import { preparationStatusReportButtonAction } from './PreparationStatusReportButtonAction.js';
 import { preparationStatusToggleSelectAction } from './PreparationStatusToggleSelectAction.js';
 

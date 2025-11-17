@@ -3,11 +3,11 @@ import {
   PermissionFlagsBits,
   UserContextMenuCommandInteraction,
 } from 'discord.js';
-import { UserContextMenuInteraction } from '../base/contextmenuBase.js';
-import { eventManager } from '../../domain/services/EventManager.js';
-import { prisma } from '../../utils/prisma.js';
-import { setMemoAction } from '../action/SetMemoAction.js';
-import { userManager } from '../../domain/services/UserManager.js';
+import { UserContextMenuInteraction } from '@/commands/base/contextmenuBase';
+import { eventManager } from '@/domain/services/EventManager';
+import { prisma } from '@/utils/prisma';
+import { setMemoAction } from '@/commands/action/SetMemoAction';
+import { userManager } from '@/domain/services/UserManager';
 
 class SetMemoUserMenu extends UserContextMenuInteraction {
   command = new ContextMenuCommandBuilder()

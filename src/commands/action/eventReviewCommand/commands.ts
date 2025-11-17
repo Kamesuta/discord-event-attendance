@@ -1,4 +1,4 @@
-import { InteractionBase } from '../../base/interactionBase.js';
+import { InteractionBase } from '@/commands/base/interactionBase';
 import { reviewFilterMarkButtonAction } from './ReviewFilterMarkButtonAction.js';
 import { reviewFilterMarkModalAction } from './ReviewFilterMarkModalAction.js';
 import { reviewMarkClearButtonAction } from './ReviewMarkClearButtonAction.js';

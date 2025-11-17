@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from 'discord.js';
-import { CommandGroupInteraction } from '../base/commandBase.js';
+import { CommandGroupInteraction } from '@/commands/base/commandBase';
 
 class StatusCommand extends CommandGroupInteraction {
   command = new SlashCommandBuilder()

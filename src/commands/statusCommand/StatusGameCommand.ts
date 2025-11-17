@@ -2,10 +2,10 @@ import {
   ChatInputCommandInteraction,
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
-import { SubcommandInteraction } from '../base/commandBase.js';
+import { SubcommandInteraction } from '@/commands/base/commandBase';
 import { statusCommand } from './StatusCommand.js';
-import { prisma } from '../../utils/prisma.js';
-import { gameService } from '../../services/GameService.js';
+import { prisma } from '@/utils/prisma';
+import { gameService } from '@/services/GameService';
 
 class StatusGameCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()

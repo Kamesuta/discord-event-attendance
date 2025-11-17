@@ -4,7 +4,7 @@ import {
   User as DiscordUser,
   APIUser,
 } from 'discord.js';
-import { prisma } from '../../utils/prisma.js';
+import { prisma } from '@/utils/prisma';
 import { Prisma, User } from '@prisma/client';
 
 /**

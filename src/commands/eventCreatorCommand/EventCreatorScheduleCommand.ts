@@ -4,18 +4,18 @@ import {
   SlashCommandSubcommandBuilder,
   MessageFlags,
 } from 'discord.js';
-import { SubcommandInteraction } from '../base/commandBase.js';
-import { config } from '../../bot/config.js';
-import { prisma } from '../../utils/prisma.js';
+import { SubcommandInteraction } from '@/commands/base/commandBase';
+import { config } from '@/bot/config';
+import { prisma } from '@/utils/prisma';
 import { eventCreatorCommand } from './EventCreatorCommand.js';
 import {
   eventIncludeHost,
   EventWithHost,
-} from '../../domain/queries/eventQueries.js';
-import { logger } from '../../utils/log.js';
-import { calendarMessageUpdater } from '../../messageUpdaters/CalendarMessageUpdater.js';
-import { detailMessageUpdater } from '../../messageUpdaters/DetailMessageUpdater.js';
-import { parseDate } from '../../domain/parsers/periodParser.js';
+} from '@/domain/queries/eventQueries';
+import { logger } from '@/utils/log';
+import { calendarMessageUpdater } from '@/messageUpdaters/CalendarMessageUpdater';
+import { detailMessageUpdater } from '@/messageUpdaters/DetailMessageUpdater';
+import { parseDate } from '@/domain/parsers/periodParser';
 import { eventCreatorPreparationPanelCommand } from './EventCreatorPreparationPanelCommand.js';
 
 class EventCreatorScheduleCommand extends SubcommandInteraction {

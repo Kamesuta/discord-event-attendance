@@ -4,11 +4,11 @@ import {
   ButtonStyle,
   ComponentType,
 } from 'discord.js';
-import { eventManager } from '../../../domain/services/EventManager.js';
-import { MessageComponentActionInteraction } from '../../base/actionBase.js';
+import { eventManager } from '@/domain/services/EventManager';
+import { MessageComponentActionInteraction } from '@/commands/base/actionBase';
 import { Event } from '@prisma/client';
-import { eventReviewCommand } from '../../eventCommand/EventReviewCommand.js';
-import { prisma } from '../../../utils/prisma.js';
+import { eventReviewCommand } from '@/commands/eventCommand/EventReviewCommand';
+import { prisma } from '@/utils/prisma';
 
 class ReviewMarkUndoButtonAction extends MessageComponentActionInteraction<ComponentType.Button> {
   /**

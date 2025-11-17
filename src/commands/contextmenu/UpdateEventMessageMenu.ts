@@ -3,8 +3,8 @@ import {
   MessageContextMenuCommandInteraction,
   PermissionFlagsBits,
 } from 'discord.js';
-import { MessageContextMenuInteraction } from '../base/contextmenuBase.js';
-import { messageUpdateManager } from '../../bot/client.js';
+import { MessageContextMenuInteraction } from '@/commands/base/contextmenuBase';
+import { messageUpdateManager } from '@/bot/client';
 
 class UpdateEventMessageMenu extends MessageContextMenuInteraction {
   command = new ContextMenuCommandBuilder()

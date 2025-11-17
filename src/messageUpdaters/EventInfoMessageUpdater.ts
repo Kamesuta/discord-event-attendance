@@ -17,19 +17,19 @@ import {
 import {
   eventIncludeHost,
   EventWithHost,
-} from '../domain/queries/eventQueries.js';
+} from '@/domain/queries/eventQueries';
 import { MessageUpdater, MessageUpdateContext } from './MessageUpdater.js';
-import { config } from '../bot/config.js';
-import { client } from '../bot/client.js';
-import { prisma } from '../utils/prisma.js';
-import { splitStrings } from '../domain/formatters/splitStrings.js';
-import { statusGameMenuAction } from '../commands/action/StatusGameMenuAction.js';
-import { userManager } from '../domain/services/UserManager.js';
-import { gameResultInclude } from '../domain/queries/gameQueries.js';
-import { logger } from '../utils/log.js';
-import { attendanceService } from '../services/AttendanceService.js';
-import { getWebhookFromInteraction } from '../bot/interactions/getWebhook.js';
-import { messageEditor } from '../bot/interactions/MessageEditor.js';
+import { config } from '@/bot/config';
+import { client } from '@/bot/client';
+import { prisma } from '@/utils/prisma';
+import { splitStrings } from '@/domain/formatters/splitStrings';
+import { statusGameMenuAction } from '@/commands/action/StatusGameMenuAction';
+import { userManager } from '@/domain/services/UserManager';
+import { gameResultInclude } from '@/domain/queries/gameQueries';
+import { logger } from '@/utils/log';
+import { attendanceService } from '@/services/AttendanceService';
+import { getWebhookFromInteraction } from '@/bot/interactions/getWebhook';
+import { messageEditor } from '@/bot/interactions/MessageEditor';
 
 /**
  * イベント情報メッセージ用のMessageUpdater実装

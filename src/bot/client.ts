@@ -1,8 +1,8 @@
 import { Client, GatewayIntentBits } from 'discord.js';
-import { CommandHandler } from '../commands/CommandHandler.js';
-import { commands } from '../commands/commands.js';
-import { messageUpdaters } from '../messageUpdaters/messageUpdaters.js';
-import { MessageUpdateManager } from '../messageUpdaters/MessageUpdateManager.js';
+import { CommandHandler } from '@/commands/CommandHandler';
+import { commands } from '@/commands/commands';
+import { messageUpdaters } from '@/messageUpdaters/messageUpdaters';
+import { MessageUpdateManager } from '@/messageUpdaters/MessageUpdateManager';
 
 /**
  * Discord Client

@@ -5,13 +5,13 @@ import {
   ComponentType,
   EmbedBuilder,
 } from 'discord.js';
-import { eventManager } from '../../../domain/services/EventManager.js';
-import { MessageComponentActionInteraction } from '../../base/actionBase.js';
+import { eventManager } from '@/domain/services/EventManager';
+import { MessageComponentActionInteraction } from '@/commands/base/actionBase';
 import {
   eventGameCommand,
   EditData,
-} from '../../eventCommand/EventGameCommand.js';
-import { gameResultFormatter } from '../../../domain/formatters/GameResultFormatter.js';
+} from '@/commands/eventCommand/EventGameCommand';
+import { gameResultFormatter } from '@/domain/formatters/GameResultFormatter';
 
 class GameConfirmButtonAction extends MessageComponentActionInteraction<ComponentType.Button> {
   /**

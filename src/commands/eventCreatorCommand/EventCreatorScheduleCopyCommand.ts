@@ -4,15 +4,15 @@ import {
   GuildScheduledEventStatus,
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
-import { SubcommandInteraction } from '../base/commandBase.js';
-import { config } from '../../bot/config.js';
-import { prisma } from '../../utils/prisma.js';
+import { SubcommandInteraction } from '@/commands/base/commandBase';
+import { config } from '@/bot/config';
+import { prisma } from '@/utils/prisma';
 import { eventCreatorCommand } from './EventCreatorCommand.js';
 import {
   eventIncludeHost,
   EventWithHost,
-} from '../../domain/queries/eventQueries.js';
-import { eventManager } from '../../domain/services/EventManager.js';
+} from '@/domain/queries/eventQueries';
+import { eventManager } from '@/domain/services/EventManager';
 
 class EventCreatorScheduleCopyCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()

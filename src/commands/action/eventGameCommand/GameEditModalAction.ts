@@ -5,12 +5,12 @@ import {
   TextInputBuilder,
   TextInputStyle,
 } from 'discord.js';
-import { eventManager } from '../../../domain/services/EventManager.js';
-import { ModalActionInteraction } from '../../base/actionBase.js';
+import { eventManager } from '@/domain/services/EventManager';
+import { ModalActionInteraction } from '@/commands/base/actionBase';
 import {
   eventGameCommand,
   EditData,
-} from '../../eventCommand/EventGameCommand.js';
+} from '@/commands/eventCommand/EventGameCommand';
 class GameEditModalAction extends ModalActionInteraction {
   /**
    * ゲーム編集モーダルを作成

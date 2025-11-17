@@ -2,10 +2,10 @@ import {
   ChatInputCommandInteraction,
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
-import { SubcommandInteraction } from '../base/commandBase.js';
-import { onStartScheduledEvent } from '../../handlers/eventHandler.js';
+import { SubcommandInteraction } from '@/commands/base/commandBase';
+import { onStartScheduledEvent } from '@/handlers/eventHandler';
 import { eventAdminCommand } from './EventAdminCommand.js';
-import { eventManager } from '../../domain/services/EventManager.js';
+import { eventManager } from '@/domain/services/EventManager';
 
 class EventAdminStartCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()

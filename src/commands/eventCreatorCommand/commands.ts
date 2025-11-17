@@ -1,4 +1,4 @@
-import { InteractionBase } from '../base/interactionBase.js';
+import { InteractionBase } from '@/commands/base/interactionBase';
 import { eventCreatorCommand } from './EventCreatorCommand.js';
 import { eventCreatorCreateCommand } from './EventCreatorCreateCommand.js';
 import { eventCreatorImportCommand } from './EventCreatorImportCommand.js';

@@ -7,18 +7,18 @@ import {
   GuildScheduledEventStatus,
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
-import { SubcommandInteraction } from '../base/commandBase.js';
-import { onCreateScheduledEvent } from '../../handlers/eventHandler.js';
-import { parseSearch } from '../../domain/parsers/searchParser.js';
+import { SubcommandInteraction } from '@/commands/base/commandBase';
+import { onCreateScheduledEvent } from '@/handlers/eventHandler';
+import { parseSearch } from '@/domain/parsers/searchParser';
 import {
   statusEventListCommand,
   EventDetail,
-} from '../statusCommand/StatusEventListCommand.js';
-import { eventManager } from '../../domain/services/EventManager.js';
-import { EventWithHost } from '../../domain/queries/eventQueries.js';
-import { parseDate } from '../../domain/parsers/periodParser.js';
+} from '@/commands/statusCommand/StatusEventListCommand';
+import { eventManager } from '@/domain/services/EventManager';
+import { EventWithHost } from '@/domain/queries/eventQueries';
+import { parseDate } from '@/domain/parsers/periodParser';
 import { eventCreatorCommand } from './EventCreatorCommand.js';
-import { userManager } from '../../domain/services/UserManager.js';
+import { userManager } from '@/domain/services/UserManager';
 
 class EventCreatorCreateCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()

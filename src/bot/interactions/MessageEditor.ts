@@ -6,7 +6,7 @@ import {
   Webhook,
 } from 'discord.js';
 import { getWebhook } from './getWebhook.js';
-import { logger } from '../../utils/log.js';
+import { logger } from '@/utils/log';
 
 /**
  * メッセージ編集を統一的に処理するクラス

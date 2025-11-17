@@ -3,15 +3,15 @@ import {
   StringSelectMenuBuilder,
   StringSelectMenuInteraction,
 } from 'discord.js';
-import { MessageComponentActionInteraction } from '../../base/actionBase.js';
+import { MessageComponentActionInteraction } from '@/commands/base/actionBase';
 import {
   eventIncludeHost,
   EventWithHost,
-} from '../../../domain/queries/eventQueries.js';
-import { prisma } from '../../../utils/prisma.js';
-import { checkCommandPermission } from '../../../bot/permissions/checkCommandPermission.js';
-import { messageUpdateManager } from '../../../bot/client.js';
-import { logger } from '../../../utils/log.js';
+} from '@/domain/queries/eventQueries';
+import { prisma } from '@/utils/prisma';
+import { checkCommandPermission } from '@/bot/permissions/checkCommandPermission';
+import { messageUpdateManager } from '@/bot/client';
+import { logger } from '@/utils/log';
 
 class PreparationStatusToggleSelectAction extends MessageComponentActionInteraction<ComponentType.StringSelect> {
   override create(events: EventWithHost[]): StringSelectMenuBuilder {

@@ -1,8 +1,8 @@
 import { z } from 'zod';
-import { createMCPJSONResult, MCPToolResult } from '../types.js';
-import { parsePeriod } from '../../domain/parsers/periodParser.js';
-import { prisma } from '../../utils/prisma.js';
-import { parseSearch } from '../../domain/parsers/searchParser.js';
+import { createMCPJSONResult, MCPToolResult } from '@/mcp/types';
+import { parsePeriod } from '@/domain/parsers/periodParser';
+import { prisma } from '@/utils/prisma';
+import { parseSearch } from '@/domain/parsers/searchParser';
 import { GuildScheduledEventStatus } from 'discord.js';
 
 /**

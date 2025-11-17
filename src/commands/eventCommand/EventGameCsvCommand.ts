@@ -3,17 +3,17 @@ import {
   EmbedBuilder,
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
-import { SubcommandInteraction } from '../base/commandBase.js';
+import { SubcommandInteraction } from '@/commands/base/commandBase';
 import { eventCommand } from './EventCommand.js';
-import { eventManager } from '../../domain/services/EventManager.js';
+import { eventManager } from '@/domain/services/EventManager';
 import { parse } from 'csv-parse';
 import { Event, User } from '@prisma/client';
 import { eventGameCommand, AddGameData } from './EventGameCommand.js';
-import { gameService } from '../../services/GameService.js';
-import { xpMap } from '../../domain/models/GameConstants.js';
-import { logger } from '../../utils/log.js';
-import { userManager } from '../../domain/services/UserManager.js';
-import { gameResultFormatter } from '../../domain/formatters/GameResultFormatter.js';
+import { gameService } from '@/services/GameService';
+import { xpMap } from '@/domain/models/GameConstants';
+import { logger } from '@/utils/log';
+import { userManager } from '@/domain/services/UserManager';
+import { gameResultFormatter } from '@/domain/formatters/GameResultFormatter';
 
 // 参加者の型定義
 interface Participant {

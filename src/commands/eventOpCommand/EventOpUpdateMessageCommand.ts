@@ -2,10 +2,10 @@ import {
   ChatInputCommandInteraction,
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
-import { SubcommandInteraction } from '../base/commandBase.js';
-import { messageUpdateManager } from '../../bot/client.js';
-import { messageEditor } from '../../bot/interactions/MessageEditor.js';
-import { MessageUpdateContext } from '../../messageUpdaters/MessageUpdater.js';
+import { SubcommandInteraction } from '@/commands/base/commandBase';
+import { messageUpdateManager } from '@/bot/client';
+import { messageEditor } from '@/bot/interactions/MessageEditor';
+import { MessageUpdateContext } from '@/messageUpdaters/MessageUpdater';
 import { eventOpCommand } from './EventOpCommand.js';
 
 class EventOpUpdateMessageCommand extends SubcommandInteraction {

@@ -7,24 +7,24 @@ import {
   RepliableInteraction,
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
-import { SubcommandInteraction } from '../base/commandBase.js';
+import { SubcommandInteraction } from '@/commands/base/commandBase';
 import { eventCommand } from './EventCommand.js';
-import { gameService } from '../../services/GameService.js';
-import { ALPHABET, Award, xpMap } from '../../domain/models/GameConstants.js';
+import { gameService } from '@/services/GameService';
+import { ALPHABET, Award, xpMap } from '@/domain/models/GameConstants';
 import {
   GameResultData,
   gameResultInclude,
-} from '../../domain/queries/gameQueries.js';
-import { eventManager } from '../../domain/services/EventManager.js';
-import { gameResultFormatter } from '../../domain/formatters/GameResultFormatter.js';
-import { prisma } from '../../utils/prisma.js';
-import { splitStrings } from '../../domain/formatters/splitStrings.js';
+} from '@/domain/queries/gameQueries';
+import { eventManager } from '@/domain/services/EventManager';
+import { gameResultFormatter } from '@/domain/formatters/GameResultFormatter';
+import { prisma } from '@/utils/prisma';
+import { splitStrings } from '@/domain/formatters/splitStrings';
 import { Event, GameResult, Prisma, User } from '@prisma/client';
 import omit from 'lodash/omit';
-import { gameEditButtonAction } from '../action/eventGameCommand/GameEditButtonAction.js';
-import { gameClearButtonAction } from '../action/eventGameCommand/GameClearButtonAction.js';
-import { gameDeleteButtonAction } from '../action/eventGameCommand/GameDeleteButtonAction.js';
-import { gameConfirmButtonAction } from '../action/eventGameCommand/GameConfirmButtonAction.js';
+import { gameEditButtonAction } from '@/commands/action/eventGameCommand/GameEditButtonAction';
+import { gameClearButtonAction } from '@/commands/action/eventGameCommand/GameClearButtonAction';
+import { gameDeleteButtonAction } from '@/commands/action/eventGameCommand/GameDeleteButtonAction';
+import { gameConfirmButtonAction } from '@/commands/action/eventGameCommand/GameConfirmButtonAction';
 
 /**
  * ゲーム登録データ

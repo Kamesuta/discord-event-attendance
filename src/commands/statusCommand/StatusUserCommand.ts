@@ -6,11 +6,11 @@ import {
   RepliableInteraction,
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
-import { SubcommandInteraction } from '../base/commandBase.js';
+import { SubcommandInteraction } from '@/commands/base/commandBase';
 import { statusCommand } from './StatusCommand.js';
-import { splitStrings } from '../../domain/formatters/splitStrings.js';
-import { prisma } from '../../utils/prisma.js';
-import { userManager } from '../../domain/services/UserManager.js';
+import { splitStrings } from '@/domain/formatters/splitStrings';
+import { prisma } from '@/utils/prisma';
+import { userManager } from '@/domain/services/UserManager';
 
 class StatusUserCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()

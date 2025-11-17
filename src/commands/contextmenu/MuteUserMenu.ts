@@ -5,12 +5,12 @@ import {
   UserContextMenuCommandInteraction,
   VoiceChannel,
 } from 'discord.js';
-import { UserContextMenuInteraction } from '../base/contextmenuBase.js';
-import { eventManager } from '../../domain/services/EventManager.js';
-import { logger } from '../../utils/log.js';
-import { prisma } from '../../utils/prisma.js';
-import { checkEventOperationPermission } from '../../bot/permissions/checkCommandPermission.js';
-import { userManager } from '../../domain/services/UserManager.js';
+import { UserContextMenuInteraction } from '@/commands/base/contextmenuBase';
+import { eventManager } from '@/domain/services/EventManager';
+import { logger } from '@/utils/log';
+import { prisma } from '@/utils/prisma';
+import { checkEventOperationPermission } from '@/bot/permissions/checkCommandPermission';
+import { userManager } from '@/domain/services/UserManager';
 
 class MuteUserMenu extends UserContextMenuInteraction {
   command = new ContextMenuCommandBuilder()

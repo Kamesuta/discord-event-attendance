@@ -5,12 +5,12 @@ import {
   PartialGuildScheduledEvent,
   VoiceBasedChannel,
 } from 'discord.js';
-import { config } from '../bot/config.js';
-import { logger } from '../utils/log.js';
-import { EventWithHost } from '../domain/queries/eventQueries.js';
-import { eventLifecycleService } from '../services/EventLifecycleService.js';
-import { eventSchedulerService } from '../services/EventSchedulerService.js';
-import { client } from '../bot/client.js';
+import { config } from '@/bot/config';
+import { logger } from '@/utils/log';
+import { EventWithHost } from '@/domain/queries/eventQueries';
+import { eventLifecycleService } from '@/services/EventLifecycleService';
+import { eventSchedulerService } from '@/services/EventSchedulerService';
+import { client } from '@/bot/client';
 
 /**
  * スケジュールイベントが作成されたときのイベントハンドラー

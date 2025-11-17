@@ -1,4 +1,4 @@
-import { InteractionBase } from '../base/interactionBase.js';
+import { InteractionBase } from '@/commands/base/interactionBase';
 import { statusCommand } from './StatusCommand.js';
 import { statusUserCommand } from './StatusUserCommand.js';
 import { statusEventCommand } from './StatusEventCommand.js';

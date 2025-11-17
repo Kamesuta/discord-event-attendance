@@ -3,21 +3,21 @@ import {
   UserSelectMenuBuilder,
   UserSelectMenuInteraction,
 } from 'discord.js';
-import { eventManager } from '../../../domain/services/EventManager.js';
-import { eventIncludeHost } from '../../../domain/queries/eventQueries.js';
-import { MessageComponentActionInteraction } from '../../base/actionBase.js';
-import { prisma } from '../../../utils/prisma.js';
+import { eventManager } from '@/domain/services/EventManager';
+import { eventIncludeHost } from '@/domain/queries/eventQueries';
+import { MessageComponentActionInteraction } from '@/commands/base/actionBase';
+import { prisma } from '@/utils/prisma';
 import {
   onCreateScheduledEvent,
   updateSchedules,
-} from '../../../handlers/eventHandler.js';
+} from '@/handlers/eventHandler';
 import {
   eventCreatorSetupCommand,
   EventSpec,
-} from '../../eventCreatorCommand/EventCreatorSetupCommand.js';
-import { userManager } from '../../../domain/services/UserManager.js';
-import { messageUpdateManager } from '../../../bot/client.js';
-import { logger } from '../../../utils/log.js';
+} from '@/commands/eventCreatorCommand/EventCreatorSetupCommand';
+import { userManager } from '@/domain/services/UserManager';
+import { messageUpdateManager } from '@/bot/client';
+import { logger } from '@/utils/log';
 
 class SetupUserSelectAction extends MessageComponentActionInteraction<ComponentType.UserSelect> {
   /**

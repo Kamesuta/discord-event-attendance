@@ -2,11 +2,11 @@ import {
   ChatInputCommandInteraction,
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
-import { SubcommandInteraction } from '../base/commandBase.js';
-import { eventManager } from '../../domain/services/EventManager.js';
+import { SubcommandInteraction } from '@/commands/base/commandBase';
+import { eventManager } from '@/domain/services/EventManager';
 import { eventAdminCommand } from './EventAdminCommand.js';
-import { attendanceService } from '../../services/AttendanceService.js';
-import { prisma } from '../../utils/prisma.js';
+import { attendanceService } from '@/services/AttendanceService';
+import { prisma } from '@/utils/prisma';
 
 class EventAdminRecalcTimeCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()

@@ -3,11 +3,11 @@ import {
   StringSelectMenuBuilder,
   StringSelectMenuInteraction,
 } from 'discord.js';
-import { MessageComponentActionInteraction } from '../base/actionBase.js';
+import { MessageComponentActionInteraction } from '@/commands/base/actionBase';
 import { Event } from '@prisma/client';
-import { gameService } from '../../services/GameService.js';
-import { GameResultData } from '../../domain/queries/gameQueries.js';
-import { prisma } from '../../utils/prisma.js';
+import { gameService } from '@/services/GameService';
+import { GameResultData } from '@/domain/queries/gameQueries';
+import { prisma } from '@/utils/prisma';
 
 class StatusGameMenuAction extends MessageComponentActionInteraction<ComponentType.StringSelect> {
   /**

@@ -6,13 +6,13 @@ import { Message, GuildScheduledEventStatus, MessageFlags } from 'discord.js';
 import {
   EventWithHost,
   eventIncludeHost,
-} from '../domain/queries/eventQueries.js';
+} from '@/domain/queries/eventQueries';
 import { MessageUpdater, MessageUpdateContext } from './MessageUpdater.js';
-import { config } from '../bot/config.js';
-import { client } from '../bot/client.js';
-import { prisma } from '../utils/prisma.js';
-import { messageEditor } from '../bot/interactions/MessageEditor.js';
-import { ScheduleMessageData } from '../commands/eventCreatorCommand/schedule/types.js';
+import { config } from '@/bot/config';
+import { client } from '@/bot/client';
+import { prisma } from '@/utils/prisma';
+import { messageEditor } from '@/bot/interactions/MessageEditor';
+import { ScheduleMessageData } from '@/commands/eventCreatorCommand/schedule/types';
 
 /**
  * カレンダーメッセージ用のMessageUpdater実装

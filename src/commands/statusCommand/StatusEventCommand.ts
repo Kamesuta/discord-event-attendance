@@ -2,10 +2,10 @@ import {
   ChatInputCommandInteraction,
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
-import { SubcommandInteraction } from '../base/commandBase.js';
+import { SubcommandInteraction } from '@/commands/base/commandBase';
 import { statusCommand } from './StatusCommand.js';
-import { eventManager } from '../../domain/services/EventManager.js';
-import { eventInfoMessageUpdater } from '../../messageUpdaters/EventInfoMessageUpdater.js';
+import { eventManager } from '@/domain/services/EventManager';
+import { eventInfoMessageUpdater } from '@/messageUpdaters/EventInfoMessageUpdater';
 
 class StatusEventCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()

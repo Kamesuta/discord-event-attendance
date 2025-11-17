@@ -1,4 +1,4 @@
-import { InteractionBase } from '../../base/interactionBase.js';
+import { InteractionBase } from '@/commands/base/interactionBase';
 import { gameClearButtonAction } from './GameClearButtonAction.js';
 import { gameConfirmButtonAction } from './GameConfirmButtonAction.js';
 import { gameDeleteButtonAction } from './GameDeleteButtonAction.js';

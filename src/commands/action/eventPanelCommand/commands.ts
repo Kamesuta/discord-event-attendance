@@ -1,4 +1,4 @@
-import { InteractionBase } from '../../base/interactionBase.js';
+import { InteractionBase } from '@/commands/base/interactionBase';
 import { panelReviewButtonAction } from './PanelReviewButtonAction.js';
 import { panelStartButtonAction } from './PanelStartButtonAction.js';
 import { panelStopButtonAction } from './PanelStopButtonAction.js';

@@ -1,6 +1,6 @@
-import type { EventWithHost } from '../domain/queries/eventQueries.js';
-import { eventManager } from '../domain/services/EventManager.js';
-import { logger } from '../utils/log.js';
+import type { EventWithHost } from '@/domain/queries/eventQueries';
+import { eventManager } from '@/domain/services/EventManager';
+import { logger } from '@/utils/log';
 import type { MessageUpdateManager } from './MessageUpdateManager.js';
 
 /**

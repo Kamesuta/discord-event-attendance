@@ -1,9 +1,9 @@
 import { z } from 'zod';
-import { createMCPJSONResult, MCPToolResult } from '../types.js';
-import { parsePeriod } from '../../domain/parsers/periodParser.js';
-import { parseSearch } from '../../domain/parsers/searchParser.js';
+import { createMCPJSONResult, MCPToolResult } from '@/mcp/types';
+import { parsePeriod } from '@/domain/parsers/periodParser';
+import { parseSearch } from '@/domain/parsers/searchParser';
 import { GuildScheduledEventStatus } from 'discord.js';
-import { prisma } from '../../utils/prisma.js';
+import { prisma } from '@/utils/prisma';
 
 /**
  * get-event-listツールの定義

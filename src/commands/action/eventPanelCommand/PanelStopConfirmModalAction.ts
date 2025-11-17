@@ -5,15 +5,15 @@ import {
   TextInputBuilder,
   TextInputStyle,
 } from 'discord.js';
-import { ModalActionInteraction } from '../../base/actionBase.js';
+import { ModalActionInteraction } from '@/commands/base/actionBase';
 import { panelStopButtonAction } from './PanelStopButtonAction.js';
-import { eventManager } from '../../../domain/services/EventManager.js';
+import { eventManager } from '@/domain/services/EventManager';
 import { GuildScheduledEventStatus } from 'discord.js';
-import { checkEventOperationPermission } from '../../../bot/permissions/checkCommandPermission.js';
-import { prisma } from '../../../utils/prisma.js';
-import { config } from '../../../bot/config.js';
+import { checkEventOperationPermission } from '@/bot/permissions/checkCommandPermission';
+import { prisma } from '@/utils/prisma';
+import { config } from '@/bot/config';
 import { Prisma } from '@prisma/client';
-import { userManager } from '../../../domain/services/UserManager.js';
+import { userManager } from '@/domain/services/UserManager';
 
 const userStatIncludeUser = {
   include: {

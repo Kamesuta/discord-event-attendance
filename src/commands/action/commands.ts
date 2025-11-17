@@ -1,4 +1,4 @@
-import { InteractionBase } from '../base/interactionBase.js';
+import { InteractionBase } from '@/commands/base/interactionBase';
 import { setMemoAction } from './SetMemoAction.js';
 import { eventGameActions } from './eventGameCommand/commands.js';
 import { eventReviewActions } from './eventReviewCommand/commands.js';

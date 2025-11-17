@@ -20,16 +20,16 @@ import {
 import {
   EventWithHost,
   eventIncludeHost,
-} from '../domain/queries/eventQueries.js';
+} from '@/domain/queries/eventQueries';
 import { MessageUpdater, MessageUpdateContext } from './MessageUpdater.js';
-import { config } from '../bot/config.js';
-import { client } from '../bot/client.js';
-import { prisma } from '../utils/prisma.js';
-import { ScheduleMessageData } from '../commands/eventCreatorCommand/schedule/types.js';
-import { BannerImageUtil } from '../commands/eventCreatorCommand/schedule/BannerImageUtil.js';
-import { userManager } from '../domain/services/UserManager.js';
-import { messageEditor } from '../bot/interactions/MessageEditor.js';
-import { statusCommand } from '../commands/statusCommand/StatusCommand.js';
+import { config } from '@/bot/config';
+import { client } from '@/bot/client';
+import { prisma } from '@/utils/prisma';
+import { ScheduleMessageData } from '@/commands/eventCreatorCommand/schedule/types';
+import { BannerImageUtil } from '@/commands/eventCreatorCommand/schedule/BannerImageUtil';
+import { userManager } from '@/domain/services/UserManager';
+import { messageEditor } from '@/bot/interactions/MessageEditor';
+import { statusCommand } from '@/commands/statusCommand/StatusCommand';
 
 /**
  * 詳細メッセージ用のMessageUpdater実装

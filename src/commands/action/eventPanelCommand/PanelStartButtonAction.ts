@@ -6,12 +6,12 @@ import {
   GuildScheduledEventStatus,
   Routes,
 } from 'discord.js';
-import { eventManager } from '../../../domain/services/EventManager.js';
-import { MessageComponentActionInteraction } from '../../base/actionBase.js';
-import { logger } from '../../../utils/log.js';
-import { checkEventOperationPermission } from '../../../bot/permissions/checkCommandPermission.js';
-import { eventOpAnnounceCommand } from '../../eventOpCommand/EventOpAnnounceCommand.js';
-import { client } from '../../../bot/client.js';
+import { eventManager } from '@/domain/services/EventManager';
+import { MessageComponentActionInteraction } from '@/commands/base/actionBase';
+import { logger } from '@/utils/log';
+import { checkEventOperationPermission } from '@/bot/permissions/checkCommandPermission';
+import { eventOpAnnounceCommand } from '@/commands/eventOpCommand/EventOpAnnounceCommand';
+import { client } from '@/bot/client';
 
 class PanelStartButtonAction extends MessageComponentActionInteraction<ComponentType.Button> {
   /**

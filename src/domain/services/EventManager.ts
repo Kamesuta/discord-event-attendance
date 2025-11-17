@@ -5,11 +5,11 @@ import {
   TextBasedChannel,
   VoiceBasedChannel,
 } from 'discord.js';
-import { prisma } from '../../utils/prisma.js';
+import { prisma } from '@/utils/prisma';
 import { Event, Prisma } from '@prisma/client';
 import { userManager } from './UserManager.js';
-import { logger } from '../../utils/log.js';
-import { eventIncludeHost, EventWithHost } from '../queries/eventQueries.js';
+import { logger } from '@/utils/log';
+import { eventIncludeHost, EventWithHost } from '@/domain/queries/eventQueries';
 
 /**
  * イベント情報を取得します

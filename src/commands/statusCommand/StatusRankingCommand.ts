@@ -4,14 +4,14 @@ import {
   GuildScheduledEventStatus,
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
-import { SubcommandInteraction } from '../base/commandBase.js';
+import { SubcommandInteraction } from '@/commands/base/commandBase';
 import { statusCommand } from './StatusCommand.js';
-import { prisma } from '../../utils/prisma.js';
-import { parsePeriod, Period } from '../../domain/parsers/periodParser.js';
-import { parseSearch } from '../../domain/parsers/searchParser.js';
+import { prisma } from '@/utils/prisma';
+import { parsePeriod, Period } from '@/domain/parsers/periodParser';
+import { parseSearch } from '@/domain/parsers/searchParser';
 import { Prisma } from '@prisma/client';
 import groupBy from 'lodash/groupBy.js';
-import { splitStrings } from '../../domain/formatters/splitStrings.js';
+import { splitStrings } from '@/domain/formatters/splitStrings';
 
 class StatusRankingCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()

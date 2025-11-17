@@ -4,9 +4,9 @@ import {
   ButtonStyle,
   ComponentType,
 } from 'discord.js';
-import { eventManager } from '../../../domain/services/EventManager.js';
-import { MessageComponentActionInteraction } from '../../base/actionBase.js';
-import { eventReviewCommand } from '../../eventCommand/EventReviewCommand.js';
+import { eventManager } from '@/domain/services/EventManager';
+import { MessageComponentActionInteraction } from '@/commands/base/actionBase';
+import { eventReviewCommand } from '@/commands/eventCommand/EventReviewCommand';
 
 class PanelReviewButtonAction extends MessageComponentActionInteraction<ComponentType.Button> {
   /**

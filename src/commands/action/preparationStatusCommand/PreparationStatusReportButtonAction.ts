@@ -6,15 +6,15 @@ import {
   ComponentType,
   StringSelectMenuBuilder,
 } from 'discord.js';
-import { MessageComponentActionInteraction } from '../../base/actionBase.js';
-import { prisma } from '../../../utils/prisma.js';
+import { MessageComponentActionInteraction } from '@/commands/base/actionBase';
+import { prisma } from '@/utils/prisma';
 import { GuildScheduledEventStatus } from 'discord.js';
 import {
   eventIncludeHost,
   EventWithHost,
-} from '../../../domain/queries/eventQueries.js';
-import { checkCommandPermission } from '../../../bot/permissions/checkCommandPermission.js';
-import { userManager } from '../../../domain/services/UserManager.js';
+} from '@/domain/queries/eventQueries';
+import { checkCommandPermission } from '@/bot/permissions/checkCommandPermission';
+import { userManager } from '@/domain/services/UserManager';
 import { preparationStatusToggleSelectAction } from './PreparationStatusToggleSelectAction.js';
 
 class PreparationStatusReportButtonAction extends MessageComponentActionInteraction<ComponentType.Button> {

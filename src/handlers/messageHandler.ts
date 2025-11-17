@@ -1,7 +1,7 @@
 import { GuildScheduledEventStatus, Message } from 'discord.js';
-import { config } from '../bot/config.js';
-import { prisma } from '../utils/prisma.js';
-import { logger } from '../utils/log.js';
+import { config } from '@/bot/config';
+import { prisma } from '@/utils/prisma';
+import { logger } from '@/utils/log';
 
 /**
  * メッセージが送信されたときのイベントハンドラー

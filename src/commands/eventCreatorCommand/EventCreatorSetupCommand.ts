@@ -11,17 +11,17 @@ import {
   StringSelectMenuBuilder,
   UserSelectMenuBuilder,
 } from 'discord.js';
-import { SubcommandInteraction } from '../base/commandBase.js';
-import { config } from '../../bot/config.js';
-import { setupUserSelectAction } from '../action/eventSetupCommand/SetupUserSelectAction.js';
-import { setupPreparerSelectAction } from '../action/eventSetupCommand/SetupPreparerSelectAction.js';
-import { setupEventSelectAction } from '../action/eventSetupCommand/SetupEventSelectAction.js';
-import { prisma } from '../../utils/prisma.js';
+import { SubcommandInteraction } from '@/commands/base/commandBase';
+import { config } from '@/bot/config';
+import { setupUserSelectAction } from '@/commands/action/eventSetupCommand/SetupUserSelectAction';
+import { setupPreparerSelectAction } from '@/commands/action/eventSetupCommand/SetupPreparerSelectAction';
+import { setupEventSelectAction } from '@/commands/action/eventSetupCommand/SetupEventSelectAction';
+import { prisma } from '@/utils/prisma';
 import { eventCreatorCommand } from './EventCreatorCommand.js';
 import {
   eventIncludeHost,
   EventWithHost,
-} from '../../domain/queries/eventQueries.js';
+} from '@/domain/queries/eventQueries';
 
 /**
  * イベント情報

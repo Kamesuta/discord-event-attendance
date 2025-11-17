@@ -1,5 +1,5 @@
 import { Event, User } from '@prisma/client';
-import { prisma } from '../utils/prisma.js';
+import { prisma } from '@/utils/prisma';
 
 /**
  * 出席時間を管理するサービス

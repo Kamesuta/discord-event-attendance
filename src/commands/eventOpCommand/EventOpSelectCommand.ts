@@ -4,9 +4,9 @@ import {
   GuildScheduledEventStatus,
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
-import { SubcommandInteraction } from '../base/commandBase.js';
-import { eventManager } from '../../domain/services/EventManager.js';
-import { statusEventListCommand } from '../statusCommand/StatusEventListCommand.js';
+import { SubcommandInteraction } from '@/commands/base/commandBase';
+import { eventManager } from '@/domain/services/EventManager';
+import { statusEventListCommand } from '@/commands/statusCommand/StatusEventListCommand';
 import { eventOpCommand } from './EventOpCommand.js';
 
 class EventOpSelectCommand extends SubcommandInteraction {

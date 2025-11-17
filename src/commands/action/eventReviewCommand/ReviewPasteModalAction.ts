@@ -5,11 +5,11 @@ import {
   TextInputBuilder,
   TextInputStyle,
 } from 'discord.js';
-import { eventManager } from '../../../domain/services/EventManager.js';
-import { ModalActionInteraction } from '../../base/actionBase.js';
+import { eventManager } from '@/domain/services/EventManager';
+import { ModalActionInteraction } from '@/commands/base/actionBase';
 import { Event } from '@prisma/client';
-import { prisma } from '../../../utils/prisma.js';
-import { eventReviewCommand } from '../../eventCommand/EventReviewCommand.js';
+import { prisma } from '@/utils/prisma';
+import { eventReviewCommand } from '@/commands/eventCommand/EventReviewCommand';
 
 /**
  * IDをペーストするモーダルアクション

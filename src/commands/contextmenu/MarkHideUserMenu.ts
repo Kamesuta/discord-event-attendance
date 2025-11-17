@@ -3,11 +3,11 @@ import {
   PermissionFlagsBits,
   UserContextMenuCommandInteraction,
 } from 'discord.js';
-import { UserContextMenuInteraction } from '../base/contextmenuBase.js';
-import { eventManager } from '../../domain/services/EventManager.js';
-import { eventReviewCommand } from '../eventCommand/EventReviewCommand.js';
-import { userManager } from '../../domain/services/UserManager.js';
-import { prisma } from '../../utils/prisma.js';
+import { UserContextMenuInteraction } from '@/commands/base/contextmenuBase';
+import { eventManager } from '@/domain/services/EventManager';
+import { eventReviewCommand } from '@/commands/eventCommand/EventReviewCommand';
+import { userManager } from '@/domain/services/UserManager';
+import { prisma } from '@/utils/prisma';
 
 class MarkHideUserMenu extends UserContextMenuInteraction {
   command = new ContextMenuCommandBuilder()

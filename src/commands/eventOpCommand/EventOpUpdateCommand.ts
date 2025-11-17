@@ -2,9 +2,9 @@ import {
   ChatInputCommandInteraction,
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
-import { SubcommandInteraction } from '../base/commandBase.js';
-import { eventManager } from '../../domain/services/EventManager.js';
-import { onUpdateScheduledEvent } from '../../handlers/eventHandler.js';
+import { SubcommandInteraction } from '@/commands/base/commandBase';
+import { eventManager } from '@/domain/services/EventManager';
+import { onUpdateScheduledEvent } from '@/handlers/eventHandler';
 import { eventOpCommand } from './EventOpCommand.js';
 
 class EventOpUpdateCommand extends SubcommandInteraction {

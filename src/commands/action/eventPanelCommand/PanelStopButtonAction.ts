@@ -11,20 +11,20 @@ import {
   Message,
   RepliableInteraction,
 } from 'discord.js';
-import { eventManager } from '../../../domain/services/EventManager.js';
-import { EventWithHost } from '../../../domain/queries/eventQueries.js';
-import { MessageComponentActionInteraction } from '../../base/actionBase.js';
-import { config } from '../../../bot/config.js';
-import { logger } from '../../../utils/log.js';
-import { onEndEvent } from '../../../handlers/eventHandler.js';
-import { checkEventOperationPermission } from '../../../bot/permissions/checkCommandPermission.js';
-import { messageUpdateManager } from '../../../bot/client.js';
-import { eventInfoMessageUpdater } from '../../../messageUpdaters/EventInfoMessageUpdater.js';
-import { roleManagementService } from '../../../services/RoleManagementService.js';
-import { messageEditor } from '../../../bot/interactions/MessageEditor.js';
-import { client } from '../../../bot/client.js';
-import { prisma } from '../../../utils/prisma.js';
-import { gameService } from '../../../services/GameService.js';
+import { eventManager } from '@/domain/services/EventManager';
+import { EventWithHost } from '@/domain/queries/eventQueries';
+import { MessageComponentActionInteraction } from '@/commands/base/actionBase';
+import { config } from '@/bot/config';
+import { logger } from '@/utils/log';
+import { onEndEvent } from '@/handlers/eventHandler';
+import { checkEventOperationPermission } from '@/bot/permissions/checkCommandPermission';
+import { messageUpdateManager } from '@/bot/client';
+import { eventInfoMessageUpdater } from '@/messageUpdaters/EventInfoMessageUpdater';
+import { roleManagementService } from '@/services/RoleManagementService';
+import { messageEditor } from '@/bot/interactions/MessageEditor';
+import { client } from '@/bot/client';
+import { prisma } from '@/utils/prisma';
+import { gameService } from '@/services/GameService';
 import { Event, GameResult } from '@prisma/client';
 import { panelStopConfirmModalAction } from './PanelStopConfirmModalAction.js';
 import { ThreadChannel } from 'discord.js';
