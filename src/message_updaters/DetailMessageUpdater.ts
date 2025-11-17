@@ -17,14 +17,17 @@ import {
   GuildScheduledEventStatus,
   ComponentType,
 } from 'discord.js';
-import { EventWithHost, eventIncludeHost } from '../event/EventManager.js';
+import {
+  EventWithHost,
+  eventIncludeHost,
+} from '../domain/queries/eventQueries.js';
 import { MessageUpdater, MessageUpdateContext } from './MessageUpdater.js';
 import { config } from '../utils/config.js';
 import { client } from '../utils/client.js';
 import { prisma } from '../utils/prisma.js';
 import { ScheduleMessageData } from '../commands/event_creator_command/schedule/types.js';
 import { BannerImageUtil } from '../commands/event_creator_command/schedule/BannerImageUtil.js';
-import { userManager } from '../event/UserManager.js';
+import { userManager } from '../domain/services/UserManager.js';
 import { messageEditor } from '../utils/discord/MessageEditor.js';
 import { statusCommand } from '../commands/status_command/StatusCommand.js';
 

@@ -7,7 +7,7 @@ import {
 } from 'discord.js';
 import { config } from './utils/config.js';
 import { logger } from './utils/log.js';
-import { EventWithHost } from './event/EventManager.js';
+import { EventWithHost } from './domain/queries/eventQueries.js';
 import { eventLifecycleService } from './services/EventLifecycleService.js';
 import { eventSchedulerService } from './services/EventSchedulerService.js';
 import { client } from './utils/client.js';

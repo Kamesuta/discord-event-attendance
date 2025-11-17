@@ -6,7 +6,7 @@ import {
   GuildScheduledEventStatus,
   Routes,
 } from 'discord.js';
-import { eventManager } from '../../../event/EventManager.js';
+import { eventManager } from '../../../domain/services/EventManager.js';
 import { MessageComponentActionInteraction } from '../../base/action_base.js';
 import { logger } from '../../../utils/log.js';
 import { checkEventOperationPermission } from '../../../utils/permissions/checkCommandPermission.js';

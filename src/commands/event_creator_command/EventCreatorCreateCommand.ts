@@ -14,10 +14,11 @@ import {
   statusEventListCommand,
   EventDetail,
 } from '../status_command/StatusEventListCommand.js';
-import { eventManager, EventWithHost } from '../../event/EventManager.js';
+import { eventManager } from '../../domain/services/EventManager.js';
+import { EventWithHost } from '../../domain/queries/eventQueries.js';
 import { parseDate } from '../../utils/parsers/periodParser.js';
 import { eventCreatorCommand } from './EventCreatorCommand.js';
-import { userManager } from '../../event/UserManager.js';
+import { userManager } from '../../domain/services/UserManager.js';
 
 class EventCreatorCreateCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()

@@ -14,15 +14,18 @@ import {
   TextBasedChannel,
   ThreadAutoArchiveDuration,
 } from 'discord.js';
-import { eventIncludeHost, EventWithHost } from '../event/EventManager.js';
+import {
+  eventIncludeHost,
+  EventWithHost,
+} from '../domain/queries/eventQueries.js';
 import { MessageUpdater, MessageUpdateContext } from './MessageUpdater.js';
 import { config } from '../utils/config.js';
 import { client } from '../utils/client.js';
 import { prisma } from '../utils/prisma.js';
 import { splitStrings } from '../utils/string/splitStrings.js';
 import { statusGameMenuAction } from '../commands/action/StatusGameMenuAction.js';
-import { userManager } from '../event/UserManager.js';
-import { gameResultInclude } from '../event/game.js';
+import { userManager } from '../domain/services/UserManager.js';
+import { gameResultInclude } from '../domain/queries/gameQueries.js';
 import { logger } from '../utils/log.js';
 import { attendanceService } from '../services/AttendanceService.js';
 import { getWebhookFromInteraction } from '../utils/discord/getWebhook.js';

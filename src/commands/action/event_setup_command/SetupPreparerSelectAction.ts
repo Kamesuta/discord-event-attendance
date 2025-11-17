@@ -3,7 +3,8 @@ import {
   UserSelectMenuBuilder,
   UserSelectMenuInteraction,
 } from 'discord.js';
-import { eventManager, eventIncludeHost } from '../../../event/EventManager.js';
+import { eventManager } from '../../../domain/services/EventManager.js';
+import { eventIncludeHost } from '../../../domain/queries/eventQueries.js';
 import { MessageComponentActionInteraction } from '../../base/action_base.js';
 import { prisma } from '../../../utils/prisma.js';
 import {
@@ -14,7 +15,7 @@ import {
   eventCreatorSetupCommand,
   EventSpec,
 } from '../../event_creator_command/EventCreatorSetupCommand.js';
-import { userManager } from '../../../event/UserManager.js';
+import { userManager } from '../../../domain/services/UserManager.js';
 import { messageUpdateManager } from '../../../utils/client.js';
 import { logger } from '../../../utils/log.js';
 

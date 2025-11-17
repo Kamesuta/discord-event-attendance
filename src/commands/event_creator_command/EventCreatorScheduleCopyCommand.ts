@@ -8,8 +8,11 @@ import { SubcommandInteraction } from '../base/command_base.js';
 import { config } from '../../utils/config.js';
 import { prisma } from '../../utils/prisma.js';
 import { eventCreatorCommand } from './EventCreatorCommand.js';
-import { eventIncludeHost, EventWithHost } from '../../event/EventManager.js';
-import { eventManager } from '../../event/EventManager.js';
+import {
+  eventIncludeHost,
+  EventWithHost,
+} from '../../domain/queries/eventQueries.js';
+import { eventManager } from '../../domain/services/EventManager.js';
 
 class EventCreatorScheduleCopyCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()

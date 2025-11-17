@@ -10,7 +10,7 @@ import { SubcommandInteraction } from '../base/command_base.js';
 import { statusCommand } from './StatusCommand.js';
 import { splitStrings } from '../../utils/string/splitStrings.js';
 import { prisma } from '../../utils/prisma.js';
-import { userManager } from '../../event/UserManager.js';
+import { userManager } from '../../domain/services/UserManager.js';
 
 class StatusUserCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()

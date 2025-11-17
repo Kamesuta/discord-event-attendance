@@ -8,13 +8,13 @@ import {
 import { config } from '../utils/config.js';
 import { attendanceService } from './AttendanceService.js';
 import { logger } from '../utils/log.js';
+import { eventManager } from '../domain/services/EventManager.js';
 import {
-  eventManager,
   eventIncludeHost,
   EventWithHost,
-} from '../event/EventManager.js';
+} from '../domain/queries/eventQueries.js';
 import { client } from '../utils/client.js';
-import { userManager } from '../event/UserManager.js';
+import { userManager } from '../domain/services/UserManager.js';
 import { prisma } from '../utils/prisma.js';
 
 /**

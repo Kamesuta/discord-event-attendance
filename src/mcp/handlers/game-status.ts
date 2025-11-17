@@ -18,7 +18,7 @@ export const getGameStatusTool = {
     },
   },
 };
-import { gameResultInclude } from '../../event/game.js';
+import { gameResultInclude } from '../../domain/queries/gameQueries.js';
 
 /**
  * get-game-statusのスキーマ

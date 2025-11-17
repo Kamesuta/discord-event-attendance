@@ -6,7 +6,7 @@ import {
 import { SubcommandInteraction } from '../base/command_base.js';
 import { config } from '../../utils/config.js';
 import { eventCreatorCommand } from './EventCreatorCommand.js';
-import { EventWithHost } from '../../event/EventManager.js';
+import { EventWithHost } from '../../domain/queries/eventQueries.js';
 import { preparationStatusMessageUpdater } from '../../message_updaters/PreparationStatusMessageUpdater.js';
 
 class EventCreatorPreparationPanelCommand extends SubcommandInteraction {

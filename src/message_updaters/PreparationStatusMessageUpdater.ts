@@ -5,7 +5,10 @@ import {
   ActionRowBuilder,
   ButtonBuilder,
 } from 'discord.js';
-import { EventWithHost, eventIncludeHost } from '../event/EventManager.js';
+import {
+  EventWithHost,
+  eventIncludeHost,
+} from '../domain/queries/eventQueries.js';
 import { MessageUpdater, MessageUpdateContext } from './MessageUpdater.js';
 import { config } from '../utils/config.js';
 import { client } from '../utils/client.js';

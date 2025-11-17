@@ -12,11 +12,11 @@ import groupBy from 'lodash/groupBy.js';
 import { eventOpTodayCommand } from '../commands/event_op_command/EventOpTodayCommand.js';
 import { preparationStatusReportButtonAction } from '../commands/action/preparation_status_command/PreparationStatusReportButtonAction.js';
 import { client } from '../utils/client.js';
+import { eventManager } from '../domain/services/EventManager.js';
 import {
-  eventManager,
   eventIncludeHost,
   EventWithHost,
-} from '../event/EventManager.js';
+} from '../domain/queries/eventQueries.js';
 import { prisma } from '../utils/prisma.js';
 
 /** スケジュール用ロガー */

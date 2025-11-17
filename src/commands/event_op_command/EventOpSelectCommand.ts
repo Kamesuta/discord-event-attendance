@@ -5,7 +5,7 @@ import {
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
-import { eventManager } from '../../event/EventManager.js';
+import { eventManager } from '../../domain/services/EventManager.js';
 import { statusEventListCommand } from '../status_command/StatusEventListCommand.js';
 import { eventOpCommand } from './EventOpCommand.js';
 

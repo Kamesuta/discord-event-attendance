@@ -4,9 +4,9 @@ import {
   UserContextMenuCommandInteraction,
 } from 'discord.js';
 import { UserContextMenuInteraction } from '../base/contextmenu_base.js';
-import { eventManager } from '../../event/EventManager.js';
+import { eventManager } from '../../domain/services/EventManager.js';
 import { eventReviewCommand } from '../event_command/EventReviewCommand.js';
-import { userManager } from '../../event/UserManager.js';
+import { userManager } from '../../domain/services/UserManager.js';
 
 class MarkShowUserMenu extends UserContextMenuInteraction {
   command = new ContextMenuCommandBuilder()

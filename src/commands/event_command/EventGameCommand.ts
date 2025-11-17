@@ -12,13 +12,15 @@ import { eventCommand } from './EventCommand.js';
 import {
   ALPHABET,
   Award,
-  GameResultData,
-  gameResultInclude,
   getGameResultNumbering,
-  makeEmbed,
   xpMap,
 } from '../../event/game.js';
-import { eventManager } from '../../event/EventManager.js';
+import {
+  GameResultData,
+  gameResultInclude,
+} from '../../domain/queries/gameQueries.js';
+import { eventManager } from '../../domain/services/EventManager.js';
+import { gameResultFormatter } from '../../domain/formatters/GameResultFormatter.js';
 import { prisma } from '../../utils/prisma.js';
 import { splitStrings } from '../../utils/string/splitStrings.js';
 import { Event, GameResult, Prisma, User } from '@prisma/client';
@@ -267,7 +269,7 @@ class EventGameCommand extends SubcommandInteraction {
     // 表示用のプレビューを作成
     const game = this._previewGetGameResult(event, editData);
     // 結果を表示
-    makeEmbed(embeds, game);
+    gameResultFormatter.makeEmbed(embeds, game);
     return embeds;
   }
 

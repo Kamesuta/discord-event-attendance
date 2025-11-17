@@ -7,11 +7,11 @@ import {
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
+import { eventManager } from '../../domain/services/EventManager.js';
 import {
-  eventManager,
   eventIncludeHost,
   EventWithHost,
-} from '../../event/EventManager.js';
+} from '../../domain/queries/eventQueries.js';
 import { onUpdateScheduledEvent } from '../../event_handler.js';
 import { prisma } from '../../utils/prisma.js';
 import { panelStartButtonAction } from '../action/event_panel_command/PanelStartButtonAction.js';
@@ -19,7 +19,7 @@ import { panelReviewButtonAction } from '../action/event_panel_command/PanelRevi
 import { panelStopButtonAction } from '../action/event_panel_command/PanelStopButtonAction.js';
 import { config } from '../../utils/config.js';
 import { eventOpCommand } from './EventOpCommand.js';
-import { userManager } from '../../event/UserManager.js';
+import { userManager } from '../../domain/services/UserManager.js';
 import { messageUpdateManager } from '../../utils/client.js';
 import { logger } from '../../utils/log.js';
 

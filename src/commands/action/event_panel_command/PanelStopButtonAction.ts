@@ -11,7 +11,8 @@ import {
   Message,
   RepliableInteraction,
 } from 'discord.js';
-import { eventManager, EventWithHost } from '../../../event/EventManager.js';
+import { eventManager } from '../../../domain/services/EventManager.js';
+import { EventWithHost } from '../../../domain/queries/eventQueries.js';
 import { MessageComponentActionInteraction } from '../../base/action_base.js';
 import { config } from '../../../utils/config.js';
 import { logger } from '../../../utils/log.js';

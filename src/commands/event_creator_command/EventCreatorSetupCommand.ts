@@ -18,7 +18,10 @@ import { setupPreparerSelectAction } from '../action/event_setup_command/SetupPr
 import { setupEventSelectAction } from '../action/event_setup_command/SetupEventSelectAction.js';
 import { prisma } from '../../utils/prisma.js';
 import { eventCreatorCommand } from './EventCreatorCommand.js';
-import { eventIncludeHost, EventWithHost } from '../../event/EventManager.js';
+import {
+  eventIncludeHost,
+  EventWithHost,
+} from '../../domain/queries/eventQueries.js';
 
 /**
  * イベント情報

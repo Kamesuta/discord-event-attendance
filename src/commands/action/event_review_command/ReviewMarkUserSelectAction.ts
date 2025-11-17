@@ -4,11 +4,11 @@ import {
   UserSelectMenuBuilder,
   UserSelectMenuInteraction,
 } from 'discord.js';
-import { eventManager } from '../../../event/EventManager.js';
+import { eventManager } from '../../../domain/services/EventManager.js';
 import { MessageComponentActionInteraction } from '../../base/action_base.js';
 import { Event } from '@prisma/client';
 import { eventReviewCommand } from '../../event_command/EventReviewCommand.js';
-import { userManager } from '../../../event/UserManager.js';
+import { userManager } from '../../../domain/services/UserManager.js';
 
 class ReviewMarkUserSelectAction extends MessageComponentActionInteraction<ComponentType.UserSelect> {
   /** UUID -> ユーザーIDのリスト */

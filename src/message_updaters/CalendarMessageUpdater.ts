@@ -3,7 +3,10 @@
  * カレンダー形式のイベント一覧メッセージの判定・更新・取得を担当
  */
 import { Message, GuildScheduledEventStatus, MessageFlags } from 'discord.js';
-import { EventWithHost, eventIncludeHost } from '../event/EventManager.js';
+import {
+  EventWithHost,
+  eventIncludeHost,
+} from '../domain/queries/eventQueries.js';
 import { MessageUpdater, MessageUpdateContext } from './MessageUpdater.js';
 import { config } from '../utils/config.js';
 import { client } from '../utils/client.js';

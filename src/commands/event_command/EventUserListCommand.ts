@@ -5,9 +5,9 @@ import {
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
 import { eventCommand } from './EventCommand.js';
-import { eventManager } from '../../event/EventManager.js';
+import { eventManager } from '../../domain/services/EventManager.js';
 import { prisma } from '../../utils/prisma.js';
-import { userManager } from '../../event/UserManager.js';
+import { userManager } from '../../domain/services/UserManager.js';
 
 class EventUserListCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()

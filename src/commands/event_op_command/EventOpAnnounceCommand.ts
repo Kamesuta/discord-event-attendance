@@ -7,7 +7,8 @@ import {
 import { SubcommandInteraction } from '../base/command_base.js';
 import { config } from '../../utils/config.js';
 import { eventInfoMessageUpdater } from '../../message_updaters/EventInfoMessageUpdater.js';
-import { eventManager, EventWithHost } from '../../event/EventManager.js';
+import { eventManager } from '../../domain/services/EventManager.js';
+import { EventWithHost } from '../../domain/queries/eventQueries.js';
 import { eventOpCommand } from './EventOpCommand.js';
 
 class EventOpAnnounceCommand extends SubcommandInteraction {

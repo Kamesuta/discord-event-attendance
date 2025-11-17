@@ -9,7 +9,8 @@ import {
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
 import { config } from '../../utils/config.js';
-import { eventManager, EventWithHost } from '../../event/EventManager.js';
+import { eventManager } from '../../domain/services/EventManager.js';
+import { EventWithHost } from '../../domain/queries/eventQueries.js';
 import { eventOpCommand } from './EventOpCommand.js';
 import { addRoleButtonAction } from '../action/AddRoleButtonAction.js';
 import { logger } from '../../utils/log.js';

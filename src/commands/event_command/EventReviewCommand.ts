@@ -11,7 +11,7 @@ import {
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
 import { eventCommand } from './EventCommand.js';
-import { eventManager } from '../../event/EventManager.js';
+import { eventManager } from '../../domain/services/EventManager.js';
 import { attendanceService } from '../../services/AttendanceService.js';
 import { prisma } from '../../utils/prisma.js';
 import { config } from '../../utils/config.js';

@@ -11,7 +11,7 @@ import { Prisma } from '@prisma/client';
 import { splitStrings } from '../../utils/string/splitStrings.js';
 import { parsePeriod } from '../../utils/parsers/periodParser.js';
 import { parseSearch } from '../../utils/parsers/searchParser.js';
-import { eventIncludeHost } from '../../event/EventManager.js';
+import { eventIncludeHost } from '../../domain/queries/eventQueries.js';
 
 /**
  * イベントの取得条件

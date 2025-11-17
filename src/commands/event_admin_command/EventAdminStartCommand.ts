@@ -5,7 +5,7 @@ import {
 import { SubcommandInteraction } from '../base/command_base.js';
 import { onStartScheduledEvent } from '../../event_handler.js';
 import { eventAdminCommand } from './EventAdminCommand.js';
-import { eventManager } from '../../event/EventManager.js';
+import { eventManager } from '../../domain/services/EventManager.js';
 
 class EventAdminStartCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()

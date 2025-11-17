@@ -5,7 +5,7 @@ import {
   TextInputBuilder,
   TextInputStyle,
 } from 'discord.js';
-import { eventManager } from '../../../event/EventManager.js';
+import { eventManager } from '../../../domain/services/EventManager.js';
 import { ModalActionInteraction } from '../../base/action_base.js';
 import {
   eventGameCommand,

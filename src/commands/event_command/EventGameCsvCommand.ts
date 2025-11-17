@@ -5,13 +5,14 @@ import {
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
 import { eventCommand } from './EventCommand.js';
-import { eventManager } from '../../event/EventManager.js';
+import { eventManager } from '../../domain/services/EventManager.js';
 import { parse } from 'csv-parse';
 import { Event, User } from '@prisma/client';
 import { eventGameCommand, AddGameData } from './EventGameCommand.js';
-import { getGameResultNumbering, makeEmbed, xpMap } from '../../event/game.js';
+import { getGameResultNumbering, xpMap } from '../../event/game.js';
 import { logger } from '../../utils/log.js';
-import { userManager } from '../../event/UserManager.js';
+import { userManager } from '../../domain/services/UserManager.js';
+import { gameResultFormatter } from '../../domain/formatters/GameResultFormatter.js';
 
 // 参加者の型定義
 interface Participant {
@@ -214,7 +215,7 @@ class EventGameCsvCommand extends SubcommandInteraction {
         const game = await eventGameCommand.addGameResult(event, editData);
 
         // 登録結果を表示
-        const embeds = makeEmbed(
+        const embeds = gameResultFormatter.makeEmbed(
           new EmbedBuilder()
             .setTitle(`🎮「${game.name}」の結果が記録されました`)
             .setDescription(`第 ${editData.gameNumber} 回目の試合結果です`),

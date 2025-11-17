@@ -5,25 +5,11 @@ import {
   TextBasedChannel,
   VoiceBasedChannel,
 } from 'discord.js';
-import { prisma } from '../utils/prisma.js';
+import { prisma } from '../../utils/prisma.js';
 import { Event, Prisma } from '@prisma/client';
 import { userManager } from './UserManager.js';
-import { logger } from '../utils/log.js';
-
-/**
- * イベントの取得条件
- */
-export const eventIncludeHost = {
-  include: {
-    host: true,
-    preparer: true,
-  },
-};
-
-/**
- * イベントにホストを含む型
- */
-export type EventWithHost = Prisma.EventGetPayload<typeof eventIncludeHost>;
+import { logger } from '../../utils/log.js';
+import { eventIncludeHost, EventWithHost } from '../queries/eventQueries.js';
 
 /**
  * イベント情報を取得します

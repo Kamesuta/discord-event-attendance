@@ -7,13 +7,13 @@ import {
 } from 'discord.js';
 import { ModalActionInteraction } from '../../base/action_base.js';
 import { panelStopButtonAction } from './PanelStopButtonAction.js';
-import { eventManager } from '../../../event/EventManager.js';
+import { eventManager } from '../../../domain/services/EventManager.js';
 import { GuildScheduledEventStatus } from 'discord.js';
 import { checkEventOperationPermission } from '../../../utils/permissions/checkCommandPermission.js';
 import { prisma } from '../../../utils/prisma.js';
 import { config } from '../../../utils/config.js';
 import { Prisma } from '@prisma/client';
-import { userManager } from '../../../event/UserManager.js';
+import { userManager } from '../../../domain/services/UserManager.js';
 
 const userStatIncludeUser = {
   include: {

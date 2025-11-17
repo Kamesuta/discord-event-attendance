@@ -7,7 +7,7 @@ import { MessageComponentActionInteraction } from '../../base/action_base.js';
 import {
   eventIncludeHost,
   EventWithHost,
-} from '../../../event/EventManager.js';
+} from '../../../domain/queries/eventQueries.js';
 import { prisma } from '../../../utils/prisma.js';
 import { checkCommandPermission } from '../../../utils/permissions/checkCommandPermission.js';
 import { messageUpdateManager } from '../../../utils/client.js';

@@ -4,7 +4,7 @@ import {
   ButtonStyle,
   ComponentType,
 } from 'discord.js';
-import { eventManager } from '../../../event/EventManager.js';
+import { eventManager } from '../../../domain/services/EventManager.js';
 import { MessageComponentActionInteraction } from '../../base/action_base.js';
 import {
   eventGameCommand,

@@ -3,7 +3,7 @@ import {
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
-import { eventManager } from '../../event/EventManager.js';
+import { eventManager } from '../../domain/services/EventManager.js';
 import { eventInfoMessageUpdater } from '../../message_updaters/EventInfoMessageUpdater.js';
 import { eventOpCommand } from './EventOpCommand.js';
 

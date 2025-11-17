@@ -5,13 +5,13 @@ import {
   ComponentType,
   EmbedBuilder,
 } from 'discord.js';
-import { eventManager } from '../../../event/EventManager.js';
+import { eventManager } from '../../../domain/services/EventManager.js';
 import { MessageComponentActionInteraction } from '../../base/action_base.js';
 import {
   eventGameCommand,
   EditData,
 } from '../../event_command/EventGameCommand.js';
-import { makeEmbed } from '../../../event/game.js';
+import { gameResultFormatter } from '../../../domain/formatters/GameResultFormatter.js';
 
 class GameConfirmButtonAction extends MessageComponentActionInteraction<ComponentType.Button> {
   /**
@@ -66,7 +66,7 @@ class GameConfirmButtonAction extends MessageComponentActionInteraction<Componen
     const game = await eventGameCommand.addGameResult(event, editData);
 
     // 登録結果を表示
-    const embeds = makeEmbed(
+    const embeds = gameResultFormatter.makeEmbed(
       new EmbedBuilder()
         .setTitle(`🎮「${game.name}」の結果が記録されました`)
         .setDescription(`第 ${editData.gameNumber} 回目の試合結果です`),
