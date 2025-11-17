@@ -2,7 +2,7 @@
 import 'dotenv/config';
 
 import { fileURLToPath } from 'url';
-import { startBot } from './bot.js';
+import { startBot } from './bot/bot.js';
 import { startMCPServer } from './mcp/server.js';
 
 // index.tsから直接起動された場合、bot.tsとmcp/server.tsの両方を起動

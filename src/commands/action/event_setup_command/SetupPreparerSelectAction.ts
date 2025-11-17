@@ -16,7 +16,7 @@ import {
   EventSpec,
 } from '../../event_creator_command/EventCreatorSetupCommand.js';
 import { userManager } from '../../../domain/services/UserManager.js';
-import { messageUpdateManager } from '../../../utils/client.js';
+import { messageUpdateManager } from '../../../bot/client.js';
 import { logger } from '../../../utils/log.js';
 
 class SetupPreparerSelectAction extends MessageComponentActionInteraction<ComponentType.UserSelect> {

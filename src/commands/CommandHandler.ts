@@ -1,6 +1,6 @@
 import { ApplicationCommandDataResolvable, Interaction } from 'discord.js';
-import { client } from '../utils/client.js';
-import { config } from '../utils/config.js';
+import { client } from '../bot/client.js';
+import { config } from '../bot/config.js';
 import { logger } from '../utils/log.js';
 import { InteractionBase } from './base/interaction_base.js';
 import { CommandBasedInteraction } from './base/command_base.js';

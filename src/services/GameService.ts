@@ -1,6 +1,6 @@
 import { EmbedBuilder, RepliableInteraction } from 'discord.js';
 import { prisma } from '../utils/prisma.js';
-import { config } from '../utils/config.js';
+import { config } from '../bot/config.js';
 import { gameResultInclude } from '../domain/queries/gameQueries.js';
 import { gameResultFormatter } from '../domain/formatters/GameResultFormatter.js';
 

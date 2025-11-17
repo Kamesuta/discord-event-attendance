@@ -13,7 +13,7 @@ import {
   eventIncludeHost,
   EventWithHost,
 } from '../../../domain/queries/eventQueries.js';
-import { checkCommandPermission } from '../../../utils/permissions/checkCommandPermission.js';
+import { checkCommandPermission } from '../../../bot/permissions/checkCommandPermission.js';
 import { userManager } from '../../../domain/services/UserManager.js';
 import { preparationStatusToggleSelectAction } from './PreparationStatusToggleSelectAction.js';
 

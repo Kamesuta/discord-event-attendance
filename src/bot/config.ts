@@ -1,6 +1,6 @@
 import assert from 'assert';
 import { parse } from 'toml';
-import { getWorkdirPath } from './workdir.js';
+import { getWorkdirPath } from '../utils/workdir.js';
 import { copyFileSync, existsSync, readFileSync } from 'fs';
 
 /**

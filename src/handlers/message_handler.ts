@@ -1,5 +1,5 @@
 import { GuildScheduledEventStatus, Message } from 'discord.js';
-import { config } from '../utils/config.js';
+import { config } from '../bot/config.js';
 import { prisma } from '../utils/prisma.js';
 import { logger } from '../utils/log.js';
 

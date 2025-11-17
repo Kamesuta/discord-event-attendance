@@ -1,16 +1,16 @@
 import { Events } from 'discord.js';
 import 'dotenv/config';
-import { logger } from './utils/log.js';
-import { client, commandHandler } from './utils/client.js';
-import { onVoiceStateUpdate } from './handlers/voice_handler.js';
+import { logger } from '../utils/log.js';
+import { client, commandHandler } from './client.js';
+import { onVoiceStateUpdate } from '../handlers/voice_handler.js';
 import {
   onGuildScheduledEventCreate,
   onGuildScheduledEventDelete,
   onGuildScheduledEventUpdate,
   updateSchedules,
-} from './handlers/event_handler.js';
-import { nowait } from './utils/utils.js';
-import { onMessageCreate } from './handlers/message_handler.js';
+} from '../handlers/event_handler.js';
+import { nowait } from '../utils/utils.js';
+import { onMessageCreate } from '../handlers/message_handler.js';
 import { fileURLToPath } from 'url';
 
 /**

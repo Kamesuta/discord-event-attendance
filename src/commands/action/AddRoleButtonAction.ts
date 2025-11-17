@@ -5,7 +5,7 @@ import {
   ComponentType,
 } from 'discord.js';
 import { MessageComponentActionInteraction } from '../base/action_base.js';
-import { config } from '../../utils/config.js';
+import { config } from '../../bot/config.js';
 
 class AddRoleButtonAction extends MessageComponentActionInteraction<ComponentType.Button> {
   /**

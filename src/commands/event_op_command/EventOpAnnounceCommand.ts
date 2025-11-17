@@ -5,7 +5,7 @@ import {
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
-import { config } from '../../utils/config.js';
+import { config } from '../../bot/config.js';
 import { eventInfoMessageUpdater } from '../../message_updaters/EventInfoMessageUpdater.js';
 import { eventManager } from '../../domain/services/EventManager.js';
 import { EventWithHost } from '../../domain/queries/eventQueries.js';

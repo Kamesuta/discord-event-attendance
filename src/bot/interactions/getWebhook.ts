@@ -6,7 +6,7 @@ import {
   TextBasedChannel,
 } from 'discord.js';
 import { client } from '../client.js';
-import { logger } from '../log.js';
+import { logger } from '../../utils/log.js';
 
 /**
  * Webhookを取得/作成します

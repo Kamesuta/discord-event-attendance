@@ -12,7 +12,7 @@ import {
   UserSelectMenuBuilder,
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
-import { config } from '../../utils/config.js';
+import { config } from '../../bot/config.js';
 import { setupUserSelectAction } from '../action/event_setup_command/SetupUserSelectAction.js';
 import { setupPreparerSelectAction } from '../action/event_setup_command/SetupPreparerSelectAction.js';
 import { setupEventSelectAction } from '../action/event_setup_command/SetupEventSelectAction.js';

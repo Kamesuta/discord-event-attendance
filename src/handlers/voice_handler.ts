@@ -5,7 +5,7 @@ import {
   VoiceState,
 } from 'discord.js';
 import { prisma } from '../utils/prisma.js';
-import { config } from '../utils/config.js';
+import { config } from '../bot/config.js';
 import { attendanceService } from '../services/AttendanceService.js';
 import { logger } from '../utils/log.js';
 import { userManager } from '../domain/services/UserManager.js';

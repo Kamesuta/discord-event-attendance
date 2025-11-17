@@ -9,9 +9,9 @@ import {
 import { eventManager } from '../../../domain/services/EventManager.js';
 import { MessageComponentActionInteraction } from '../../base/action_base.js';
 import { logger } from '../../../utils/log.js';
-import { checkEventOperationPermission } from '../../../utils/permissions/checkCommandPermission.js';
+import { checkEventOperationPermission } from '../../../bot/permissions/checkCommandPermission.js';
 import { eventOpAnnounceCommand } from '../../event_op_command/EventOpAnnounceCommand.js';
-import { client } from '../../../utils/client.js';
+import { client } from '../../../bot/client.js';
 
 class PanelStartButtonAction extends MessageComponentActionInteraction<ComponentType.Button> {
   /**

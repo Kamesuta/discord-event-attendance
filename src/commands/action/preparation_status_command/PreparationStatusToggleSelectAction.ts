@@ -9,8 +9,8 @@ import {
   EventWithHost,
 } from '../../../domain/queries/eventQueries.js';
 import { prisma } from '../../../utils/prisma.js';
-import { checkCommandPermission } from '../../../utils/permissions/checkCommandPermission.js';
-import { messageUpdateManager } from '../../../utils/client.js';
+import { checkCommandPermission } from '../../../bot/permissions/checkCommandPermission.js';
+import { messageUpdateManager } from '../../../bot/client.js';
 import { logger } from '../../../utils/log.js';
 
 class PreparationStatusToggleSelectAction extends MessageComponentActionInteraction<ComponentType.StringSelect> {
@@ -110,7 +110,7 @@ class PreparationStatusToggleSelectAction extends MessageComponentActionInteract
     );
 
     // 連絡チャンネルに通知
-    const contactChannelId = (await import('../../../utils/config.js')).config
+    const contactChannelId = (await import('../../../bot/config.js')).config
       .event_contact_channel_id;
     const contactChannel =
       interaction.guild?.channels.cache.get(contactChannelId);

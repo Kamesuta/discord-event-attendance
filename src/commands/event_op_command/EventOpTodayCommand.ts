@@ -8,13 +8,13 @@ import {
   GuildTextBasedChannel,
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
-import { config } from '../../utils/config.js';
+import { config } from '../../bot/config.js';
 import { eventManager } from '../../domain/services/EventManager.js';
 import { EventWithHost } from '../../domain/queries/eventQueries.js';
 import { eventOpCommand } from './EventOpCommand.js';
 import { addRoleButtonAction } from '../action/AddRoleButtonAction.js';
 import { logger } from '../../utils/log.js';
-import { client } from '../../utils/client.js';
+import { client } from '../../bot/client.js';
 
 class EventOpTodayCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()

@@ -9,7 +9,7 @@ import { UserContextMenuInteraction } from '../base/contextmenu_base.js';
 import { eventManager } from '../../domain/services/EventManager.js';
 import { logger } from '../../utils/log.js';
 import { prisma } from '../../utils/prisma.js';
-import { checkEventOperationPermission } from '../../utils/permissions/checkCommandPermission.js';
+import { checkEventOperationPermission } from '../../bot/permissions/checkCommandPermission.js';
 import { userManager } from '../../domain/services/UserManager.js';
 
 class MuteUserMenu extends UserContextMenuInteraction {

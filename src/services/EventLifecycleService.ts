@@ -5,7 +5,7 @@ import {
   PartialGuildScheduledEvent,
   VoiceBasedChannel,
 } from 'discord.js';
-import { config } from '../utils/config.js';
+import { config } from '../bot/config.js';
 import { attendanceService } from './AttendanceService.js';
 import { logger } from '../utils/log.js';
 import { eventManager } from '../domain/services/EventManager.js';
@@ -13,7 +13,7 @@ import {
   eventIncludeHost,
   EventWithHost,
 } from '../domain/queries/eventQueries.js';
-import { client } from '../utils/client.js';
+import { client } from '../bot/client.js';
 import { userManager } from '../domain/services/UserManager.js';
 import { prisma } from '../utils/prisma.js';
 

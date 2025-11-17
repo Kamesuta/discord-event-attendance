@@ -10,7 +10,7 @@ import { ModalActionInteraction } from '../../base/action_base.js';
 import { Event } from '@prisma/client';
 import { prisma } from '../../../utils/prisma.js';
 import { eventReviewCommand } from '../../event_command/EventReviewCommand.js';
-import { config } from '../../../utils/config.js';
+import { config } from '../../../bot/config.js';
 
 class ReviewFilterMarkModalAction extends ModalActionInteraction {
   /**

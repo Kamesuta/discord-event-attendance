@@ -8,9 +8,9 @@ import { SubcommandInteraction } from '../base/command_base.js';
 import { statusCommand } from './StatusCommand.js';
 import { prisma } from '../../utils/prisma.js';
 import { Prisma } from '@prisma/client';
-import { splitStrings } from '../../utils/string/splitStrings.js';
-import { parsePeriod } from '../../utils/parsers/periodParser.js';
-import { parseSearch } from '../../utils/parsers/searchParser.js';
+import { splitStrings } from '../../domain/formatters/splitStrings.js';
+import { parsePeriod } from '../../domain/parsers/periodParser.js';
+import { parseSearch } from '../../domain/parsers/searchParser.js';
 import { eventIncludeHost } from '../../domain/queries/eventQueries.js';
 
 /**

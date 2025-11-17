@@ -8,10 +8,10 @@ import {
   eventIncludeHost,
 } from '../domain/queries/eventQueries.js';
 import { MessageUpdater, MessageUpdateContext } from './MessageUpdater.js';
-import { config } from '../utils/config.js';
-import { client } from '../utils/client.js';
+import { config } from '../bot/config.js';
+import { client } from '../bot/client.js';
 import { prisma } from '../utils/prisma.js';
-import { messageEditor } from '../utils/discord/MessageEditor.js';
+import { messageEditor } from '../bot/interactions/MessageEditor.js';
 import { ScheduleMessageData } from '../commands/event_creator_command/schedule/types.js';
 
 /**

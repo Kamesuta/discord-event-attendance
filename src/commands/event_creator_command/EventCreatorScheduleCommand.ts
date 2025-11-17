@@ -5,7 +5,7 @@ import {
   MessageFlags,
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
-import { config } from '../../utils/config.js';
+import { config } from '../../bot/config.js';
 import { prisma } from '../../utils/prisma.js';
 import { eventCreatorCommand } from './EventCreatorCommand.js';
 import {
@@ -15,7 +15,7 @@ import {
 import { logger } from '../../utils/log.js';
 import { calendarMessageUpdater } from '../../message_updaters/CalendarMessageUpdater.js';
 import { detailMessageUpdater } from '../../message_updaters/DetailMessageUpdater.js';
-import { parseDate } from '../../utils/parsers/periodParser.js';
+import { parseDate } from '../../domain/parsers/periodParser.js';
 import { eventCreatorPreparationPanelCommand } from './EventCreatorPreparationPanelCommand.js';
 
 class EventCreatorScheduleCommand extends SubcommandInteraction {

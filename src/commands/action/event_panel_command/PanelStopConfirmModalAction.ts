@@ -9,9 +9,9 @@ import { ModalActionInteraction } from '../../base/action_base.js';
 import { panelStopButtonAction } from './PanelStopButtonAction.js';
 import { eventManager } from '../../../domain/services/EventManager.js';
 import { GuildScheduledEventStatus } from 'discord.js';
-import { checkEventOperationPermission } from '../../../utils/permissions/checkCommandPermission.js';
+import { checkEventOperationPermission } from '../../../bot/permissions/checkCommandPermission.js';
 import { prisma } from '../../../utils/prisma.js';
-import { config } from '../../../utils/config.js';
+import { config } from '../../../bot/config.js';
 import { Prisma } from '@prisma/client';
 import { userManager } from '../../../domain/services/UserManager.js';
 
