@@ -9,12 +9,8 @@ import {
 } from 'discord.js';
 import { SubcommandInteraction } from '../base/command_base.js';
 import { eventCommand } from './EventCommand.js';
-import {
-  ALPHABET,
-  Award,
-  getGameResultNumbering,
-  xpMap,
-} from '../../event/game.js';
+import { gameService } from '../../services/GameService.js';
+import { ALPHABET, Award, xpMap } from '../../domain/models/GameConstants.js';
 import {
   GameResultData,
   gameResultInclude,
@@ -369,7 +365,7 @@ class EventGameCommand extends SubcommandInteraction {
       }
 
       // 何番目の試合か
-      editData.gameNumber = await getGameResultNumbering(
+      editData.gameNumber = await gameService.getGameResultNumbering(
         eventId,
         editData.game.id,
       );

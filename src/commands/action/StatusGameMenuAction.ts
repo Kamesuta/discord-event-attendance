@@ -5,7 +5,7 @@ import {
 } from 'discord.js';
 import { MessageComponentActionInteraction } from '../base/action_base.js';
 import { Event } from '@prisma/client';
-import { showGameResults } from '../../event/game.js';
+import { gameService } from '../../services/GameService.js';
 import { GameResultData } from '../../domain/queries/gameQueries.js';
 import { prisma } from '../../utils/prisma.js';
 
@@ -61,7 +61,7 @@ class StatusGameMenuAction extends MessageComponentActionInteraction<ComponentTy
       });
       return;
     }
-    await showGameResults(interaction, game.id);
+    await gameService.showGameResults(interaction, game.id);
   }
 }
 

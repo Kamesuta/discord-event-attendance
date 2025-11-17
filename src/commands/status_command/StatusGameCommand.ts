@@ -5,7 +5,7 @@ import {
 import { SubcommandInteraction } from '../base/command_base.js';
 import { statusCommand } from './StatusCommand.js';
 import { prisma } from '../../utils/prisma.js';
-import { showGameResults } from '../../event/game.js';
+import { gameService } from '../../services/GameService.js';
 
 class StatusGameCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
@@ -39,7 +39,7 @@ class StatusGameCommand extends SubcommandInteraction {
       });
       return;
     }
-    await showGameResults(interaction, game.id);
+    await gameService.showGameResults(interaction, game.id);
   }
 }
 

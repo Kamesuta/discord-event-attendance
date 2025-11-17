@@ -9,7 +9,8 @@ import { eventManager } from '../../domain/services/EventManager.js';
 import { parse } from 'csv-parse';
 import { Event, User } from '@prisma/client';
 import { eventGameCommand, AddGameData } from './EventGameCommand.js';
-import { getGameResultNumbering, xpMap } from '../../event/game.js';
+import { gameService } from '../../services/GameService.js';
+import { xpMap } from '../../domain/models/GameConstants.js';
 import { logger } from '../../utils/log.js';
 import { userManager } from '../../domain/services/UserManager.js';
 import { gameResultFormatter } from '../../domain/formatters/GameResultFormatter.js';
@@ -185,7 +186,7 @@ class EventGameCsvCommand extends SubcommandInteraction {
     }
 
     // 最後の試合番号を取得
-    let gameNumber = await getGameResultNumbering(event.id);
+    let gameNumber = await gameService.getGameResultNumbering(event.id);
 
     // 試合結果を登録するための処理
     for (const game of games) {

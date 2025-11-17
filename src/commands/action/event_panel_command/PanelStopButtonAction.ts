@@ -24,7 +24,7 @@ import { roleManagementService } from '../../../services/RoleManagementService.j
 import { messageEditor } from '../../../utils/discord/MessageEditor.js';
 import { client } from '../../../utils/client.js';
 import { prisma } from '../../../utils/prisma.js';
-import { makeGameResultEmbed } from '../../../event/game.js';
+import { gameService } from '../../../services/GameService.js';
 import { Event, GameResult } from '@prisma/client';
 import { panelStopConfirmModalAction } from './PanelStopConfirmModalAction.js';
 import { ThreadChannel } from 'discord.js';
@@ -72,7 +72,7 @@ class PanelStopButtonAction extends MessageComponentActionInteraction<ComponentT
       // ゲームの戦績をすべて表示
       const gameResultMessages: { game: GameResult; message: Message }[] = [];
       for (const game of gameResults) {
-        const embeds = await makeGameResultEmbed(game.id);
+        const embeds = await gameService.makeGameResultEmbed(game.id);
         const gameResultMessage = await thread.send({ embeds: [embeds] });
         gameResultMessages.push({ game, message: gameResultMessage });
       }
