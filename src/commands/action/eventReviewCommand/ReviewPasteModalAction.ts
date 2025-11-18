@@ -1,5 +1,6 @@
 import {
   ActionRowBuilder,
+  ComponentType,
   ModalBuilder,
   ModalSubmitInteraction,
   TextInputBuilder,
@@ -53,7 +54,11 @@ class ReviewPasteModalAction extends ModalActionInteraction {
     const eventId = params.get('event');
     if (!eventId) return; // 必要なパラメータがない場合は旧形式の可能性があるため無視
 
-    const idsText = interaction.components[0]?.components[0]?.value;
+    const idsAction = interaction.components[0];
+    const idsText =
+      idsAction?.type === ComponentType.ActionRow
+        ? idsAction.components[0]?.value
+        : undefined;
     if (!idsText || !idsText.trim()) {
       await interaction.reply({
         ephemeral: true,

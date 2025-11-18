@@ -277,7 +277,6 @@ class EventGameCommand extends SubcommandInteraction {
    * @param editGameId 編集する試合ID
    * @param clear 編集データをクリアするか
    * @returns 編集データ
-   * @throws エラーメッセージ
    */
   async getEditData(
     key: string,

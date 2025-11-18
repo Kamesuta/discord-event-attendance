@@ -1,5 +1,6 @@
 import {
   ActionRowBuilder,
+  ComponentType,
   ModalBuilder,
   ModalSubmitInteraction,
   TextInputBuilder,
@@ -81,7 +82,11 @@ class SetMemoModalAction extends ModalActionInteraction {
     }
     const user = await userManager.getOrCreateUser(member);
 
-    const memo = interaction.components[0]?.components[0]?.value;
+    const memoAction = interaction.components[0];
+    const memo =
+      memoAction?.type === ComponentType.ActionRow
+        ? memoAction.components[0]?.value
+        : undefined;
     if (memo === undefined || memo === '' || memo === '!') {
       await prisma.userStat.update({
         where: {

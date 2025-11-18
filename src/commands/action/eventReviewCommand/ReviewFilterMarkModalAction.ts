@@ -1,5 +1,6 @@
 import {
   ActionRowBuilder,
+  ComponentType,
   ModalBuilder,
   ModalSubmitInteraction,
   TextInputBuilder,
@@ -53,7 +54,11 @@ class ReviewFilterMarkModalAction extends ModalActionInteraction {
     const eventId = params.get('event');
     if (!eventId) return; // 必要なパラメータがない場合は旧形式の可能性があるため無視
 
-    const minutesText = interaction.components[0]?.components[0]?.value;
+    const minutesAction = interaction.components[0];
+    const minutesText =
+      minutesAction?.type === ComponentType.ActionRow
+        ? minutesAction.components[0]?.value
+        : '';
     const minutes = parseInt(minutesText);
     if (isNaN(minutes) || minutes < config.required_time) {
       await interaction.reply({

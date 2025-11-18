@@ -1,5 +1,6 @@
 import {
   ActionRowBuilder,
+  ComponentType,
   ModalBuilder,
   ModalSubmitInteraction,
   TextInputBuilder,
@@ -84,9 +85,17 @@ class GameEditModalAction extends ModalActionInteraction {
     if (!editData) return;
 
     // ゲーム編集状態を設定
+    const gameNameAction = interaction.components[0];
+    const rankAction = interaction.components[1];
     eventGameCommand.setEditData(editData, {
-      gameName: interaction.components[0]?.components[0]?.value,
-      rank: interaction.components[1]?.components[0]?.value,
+      gameName:
+        gameNameAction?.type === ComponentType.ActionRow
+          ? gameNameAction.components[0]?.value
+          : null,
+      rank:
+        rankAction?.type === ComponentType.ActionRow
+          ? rankAction.components[0]?.value
+          : null,
     });
 
     // Embedを更新
