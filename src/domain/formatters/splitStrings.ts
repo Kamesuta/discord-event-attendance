@@ -15,7 +15,7 @@ export function splitStrings(
   return lines.reduce((acc: string[], name: string) => {
     if (
       acc.length > 0 &&
-      acc[acc.length - 1].length + name.length < maxLength
+      acc[acc.length - 1].length + name.length + delimiter.length <= maxLength
     ) {
       acc[acc.length - 1] += `${name}${delimiter}`;
     } else {

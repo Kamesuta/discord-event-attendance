@@ -15,9 +15,9 @@ type UserGameResultWithUser = Prisma.UserGameResultGetPayload<{
 class GameResultFormatter {
   /**
    * ゲームの勝敗の表示を作成する
-   * @param embeds 埋め込み
+   * @param embeds Discordの埋め込みビルダー
    * @param game 試合
-   * @returns Discordの埋め込み
+   * @returns Discordの埋め込みビルダー
    */
   makeEmbed(embeds: EmbedBuilder, game: GameResultData): EmbedBuilder {
     // 結果を表示
