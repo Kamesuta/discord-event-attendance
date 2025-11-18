@@ -1,9 +1,9 @@
 import { InteractionBase } from '@/commands/base/interactionBase';
-import { eventAdminCommand } from './EventAdminCommand.js';
-import { eventAdminStartCommand } from './EventAdminStartCommand.js';
-import { eventAdminStopCommand } from './EventAdminStopCommand.js';
-import { eventAdminRecalcTimeCommand } from './EventAdminRecalcTimeCommand.js';
-import { eventAdminSyncRoleCommand } from './EventAdminSyncRoleCommand.js';
+import { eventAdminCommand } from './EventAdminCommand';
+import { eventAdminStartCommand } from './EventAdminStartCommand';
+import { eventAdminStopCommand } from './EventAdminStopCommand';
+import { eventAdminRecalcTimeCommand } from './EventAdminRecalcTimeCommand';
+import { eventAdminSyncRoleCommand } from './EventAdminSyncRoleCommand';
 
 /**
  * イベント管理者コマンドの配列

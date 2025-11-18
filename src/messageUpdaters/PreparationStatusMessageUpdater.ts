@@ -5,11 +5,8 @@ import {
   ActionRowBuilder,
   ButtonBuilder,
 } from 'discord.js';
-import {
-  EventWithHost,
-  eventIncludeHost,
-} from '@/domain/queries/eventQueries';
-import { MessageUpdater, MessageUpdateContext } from './MessageUpdater.js';
+import { EventWithHost, eventIncludeHost } from '@/domain/queries/eventQueries';
+import { MessageUpdater, MessageUpdateContext } from './MessageUpdater';
 import { config } from '@/bot/config';
 import { client } from '@/bot/client';
 import { prisma } from '@/utils/prisma';

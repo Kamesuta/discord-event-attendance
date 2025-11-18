@@ -1,11 +1,11 @@
 import { InteractionBase } from '@/commands/base/interactionBase';
-import { eventCreatorCommand } from './EventCreatorCommand.js';
-import { eventCreatorCreateCommand } from './EventCreatorCreateCommand.js';
-import { eventCreatorImportCommand } from './EventCreatorImportCommand.js';
-import { eventCreatorScheduleCommand } from './EventCreatorScheduleCommand.js';
-import { eventCreatorPreparationPanelCommand } from './EventCreatorPreparationPanelCommand.js';
-import { eventCreatorScheduleCopyCommand } from './EventCreatorScheduleCopyCommand.js';
-import { eventCreatorSetupCommand } from './EventCreatorSetupCommand.js';
+import { eventCreatorCommand } from './EventCreatorCommand';
+import { eventCreatorCreateCommand } from './EventCreatorCreateCommand';
+import { eventCreatorImportCommand } from './EventCreatorImportCommand';
+import { eventCreatorScheduleCommand } from './EventCreatorScheduleCommand';
+import { eventCreatorPreparationPanelCommand } from './EventCreatorPreparationPanelCommand';
+import { eventCreatorScheduleCopyCommand } from './EventCreatorScheduleCopyCommand';
+import { eventCreatorSetupCommand } from './EventCreatorSetupCommand';
 
 /**
  * イベント作成者コマンドの配列

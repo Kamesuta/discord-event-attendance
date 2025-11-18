@@ -5,7 +5,7 @@ import {
   ModalBuilder,
   ModalSubmitInteraction,
 } from 'discord.js';
-import { InteractionBase } from './interactionBase.js';
+import { InteractionBase } from './interactionBase';
 
 /**
  * アクション

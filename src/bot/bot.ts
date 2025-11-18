@@ -1,7 +1,7 @@
 import { Events } from 'discord.js';
 import 'dotenv/config';
 import { logger } from '@/utils/log';
-import { client, commandHandler } from './client.js';
+import { client, commandHandler } from './client';
 import { onVoiceStateUpdate } from '@/handlers/voiceHandler';
 import {
   onGuildScheduledEventCreate,

@@ -8,17 +8,14 @@ import {
 } from 'discord.js';
 import { SubcommandInteraction } from '@/commands/base/commandBase';
 import { eventManager } from '@/domain/services/EventManager';
-import {
-  eventIncludeHost,
-  EventWithHost,
-} from '@/domain/queries/eventQueries';
+import { eventIncludeHost, EventWithHost } from '@/domain/queries/eventQueries';
 import { onUpdateScheduledEvent } from '@/handlers/eventHandler';
 import { prisma } from '@/utils/prisma';
 import { panelStartButtonAction } from '@/commands/action/eventPanelCommand/PanelStartButtonAction';
 import { panelReviewButtonAction } from '@/commands/action/eventPanelCommand/PanelReviewButtonAction';
 import { panelStopButtonAction } from '@/commands/action/eventPanelCommand/PanelStopButtonAction';
 import { config } from '@/bot/config';
-import { eventOpCommand } from './EventOpCommand.js';
+import { eventOpCommand } from './EventOpCommand';
 import { userManager } from '@/domain/services/UserManager';
 import { messageUpdateManager } from '@/bot/client';
 import { logger } from '@/utils/log';

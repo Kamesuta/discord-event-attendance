@@ -9,7 +9,7 @@ import {
   SlashCommandSubcommandGroupBuilder,
   SlashCommandSubcommandsOnlyBuilder,
 } from 'discord.js';
-import { InteractionBase } from './interactionBase.js';
+import { InteractionBase } from './interactionBase';
 
 /**
  * コマンドベースのインタラクション

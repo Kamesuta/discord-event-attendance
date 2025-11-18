@@ -5,7 +5,7 @@ import {
   TextBasedChannel,
   Webhook,
 } from 'discord.js';
-import { getWebhook } from './getWebhook.js';
+import { getWebhook } from './getWebhook';
 import { logger } from '@/utils/log';
 
 /**

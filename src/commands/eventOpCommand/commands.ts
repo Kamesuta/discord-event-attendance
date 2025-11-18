@@ -1,12 +1,12 @@
 import { InteractionBase } from '@/commands/base/interactionBase';
-import { eventOpAnnounceCommand } from './EventOpAnnounceCommand.js';
-import { eventOpCommand } from './EventOpCommand.js';
-import { eventOpPanelCommand } from './EventOpPanelCommand.js';
-import { eventOpSelectCommand } from './EventOpSelectCommand.js';
-import { eventOpShowCommand } from './EventOpShowCommand.js';
-import { eventOpUpdateCommand } from './EventOpUpdateCommand.js';
-import { eventOpUpdateMessageCommand } from './EventOpUpdateMessageCommand.js';
-import { eventOpTodayCommand } from './EventOpTodayCommand.js';
+import { eventOpAnnounceCommand } from './EventOpAnnounceCommand';
+import { eventOpCommand } from './EventOpCommand';
+import { eventOpPanelCommand } from './EventOpPanelCommand';
+import { eventOpSelectCommand } from './EventOpSelectCommand';
+import { eventOpShowCommand } from './EventOpShowCommand';
+import { eventOpUpdateCommand } from './EventOpUpdateCommand';
+import { eventOpUpdateMessageCommand } from './EventOpUpdateMessageCommand';
+import { eventOpTodayCommand } from './EventOpTodayCommand';
 
 /**
  * イベント運営コマンドの配列

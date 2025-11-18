@@ -2,8 +2,8 @@ import { ApplicationCommandDataResolvable, Interaction } from 'discord.js';
 import { client } from '@/bot/client';
 import { config } from '@/bot/config';
 import { logger } from '@/utils/log';
-import { InteractionBase } from './base/interactionBase.js';
-import { CommandBasedInteraction } from './base/commandBase.js';
+import { InteractionBase } from './base/interactionBase';
+import { CommandBasedInteraction } from './base/commandBase';
 
 /**
  * コマンドハンドラー

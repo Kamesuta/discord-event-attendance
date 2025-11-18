@@ -1,10 +1,10 @@
 import { InteractionBase } from '@/commands/base/interactionBase';
-import { statusCommand } from './StatusCommand.js';
-import { statusUserCommand } from './StatusUserCommand.js';
-import { statusEventCommand } from './StatusEventCommand.js';
-import { statusGameCommand } from './StatusGameCommand.js';
-import { statusEventListCommand } from './StatusEventListCommand.js';
-import { statusRankingCommand } from './StatusRankingCommand.js';
+import { statusCommand } from './StatusCommand';
+import { statusUserCommand } from './StatusUserCommand';
+import { statusEventCommand } from './StatusEventCommand';
+import { statusGameCommand } from './StatusGameCommand';
+import { statusEventListCommand } from './StatusEventListCommand';
+import { statusRankingCommand } from './StatusRankingCommand';
 
 /**
  * ステータスコマンドの配列

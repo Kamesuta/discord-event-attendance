@@ -7,11 +7,8 @@ import {
 import { SubcommandInteraction } from '@/commands/base/commandBase';
 import { config } from '@/bot/config';
 import { prisma } from '@/utils/prisma';
-import { eventCreatorCommand } from './EventCreatorCommand.js';
-import {
-  eventIncludeHost,
-  EventWithHost,
-} from '@/domain/queries/eventQueries';
+import { eventCreatorCommand } from './EventCreatorCommand';
+import { eventIncludeHost, EventWithHost } from '@/domain/queries/eventQueries';
 import { eventManager } from '@/domain/services/EventManager';
 
 class EventCreatorScheduleCopyCommand extends SubcommandInteraction {

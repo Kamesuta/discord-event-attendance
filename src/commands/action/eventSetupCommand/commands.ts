@@ -1,7 +1,7 @@
 import { InteractionBase } from '@/commands/base/interactionBase';
-import { setupEventSelectAction } from './SetupEventSelectAction.js';
-import { setupUserSelectAction } from './SetupUserSelectAction.js';
-import { setupPreparerSelectAction } from './SetupPreparerSelectAction.js';
+import { setupEventSelectAction } from './SetupEventSelectAction';
+import { setupUserSelectAction } from './SetupUserSelectAction';
+import { setupPreparerSelectAction } from './SetupPreparerSelectAction';
 
 /**
  * イベントセットアップアクションの配列

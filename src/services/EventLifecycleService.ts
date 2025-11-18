@@ -6,13 +6,10 @@ import {
   VoiceBasedChannel,
 } from 'discord.js';
 import { config } from '@/bot/config';
-import { attendanceService } from './AttendanceService.js';
+import { attendanceService } from './AttendanceService';
 import { logger } from '@/utils/log';
 import { eventManager } from '@/domain/services/EventManager';
-import {
-  eventIncludeHost,
-  EventWithHost,
-} from '@/domain/queries/eventQueries';
+import { eventIncludeHost, EventWithHost } from '@/domain/queries/eventQueries';
 import { client } from '@/bot/client';
 import { userManager } from '@/domain/services/UserManager';
 import { prisma } from '@/utils/prisma';

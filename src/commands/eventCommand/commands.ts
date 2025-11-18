@@ -1,9 +1,9 @@
 import { InteractionBase } from '@/commands/base/interactionBase';
-import { eventCommand } from './EventCommand.js';
-import { eventReviewCommand } from './EventReviewCommand.js';
-import { eventGameCommand } from './EventGameCommand.js';
-import { eventUserListCommand } from './EventUserListCommand.js';
-import { eventGameCsvCommand } from './EventGameCsvCommand.js';
+import { eventCommand } from './EventCommand';
+import { eventReviewCommand } from './EventReviewCommand';
+import { eventGameCommand } from './EventGameCommand';
+import { eventUserListCommand } from './EventUserListCommand';
+import { eventGameCsvCommand } from './EventGameCsvCommand';
 
 /**
  * イベントコマンドの配列

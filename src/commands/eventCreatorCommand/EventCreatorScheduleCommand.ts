@@ -7,16 +7,13 @@ import {
 import { SubcommandInteraction } from '@/commands/base/commandBase';
 import { config } from '@/bot/config';
 import { prisma } from '@/utils/prisma';
-import { eventCreatorCommand } from './EventCreatorCommand.js';
-import {
-  eventIncludeHost,
-  EventWithHost,
-} from '@/domain/queries/eventQueries';
+import { eventCreatorCommand } from './EventCreatorCommand';
+import { eventIncludeHost, EventWithHost } from '@/domain/queries/eventQueries';
 import { logger } from '@/utils/log';
 import { calendarMessageUpdater } from '@/messageUpdaters/CalendarMessageUpdater';
 import { detailMessageUpdater } from '@/messageUpdaters/DetailMessageUpdater';
 import { parseDate } from '@/domain/parsers/periodParser';
-import { eventCreatorPreparationPanelCommand } from './EventCreatorPreparationPanelCommand.js';
+import { eventCreatorPreparationPanelCommand } from './EventCreatorPreparationPanelCommand';
 
 class EventCreatorScheduleCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()

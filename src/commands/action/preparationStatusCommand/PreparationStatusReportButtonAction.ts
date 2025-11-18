@@ -9,13 +9,10 @@ import {
 import { MessageComponentActionInteraction } from '@/commands/base/actionBase';
 import { prisma } from '@/utils/prisma';
 import { GuildScheduledEventStatus } from 'discord.js';
-import {
-  eventIncludeHost,
-  EventWithHost,
-} from '@/domain/queries/eventQueries';
+import { eventIncludeHost, EventWithHost } from '@/domain/queries/eventQueries';
 import { checkCommandPermission } from '@/bot/permissions/checkCommandPermission';
 import { userManager } from '@/domain/services/UserManager';
-import { preparationStatusToggleSelectAction } from './PreparationStatusToggleSelectAction.js';
+import { preparationStatusToggleSelectAction } from './PreparationStatusToggleSelectAction';
 
 class PreparationStatusReportButtonAction extends MessageComponentActionInteraction<ComponentType.Button> {
   override create(): ButtonBuilder {

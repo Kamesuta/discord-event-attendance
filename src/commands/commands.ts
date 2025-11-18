@@ -1,11 +1,11 @@
-import { InteractionBase } from './base/interactionBase.js';
-import { eventCommands } from './eventCommand/commands.js';
-import { eventAdminCommands } from './eventAdminCommand/commands.js';
-import { eventCreatorCommands } from './eventCreatorCommand/commands.js';
-import { eventOpCommands } from './eventOpCommand/commands.js';
-import { statusCommands } from './statusCommand/commands.js';
-import { contextMenuCommands } from './contextmenu/commands.js';
-import { actionCommands } from './action/commands.js';
+import { InteractionBase } from './base/interactionBase';
+import { eventCommands } from './eventCommand/commands';
+import { eventAdminCommands } from './eventAdminCommand/commands';
+import { eventCreatorCommands } from './eventCreatorCommand/commands';
+import { eventOpCommands } from './eventOpCommand/commands';
+import { statusCommands } from './statusCommand/commands';
+import { contextMenuCommands } from './contextmenu/commands';
+import { actionCommands } from './action/commands';
 
 /**
  * 全コマンドの配列

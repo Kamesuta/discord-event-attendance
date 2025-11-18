@@ -1,6 +1,6 @@
 import { InteractionBase } from '@/commands/base/interactionBase';
-import { preparationStatusReportButtonAction } from './PreparationStatusReportButtonAction.js';
-import { preparationStatusToggleSelectAction } from './PreparationStatusToggleSelectAction.js';
+import { preparationStatusReportButtonAction } from './PreparationStatusReportButtonAction';
+import { preparationStatusToggleSelectAction } from './PreparationStatusToggleSelectAction';
 
 /**
  * 準備状況アクションの配列

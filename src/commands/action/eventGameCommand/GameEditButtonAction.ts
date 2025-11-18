@@ -10,7 +10,7 @@ import {
   eventGameCommand,
   EditData,
 } from '@/commands/eventCommand/EventGameCommand';
-import { gameEditModalAction } from './GameEditModalAction.js';
+import { gameEditModalAction } from './GameEditModalAction';
 
 class GameEditButtonAction extends MessageComponentActionInteraction<ComponentType.Button> {
   /**

@@ -4,7 +4,7 @@ import {
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
 import { SubcommandInteraction } from '@/commands/base/commandBase';
-import { eventCommand } from './EventCommand.js';
+import { eventCommand } from './EventCommand';
 import { eventManager } from '@/domain/services/EventManager';
 import { prisma } from '@/utils/prisma';
 import { userManager } from '@/domain/services/UserManager';

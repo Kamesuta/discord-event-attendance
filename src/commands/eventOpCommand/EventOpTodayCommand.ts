@@ -11,7 +11,7 @@ import { SubcommandInteraction } from '@/commands/base/commandBase';
 import { config } from '@/bot/config';
 import { eventManager } from '@/domain/services/EventManager';
 import { EventWithHost } from '@/domain/queries/eventQueries';
-import { eventOpCommand } from './EventOpCommand.js';
+import { eventOpCommand } from './EventOpCommand';
 import { addRoleButtonAction } from '@/commands/action/AddRoleButtonAction';
 import { logger } from '@/utils/log';
 import { client } from '@/bot/client';

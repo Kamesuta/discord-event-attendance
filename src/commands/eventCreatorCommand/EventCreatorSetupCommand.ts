@@ -17,11 +17,8 @@ import { setupUserSelectAction } from '@/commands/action/eventSetupCommand/Setup
 import { setupPreparerSelectAction } from '@/commands/action/eventSetupCommand/SetupPreparerSelectAction';
 import { setupEventSelectAction } from '@/commands/action/eventSetupCommand/SetupEventSelectAction';
 import { prisma } from '@/utils/prisma';
-import { eventCreatorCommand } from './EventCreatorCommand.js';
-import {
-  eventIncludeHost,
-  EventWithHost,
-} from '@/domain/queries/eventQueries';
+import { eventCreatorCommand } from './EventCreatorCommand';
+import { eventIncludeHost, EventWithHost } from '@/domain/queries/eventQueries';
 
 /**
  * イベント情報

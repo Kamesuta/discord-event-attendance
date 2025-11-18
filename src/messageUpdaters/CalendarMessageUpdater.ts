@@ -3,11 +3,8 @@
  * カレンダー形式のイベント一覧メッセージの判定・更新・取得を担当
  */
 import { Message, GuildScheduledEventStatus, MessageFlags } from 'discord.js';
-import {
-  EventWithHost,
-  eventIncludeHost,
-} from '@/domain/queries/eventQueries';
-import { MessageUpdater, MessageUpdateContext } from './MessageUpdater.js';
+import { EventWithHost, eventIncludeHost } from '@/domain/queries/eventQueries';
+import { MessageUpdater, MessageUpdateContext } from './MessageUpdater';
 import { config } from '@/bot/config';
 import { client } from '@/bot/client';
 import { prisma } from '@/utils/prisma';

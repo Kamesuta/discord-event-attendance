@@ -4,7 +4,7 @@ import {
 } from 'discord.js';
 import { SubcommandInteraction } from '@/commands/base/commandBase';
 import { onCreateScheduledEvent } from '@/handlers/eventHandler';
-import { eventCreatorCommand } from './EventCreatorCommand.js';
+import { eventCreatorCommand } from './EventCreatorCommand';
 
 class EventCreatorImportCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()

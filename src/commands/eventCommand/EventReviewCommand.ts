@@ -10,7 +10,7 @@ import {
   UserSelectMenuBuilder,
 } from 'discord.js';
 import { SubcommandInteraction } from '@/commands/base/commandBase';
-import { eventCommand } from './EventCommand.js';
+import { eventCommand } from './EventCommand';
 import { eventManager } from '@/domain/services/EventManager';
 import { attendanceService } from '@/services/AttendanceService';
 import { prisma } from '@/utils/prisma';

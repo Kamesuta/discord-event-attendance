@@ -17,7 +17,7 @@ import {
 import { eventManager } from '@/domain/services/EventManager';
 import { EventWithHost } from '@/domain/queries/eventQueries';
 import { parseDate } from '@/domain/parsers/periodParser';
-import { eventCreatorCommand } from './EventCreatorCommand.js';
+import { eventCreatorCommand } from './EventCreatorCommand';
 import { userManager } from '@/domain/services/UserManager';
 
 class EventCreatorCreateCommand extends SubcommandInteraction {

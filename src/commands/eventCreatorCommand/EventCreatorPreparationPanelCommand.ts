@@ -5,7 +5,7 @@ import {
 } from 'discord.js';
 import { SubcommandInteraction } from '@/commands/base/commandBase';
 import { config } from '@/bot/config';
-import { eventCreatorCommand } from './EventCreatorCommand.js';
+import { eventCreatorCommand } from './EventCreatorCommand';
 import { EventWithHost } from '@/domain/queries/eventQueries';
 import { preparationStatusMessageUpdater } from '@/messageUpdaters/PreparationStatusMessageUpdater';
 

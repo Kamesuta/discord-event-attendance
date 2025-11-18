@@ -6,7 +6,7 @@ import { SubcommandInteraction } from '@/commands/base/commandBase';
 import { messageUpdateManager } from '@/bot/client';
 import { messageEditor } from '@/bot/interactions/MessageEditor';
 import { MessageUpdateContext } from '@/messageUpdaters/MessageUpdater';
-import { eventOpCommand } from './EventOpCommand.js';
+import { eventOpCommand } from './EventOpCommand';
 
 class EventOpUpdateMessageCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()

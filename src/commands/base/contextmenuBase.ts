@@ -6,7 +6,7 @@ import {
   MessageContextMenuCommandInteraction,
   UserContextMenuCommandInteraction,
 } from 'discord.js';
-import { InteractionBase } from './interactionBase.js';
+import { InteractionBase } from './interactionBase';
 
 /**
  * ユーザーコンテキストメニュー

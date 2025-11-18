@@ -1,8 +1,8 @@
 import { Message } from 'discord.js';
-import { MessageUpdater, MessageUpdateContext } from './MessageUpdater.js';
+import { MessageUpdater, MessageUpdateContext } from './MessageUpdater';
 import { EventWithHost } from '@/domain/queries/eventQueries';
 import { logger } from '@/utils/log';
-import { MessageUpdateScheduler } from './MessageUpdateScheduler.js';
+import { MessageUpdateScheduler } from './MessageUpdateScheduler';
 
 /**
  * メッセージ更新マネージャー

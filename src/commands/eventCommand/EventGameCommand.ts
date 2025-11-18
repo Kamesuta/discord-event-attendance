@@ -8,7 +8,7 @@ import {
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
 import { SubcommandInteraction } from '@/commands/base/commandBase';
-import { eventCommand } from './EventCommand.js';
+import { eventCommand } from './EventCommand';
 import { gameService } from '@/services/GameService';
 import { ALPHABET, Award, xpMap } from '@/domain/models/GameConstants';
 import {

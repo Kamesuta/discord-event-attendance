@@ -1,5 +1,5 @@
 import log4js from 'log4js';
-import { getWorkdirPath } from './workdir.js';
+import { getWorkdirPath } from './workdir';
 
 // Initialize the logger
 log4js.configure({

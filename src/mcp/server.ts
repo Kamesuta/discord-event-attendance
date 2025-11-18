@@ -1,26 +1,26 @@
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
+import { Server } from '@modelcontextprotocol/sdk/server/index';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio';
+import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp';
 import express, { Request, Response } from 'express';
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
-} from '@modelcontextprotocol/sdk/types.js';
+} from '@modelcontextprotocol/sdk/types';
 // ハンドラーとツール定義のインポート
-import { getEventStatus, getEventStatusTool } from './handlers/eventStatus.js';
-import { getEventList, getEventListTool } from './handlers/eventList.js';
-import { getUserStatus, getUserStatusTool } from './handlers/userStatus.js';
-import { getGameStatus, getGameStatusTool } from './handlers/gameStatus.js';
+import { getEventStatus, getEventStatusTool } from './handlers/eventStatus';
+import { getEventList, getEventListTool } from './handlers/eventList';
+import { getUserStatus, getUserStatusTool } from './handlers/userStatus';
+import { getGameStatus, getGameStatusTool } from './handlers/gameStatus';
 import {
   getParticipationRanking,
   getParticipationRankingTool,
-} from './handlers/participationRanking.js';
-import { getHostRanking, getHostRankingTool } from './handlers/hostRanking.js';
-import { getXpRanking, getXpRankingTool } from './handlers/xpRanking.js';
+} from './handlers/participationRanking';
+import { getHostRanking, getHostRankingTool } from './handlers/hostRanking';
+import { getXpRanking, getXpRankingTool } from './handlers/xpRanking';
 import {
   getHostPerformanceRanking,
   getHostPerformanceRankingTool,
-} from './handlers/hostPerformanceRanking.js';
+} from './handlers/hostPerformanceRanking';
 import { logger } from '@/utils/log';
 import { fileURLToPath } from 'url';
 

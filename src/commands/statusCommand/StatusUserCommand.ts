@@ -7,7 +7,7 @@ import {
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
 import { SubcommandInteraction } from '@/commands/base/commandBase';
-import { statusCommand } from './StatusCommand.js';
+import { statusCommand } from './StatusCommand';
 import { splitStrings } from '@/domain/formatters/splitStrings';
 import { prisma } from '@/utils/prisma';
 import { userManager } from '@/domain/services/UserManager';

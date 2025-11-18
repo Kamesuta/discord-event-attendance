@@ -1,10 +1,10 @@
 import { InteractionBase } from '@/commands/base/interactionBase';
-import { statusUserMenu } from './StatusUserMenu.js';
-import { markShowUserMenu } from './MarkShowUserMenu.js';
-import { markHideUserMenu } from './MarkHideUserMenu.js';
-import { setMemoUserMenu } from './SetMemoUserMenu.js';
-import { updateEventMessageMenu } from './UpdateEventMessageMenu.js';
-import { muteUserMenu } from './MuteUserMenu.js';
+import { statusUserMenu } from './StatusUserMenu';
+import { markShowUserMenu } from './MarkShowUserMenu';
+import { markHideUserMenu } from './MarkHideUserMenu';
+import { setMemoUserMenu } from './SetMemoUserMenu';
+import { updateEventMessageMenu } from './UpdateEventMessageMenu';
+import { muteUserMenu } from './MuteUserMenu';
 
 /**
  * コンテキストメニューコマンドの配列

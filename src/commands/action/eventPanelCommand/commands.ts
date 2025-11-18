@@ -1,8 +1,8 @@
 import { InteractionBase } from '@/commands/base/interactionBase';
-import { panelReviewButtonAction } from './PanelReviewButtonAction.js';
-import { panelStartButtonAction } from './PanelStartButtonAction.js';
-import { panelStopButtonAction } from './PanelStopButtonAction.js';
-import { panelStopConfirmModalAction } from './PanelStopConfirmModalAction.js';
+import { panelReviewButtonAction } from './PanelReviewButtonAction';
+import { panelStartButtonAction } from './PanelStartButtonAction';
+import { panelStopButtonAction } from './PanelStopButtonAction';
+import { panelStopConfirmModalAction } from './PanelStopConfirmModalAction';
 
 /**
  * イベントパネルアクションの配列

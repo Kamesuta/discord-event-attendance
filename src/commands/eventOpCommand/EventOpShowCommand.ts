@@ -5,7 +5,7 @@ import {
 import { SubcommandInteraction } from '@/commands/base/commandBase';
 import { eventManager } from '@/domain/services/EventManager';
 import { eventInfoMessageUpdater } from '@/messageUpdaters/EventInfoMessageUpdater';
-import { eventOpCommand } from './EventOpCommand.js';
+import { eventOpCommand } from './EventOpCommand';
 
 class EventOpShowCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()

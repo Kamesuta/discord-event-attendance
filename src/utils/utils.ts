@@ -1,4 +1,4 @@
-import { logger } from './log.js';
+import { logger } from './log';
 
 /**
  * Sleep function

@@ -15,11 +15,9 @@ export default [
     ...tseslint.configs.recommendedTypeChecked,
     jsdoc.configs['flat/recommended-typescript'],
     eslintConfigPrettier,
+    importPlugin.flatConfigs.recommended,
     // /Plugins
     {
-        plugins: {
-            import: importPlugin,
-        },
         settings: {
             'import/resolver': {
                 typescript: true,
@@ -69,17 +67,21 @@ export default [
             'import/extensions': [
                 'error',
                 'never',
-                {
-                    json: 'always',
-                },
             ],
             'no-restricted-imports': [
                 'error',
                 {
-                    patterns: [{
-                        group: ['../*'],
-                        message: 'Parent directory imports are not allowed. Use @/ alias instead (e.g., import { foo } from \'@/utils/foo\').',
-                    }],
+                    patterns: [
+                        {
+                            group: ['../*'],
+                            message: 'Parent directory imports are not allowed. Use @/ alias instead (e.g., import { foo } from \'@/utils/foo\').',
+                        },
+                        {
+                            // 'import/extensions' rule does not work well with 'import/resolver' typescript settings, so we restrict here instead
+                            group: ['./**/*.js', './*.js', '@/**/*.js'],
+                            message: 'Do not use .js extension in imports. TypeScript will resolve the correct file.',
+                        },
+                    ],
                 },
             ],
             '@typescript-eslint/naming-convention': [

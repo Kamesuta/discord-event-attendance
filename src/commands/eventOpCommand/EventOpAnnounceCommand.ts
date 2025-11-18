@@ -9,7 +9,7 @@ import { config } from '@/bot/config';
 import { eventInfoMessageUpdater } from '@/messageUpdaters/EventInfoMessageUpdater';
 import { eventManager } from '@/domain/services/EventManager';
 import { EventWithHost } from '@/domain/queries/eventQueries';
-import { eventOpCommand } from './EventOpCommand.js';
+import { eventOpCommand } from './EventOpCommand';
 
 class EventOpAnnounceCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()

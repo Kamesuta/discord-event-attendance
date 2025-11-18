@@ -3,7 +3,7 @@ import {
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
 import { SubcommandInteraction } from '@/commands/base/commandBase';
-import { statusCommand } from './StatusCommand.js';
+import { statusCommand } from './StatusCommand';
 import { prisma } from '@/utils/prisma';
 import { gameService } from '@/services/GameService';
 

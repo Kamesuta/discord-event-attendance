@@ -1,7 +1,7 @@
 import type { EventWithHost } from '@/domain/queries/eventQueries';
 import { eventManager } from '@/domain/services/EventManager';
 import { logger } from '@/utils/log';
-import type { MessageUpdateManager } from './MessageUpdateManager.js';
+import type { MessageUpdateManager } from './MessageUpdateManager';
 
 /**
  * 非同期メッセージ更新スケジューラ

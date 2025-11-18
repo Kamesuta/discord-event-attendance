@@ -26,7 +26,7 @@ import { client } from '@/bot/client';
 import { prisma } from '@/utils/prisma';
 import { gameService } from '@/services/GameService';
 import { Event, GameResult } from '@prisma/client';
-import { panelStopConfirmModalAction } from './PanelStopConfirmModalAction.js';
+import { panelStopConfirmModalAction } from './PanelStopConfirmModalAction';
 import { ThreadChannel } from 'discord.js';
 
 class PanelStopButtonAction extends MessageComponentActionInteraction<ComponentType.Button> {

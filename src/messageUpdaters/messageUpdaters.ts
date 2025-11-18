@@ -1,8 +1,8 @@
-import { MessageUpdater } from './MessageUpdater.js';
-import { eventInfoMessageUpdater } from './EventInfoMessageUpdater.js';
-import { calendarMessageUpdater } from './CalendarMessageUpdater.js';
-import { detailMessageUpdater } from './DetailMessageUpdater.js';
-import { preparationStatusMessageUpdater } from './PreparationStatusMessageUpdater.js';
+import { MessageUpdater } from './MessageUpdater';
+import { eventInfoMessageUpdater } from './EventInfoMessageUpdater';
+import { calendarMessageUpdater } from './CalendarMessageUpdater';
+import { detailMessageUpdater } from './DetailMessageUpdater';
+import { preparationStatusMessageUpdater } from './PreparationStatusMessageUpdater';
 
 /**
  * 登録するMessageUpdaterの一覧

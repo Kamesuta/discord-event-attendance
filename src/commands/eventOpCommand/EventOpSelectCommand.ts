@@ -7,7 +7,7 @@ import {
 import { SubcommandInteraction } from '@/commands/base/commandBase';
 import { eventManager } from '@/domain/services/EventManager';
 import { statusEventListCommand } from '@/commands/statusCommand/StatusEventListCommand';
-import { eventOpCommand } from './EventOpCommand.js';
+import { eventOpCommand } from './EventOpCommand';
 
 class EventOpSelectCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()

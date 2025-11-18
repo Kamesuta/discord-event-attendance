@@ -1,9 +1,9 @@
 import { InteractionBase } from '@/commands/base/interactionBase';
-import { gameClearButtonAction } from './GameClearButtonAction.js';
-import { gameConfirmButtonAction } from './GameConfirmButtonAction.js';
-import { gameDeleteButtonAction } from './GameDeleteButtonAction.js';
-import { gameEditButtonAction } from './GameEditButtonAction.js';
-import { gameEditModalAction } from './GameEditModalAction.js';
+import { gameClearButtonAction } from './GameClearButtonAction';
+import { gameConfirmButtonAction } from './GameConfirmButtonAction';
+import { gameDeleteButtonAction } from './GameDeleteButtonAction';
+import { gameEditButtonAction } from './GameEditButtonAction';
+import { gameEditModalAction } from './GameEditModalAction';
 
 /**
  * イベントゲームアクションの配列
