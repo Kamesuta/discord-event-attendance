@@ -10,6 +10,7 @@ import {
   GuildScheduledEventStatus,
   Message,
   RepliableInteraction,
+  ThreadChannel,
 } from 'discord.js';
 import { eventManager } from '@/domain/services/EventManager';
 import { EventWithHost } from '@/domain/queries/eventQueries';
@@ -18,16 +19,14 @@ import { config } from '@/bot/config';
 import { logger } from '@/utils/log';
 import { onEndEvent } from '@/handlers/eventHandler';
 import { checkEventOperationPermission } from '@/bot/permissions/checkCommandPermission';
-import { messageUpdateManager } from '@/bot/client';
+import { messageUpdateManager, client } from '@/bot/client';
 import { eventInfoMessageUpdater } from '@/messageUpdaters/EventInfoMessageUpdater';
 import { roleManagementService } from '@/services/RoleManagementService';
 import { messageEditor } from '@/bot/interactions/MessageEditor';
-import { client } from '@/bot/client';
 import { prisma } from '@/utils/prisma';
 import { gameService } from '@/services/GameService';
 import { Event, GameResult } from '@prisma/client';
 import { panelStopConfirmModalAction } from './PanelStopConfirmModalAction';
-import { ThreadChannel } from 'discord.js';
 
 class PanelStopButtonAction extends MessageComponentActionInteraction<ComponentType.Button> {
   /**
