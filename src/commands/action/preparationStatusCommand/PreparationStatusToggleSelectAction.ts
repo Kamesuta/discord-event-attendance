@@ -4,14 +4,12 @@ import {
   StringSelectMenuInteraction,
 } from 'discord.js';
 import { MessageComponentActionInteraction } from '@/commands/base/actionBase';
-import {
-  eventIncludeHost,
-  EventWithHost,
-} from '@/domain/queries/eventQueries';
+import { eventIncludeHost, EventWithHost } from '@/domain/queries/eventQueries';
 import { prisma } from '@/utils/prisma';
 import { checkCommandPermission } from '@/bot/permissions/checkCommandPermission';
 import { messageUpdateManager } from '@/bot/client';
 import { logger } from '@/utils/log';
+import { config } from '@/bot/config';
 
 class PreparationStatusToggleSelectAction extends MessageComponentActionInteraction<ComponentType.StringSelect> {
   override create(events: EventWithHost[]): StringSelectMenuBuilder {
@@ -110,8 +108,7 @@ class PreparationStatusToggleSelectAction extends MessageComponentActionInteract
     );
 
     // 連絡チャンネルに通知
-    const contactChannelId = (await import('../../../bot/config.js')).config
-      .event_contact_channel_id;
+    const contactChannelId = config.event_contact_channel_id;
     const contactChannel =
       interaction.guild?.channels.cache.get(contactChannelId);
     if (contactChannel?.isTextBased()) {

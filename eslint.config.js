@@ -42,6 +42,10 @@ export default [
                     selector: 'VariableDeclaration[kind=\'var\'][declare!=true]',
                     message: 'Unexpected var, use let or const instead.',
                 },
+                {
+                    selector: 'ImportExpression',
+                    message: 'Dynamic import is not allowed. Use static import instead.',
+                },
             ],
             eqeqeq: 'warn',
             'no-unused-vars': 'off',
