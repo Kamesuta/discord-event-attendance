@@ -1,16 +1,17 @@
 import {
   ActionRowBuilder,
+  ComponentType,
   ModalBuilder,
   ModalSubmitInteraction,
   TextInputBuilder,
   TextInputStyle,
   User,
 } from 'discord.js';
-import eventManager from '../../event/EventManager.js';
-import { ModalActionInteraction } from '../base/action_base.js';
+import { eventManager } from '@/domain/services/EventManager';
+import { ModalActionInteraction } from '@/commands/base/actionBase';
 import { Event } from '@prisma/client';
-import { prisma } from '../../utils/prisma.js';
-import userManager from '../../event/UserManager.js';
+import { prisma } from '@/utils/prisma';
+import { userManager } from '@/domain/services/UserManager';
 
 class SetMemoModalAction extends ModalActionInteraction {
   /**
@@ -81,7 +82,11 @@ class SetMemoModalAction extends ModalActionInteraction {
     }
     const user = await userManager.getOrCreateUser(member);
 
-    const memo = interaction.components[0]?.components[0]?.value;
+    const memoAction = interaction.components[0];
+    const memo =
+      memoAction?.type === ComponentType.ActionRow
+        ? memoAction.components[0]?.value
+        : undefined;
     if (memo === undefined || memo === '' || memo === '!') {
       await prisma.userStat.update({
         where: {
@@ -116,4 +121,7 @@ class SetMemoModalAction extends ModalActionInteraction {
   }
 }
 
-export default new SetMemoModalAction('memo');
+/**
+ * SetMemoModalActionのインスタンス
+ */
+export const setMemoAction = new SetMemoModalAction('memo');

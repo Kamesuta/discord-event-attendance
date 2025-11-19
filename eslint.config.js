@@ -1,13 +1,13 @@
 // eslint.config.js
 
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable jsdoc/require-jsdoc */
 /* eslint-disable @typescript-eslint/naming-convention */
 
-import tseslint from 'typescript-eslint';
-import jsdoc from 'eslint-plugin-jsdoc';
 import eslint from '@eslint/js';
 import eslintConfigPrettier from 'eslint-config-prettier';
+import importPlugin from 'eslint-plugin-import';
+import jsdoc from 'eslint-plugin-jsdoc';
+import tseslint from 'typescript-eslint';
 
 export default [
     // Plugins
@@ -15,8 +15,15 @@ export default [
     ...tseslint.configs.recommendedTypeChecked,
     jsdoc.configs['flat/recommended-typescript'],
     eslintConfigPrettier,
+    importPlugin.flatConfigs.recommended,
     // /Plugins
     {
+        settings: {
+            'import/resolver': {
+                typescript: true,
+                node: true,
+            },
+        },
         languageOptions: {
             parser: tseslint.parser,
             parserOptions: {
@@ -34,6 +41,10 @@ export default [
                 {
                     selector: 'VariableDeclaration[kind=\'var\'][declare!=true]',
                     message: 'Unexpected var, use let or const instead.',
+                },
+                {
+                    selector: 'ImportExpression',
+                    message: 'Dynamic import is not allowed. Use static import instead.',
                 },
             ],
             eqeqeq: 'warn',
@@ -54,6 +65,28 @@ export default [
                     skipRegExps: true,
                     skipTemplates: true,
                 }
+            ],
+            // Import rules
+            'import/no-unresolved': 'error',
+            'import/extensions': [
+                'error',
+                'never',
+            ],
+            'no-restricted-imports': [
+                'error',
+                {
+                    patterns: [
+                        {
+                            group: ['../*'],
+                            message: 'Parent directory imports are not allowed. Use @/ alias instead (e.g., import { foo } from \'@/utils/foo\').',
+                        },
+                        {
+                            // 'import/extensions' rule does not work well with 'import/resolver' typescript settings, so we restrict here instead
+                            group: ['./**/*.js', './*.js', '@/**/*.js'],
+                            message: 'Do not use .js extension in imports. TypeScript will resolve the correct file.',
+                        },
+                    ],
+                },
             ],
             '@typescript-eslint/naming-convention': [
                 'error',

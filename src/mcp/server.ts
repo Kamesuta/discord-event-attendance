@@ -1,27 +1,27 @@
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
+import { Server } from '@modelcontextprotocol/sdk/server/index';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio';
+import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp';
 import express, { Request, Response } from 'express';
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
-} from '@modelcontextprotocol/sdk/types.js';
+} from '@modelcontextprotocol/sdk/types';
 // ハンドラーとツール定義のインポート
-import { getEventStatus, getEventStatusTool } from './handlers/event-status.js';
-import { getEventList, getEventListTool } from './handlers/event-list.js';
-import { getUserStatus, getUserStatusTool } from './handlers/user-status.js';
-import { getGameStatus, getGameStatusTool } from './handlers/game-status.js';
+import { getEventStatus, getEventStatusTool } from './handlers/eventStatus';
+import { getEventList, getEventListTool } from './handlers/eventList';
+import { getUserStatus, getUserStatusTool } from './handlers/userStatus';
+import { getGameStatus, getGameStatusTool } from './handlers/gameStatus';
 import {
   getParticipationRanking,
   getParticipationRankingTool,
-} from './handlers/participation-ranking.js';
-import { getHostRanking, getHostRankingTool } from './handlers/host-ranking.js';
-import { getXpRanking, getXpRankingTool } from './handlers/xp-ranking.js';
+} from './handlers/participationRanking';
+import { getHostRanking, getHostRankingTool } from './handlers/hostRanking';
+import { getXpRanking, getXpRankingTool } from './handlers/xpRanking';
 import {
   getHostPerformanceRanking,
   getHostPerformanceRankingTool,
-} from './handlers/host-performance-ranking.js';
-import { logger } from '../utils/log.js';
+} from './handlers/hostPerformanceRanking';
+import { logger } from '@/utils/log';
 import { fileURLToPath } from 'url';
 
 /**

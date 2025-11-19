@@ -3,10 +3,10 @@ import {
   PermissionFlagsBits,
   UserContextMenuCommandInteraction,
 } from 'discord.js';
-import { UserContextMenuInteraction } from '../base/contextmenu_base.js';
-import eventManager from '../../event/EventManager.js';
-import eventReviewCommand from '../event_command/EventReviewCommand.js';
-import userManager from '../../event/UserManager.js';
+import { UserContextMenuInteraction } from '@/commands/base/contextmenuBase';
+import { eventManager } from '@/domain/services/EventManager';
+import { eventReviewCommand } from '@/commands/eventCommand/EventReviewCommand';
+import { userManager } from '@/domain/services/UserManager';
 
 class MarkShowUserMenu extends UserContextMenuInteraction {
   command = new ContextMenuCommandBuilder()
@@ -40,4 +40,7 @@ class MarkShowUserMenu extends UserContextMenuInteraction {
   }
 }
 
-export default new MarkShowUserMenu();
+/**
+ * MarkShowUserMenuのインスタンス
+ */
+export const markShowUserMenu = new MarkShowUserMenu();

@@ -1,6 +1,6 @@
 ﻿/* eslint-disable @typescript-eslint/explicit-function-return-type */
 const config = {
-  '{src,test}/**/*.{js,ts}': 'eslint --cache --fix',
+  '{src,test}/**/*.{js,ts}': 'eslint --cache',
   '{src,test}/**': 'prettier --write',
   '{src,test}/**/*.ts': () => 'tsc --noEmit',
 };

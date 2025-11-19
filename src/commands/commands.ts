@@ -1,20 +1,21 @@
-import { InteractionBase } from './base/interaction_base.js';
-import eventCommands from './event_command/commands.js';
-import eventAdminCommands from './event_admin_command/commands.js';
-import eventCreatorCommands from './event_creator_command/commands.js';
-import eventOpCommands from './event_op_command/commands.js';
-import statusCommands from './status_command/commands.js';
-import userMenuCommands from './contextmenu/commands.js';
-import actionCommands from './action/commands.js';
+import { InteractionBase } from './base/interactionBase';
+import { eventCommands } from './eventCommand/commands';
+import { eventAdminCommands } from './eventAdminCommand/commands';
+import { eventCreatorCommands } from './eventCreatorCommand/commands';
+import { eventOpCommands } from './eventOpCommand/commands';
+import { statusCommands } from './statusCommand/commands';
+import { contextMenuCommands } from './contextmenu/commands';
+import { actionCommands } from './action/commands';
 
-const commands: InteractionBase[] = [
+/**
+ * 全コマンドの配列
+ */
+export const commands: InteractionBase[] = [
   ...eventCommands,
   ...eventAdminCommands,
   ...eventCreatorCommands,
   ...eventOpCommands,
   ...statusCommands,
-  ...userMenuCommands,
+  ...contextMenuCommands,
   ...actionCommands,
 ];
-
-export default commands;

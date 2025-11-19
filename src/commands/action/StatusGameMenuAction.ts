@@ -3,10 +3,11 @@ import {
   StringSelectMenuBuilder,
   StringSelectMenuInteraction,
 } from 'discord.js';
-import { MessageComponentActionInteraction } from '../base/action_base.js';
+import { MessageComponentActionInteraction } from '@/commands/base/actionBase';
 import { Event } from '@prisma/client';
-import { GameResultData, showGameResults } from '../../event/game.js';
-import { prisma } from '../../utils/prisma.js';
+import { gameService } from '@/services/GameService';
+import { GameResultData } from '@/domain/queries/gameQueries';
+import { prisma } from '@/utils/prisma';
 
 class StatusGameMenuAction extends MessageComponentActionInteraction<ComponentType.StringSelect> {
   /**
@@ -60,11 +61,14 @@ class StatusGameMenuAction extends MessageComponentActionInteraction<ComponentTy
       });
       return;
     }
-    await showGameResults(interaction, game.id);
+    await gameService.showGameResults(interaction, game.id);
   }
 }
 
-export default new StatusGameMenuAction(
+/**
+ * StatusGameMenuActionのインスタンス
+ */
+export const statusGameMenuAction = new StatusGameMenuAction(
   'status_game',
   ComponentType.StringSelect,
 );

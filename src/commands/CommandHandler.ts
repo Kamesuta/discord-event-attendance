@@ -1,14 +1,14 @@
 import { ApplicationCommandDataResolvable, Interaction } from 'discord.js';
-import { client } from '../utils/client.js';
-import { config } from '../utils/config.js';
-import { logger } from '../utils/log.js';
-import { InteractionBase } from './base/interaction_base.js';
-import { CommandBasedInteraction } from './base/command_base.js';
+import { client } from '@/bot/client';
+import { config } from '@/bot/config';
+import { logger } from '@/utils/log';
+import { InteractionBase } from './base/interactionBase';
+import { CommandBasedInteraction } from './base/commandBase';
 
 /**
  * コマンドハンドラー
  */
-export default class CommandHandler {
+export class CommandHandler {
   /**
    * コマンドハンドラーを初期化します
    * @param _commands コマンドリスト
