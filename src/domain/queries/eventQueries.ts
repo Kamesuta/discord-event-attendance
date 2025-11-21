@@ -7,6 +7,7 @@ export const eventIncludeHost = {
   include: {
     host: true,
     preparer: true,
+    tags: true,
   },
 } as const satisfies Pick<Prisma.EventFindUniqueArgs, 'include'>;
 

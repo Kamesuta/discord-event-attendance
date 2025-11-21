@@ -1,5 +1,6 @@
 import {
   ActionRowBuilder,
+  ButtonBuilder,
   ChatInputCommandInteraction,
   Collection,
   EmbedBuilder,
@@ -19,6 +20,9 @@ import { setupEventSelectAction } from '@/commands/action/eventSetupCommand/Setu
 import { prisma } from '@/utils/prisma';
 import { eventCreatorCommand } from './EventCreatorCommand';
 import { eventIncludeHost, EventWithHost } from '@/domain/queries/eventQueries';
+import { setupTagEditAction } from '@/commands/action/eventSetupCommand/SetupTagEditAction';
+import { setupTagConfirmAction } from '@/commands/action/eventSetupCommand/SetupTagConfirmAction';
+import { tagService, TagSuggestion } from '@/domain/services/TagService';
 
 /**
  * イベント情報
@@ -35,11 +39,30 @@ export interface EventSpec {
 }
 
 /**
+ * タグ編集状態
+ */
+export interface TagEditState {
+  /**
+   * DBに保存されているタグ
+   */
+  originalTags: string[];
+  /**
+   * 編集中のタグ
+   */
+  pendingTags: string[];
+  /**
+   * サジェスト済みのタグ候補
+   */
+  suggestions: TagSuggestion[];
+}
+
+/**
  * 設定中のデータ
  */
 interface EditData {
   interaction: RepliableInteraction;
   selectedEvent: string;
+  tagEdits?: Record<string, TagEditState>;
 }
 
 class EventCreatorSetupCommand extends SubcommandInteraction {
@@ -51,6 +74,86 @@ class EventCreatorSetupCommand extends SubcommandInteraction {
   command = new SlashCommandSubcommandBuilder()
     .setName('setup')
     .setDescription('1週間分のイベントの主催者と準備者を設定します');
+
+  /**
+   * タグ編集状態を生成します
+   * @param eventSpec イベント情報
+   * @param existingState 既存の編集状態
+   * @returns タグ編集状態
+   */
+  private async _buildTagEditState(
+    eventSpec: EventSpec,
+    existingState?: TagEditState,
+  ): Promise<TagEditState> {
+    if (existingState) return existingState;
+
+    const currentTags = tagService.sanitizeTagNames(
+      eventSpec.event?.tags?.map((tag) => tag.name) ?? [],
+    );
+    const suggestions = await tagService.suggestTags(
+      eventSpec.event?.name ?? eventSpec.scheduledEvent.name,
+      eventSpec.event?.description ?? eventSpec.scheduledEvent.description,
+      currentTags,
+    );
+    const defaultPending =
+      currentTags.length > 0
+        ? currentTags
+        : suggestions
+            .filter((suggestion) => suggestion.preselect)
+            .map((suggestion) => suggestion.name);
+    return {
+      originalTags: currentTags,
+      pendingTags: defaultPending,
+      suggestions,
+    };
+  }
+
+  /**
+   * タグ編集状態を取得します
+   * @param editData 編集データ
+   * @param eventSpec イベント情報
+   * @returns タグ編集状態
+   */
+  private async _getTagEditState(
+    editData: EditData,
+    eventSpec: EventSpec,
+  ): Promise<TagEditState> {
+    const eventKey = eventSpec.scheduledEvent.id;
+    if (!editData.tagEdits) {
+      editData.tagEdits = {};
+    }
+    const existingState = editData.tagEdits[eventKey];
+    const state = await this._buildTagEditState(eventSpec, existingState);
+    editData.tagEdits[eventKey] = state;
+    return state;
+  }
+
+  /**
+   * タグ表示用の文字列を生成します
+   * @param tagState タグ編集状態
+   * @returns 表示用文字列
+   */
+  private _getTagDisplay(tagState?: TagEditState): string {
+    const tags = tagService.sanitizeTagNames(tagState?.pendingTags ?? []);
+    if (tags.length === 0) return 'タグ: なし';
+    const hasPending = this._hasUnsavedTags(tagState);
+    const suffix = hasPending ? ' (未確定)' : '';
+    return `タグ: ${tags.map((tag) => `#${tag}`).join(' ')}${suffix}`;
+  }
+
+  /**
+   * タグが未確定か確認します
+   * @param tagState タグ編集状態
+   * @returns 未確定かどうか
+   */
+  private _hasUnsavedTags(tagState?: TagEditState): boolean {
+    if (!tagState) return false;
+    const normalize = (tags: string[]): string =>
+      tagService.sanitizeTagNames(tags).sort().join(' ');
+    const original = normalize(tagState.originalTags);
+    const pending = normalize(tagState.pendingTags);
+    return original !== pending;
+  }
 
   async onCommand(interaction: ChatInputCommandInteraction): Promise<void> {
     await interaction.deferReply({ ephemeral: true });
@@ -120,6 +223,27 @@ class EventCreatorSetupCommand extends SubcommandInteraction {
             0),
       );
 
+    // パネル読み込み
+    let editData = this.setupPanels[this.key(interaction)];
+
+    // パネルを保存 (選択中のイベントとインタラクション)
+    this.setupPanels[this.key(interaction)] = editData = {
+      interaction,
+      selectedEvent:
+        editData?.selectedEvent ?? eventList[0]?.scheduledEvent.id ?? '',
+      tagEdits: editData?.tagEdits,
+    };
+
+    // タグ編集状態を初期化
+    for (const eventSpec of eventList) {
+      await this._getTagEditState(editData, eventSpec);
+    }
+
+    // 選択中のイベントを取得
+    const selectedEvent = eventList.find(
+      ({ scheduledEvent }) => scheduledEvent.id === editData?.selectedEvent,
+    );
+
     // イベントとイベント主催者の表を表示
     const eventTable = eventList
       .map(({ event, scheduledEvent }) => {
@@ -134,8 +258,20 @@ class EventCreatorSetupCommand extends SubcommandInteraction {
         const preparerDisplay = event?.preparer?.userId
           ? ` / 準備者: <@${event.preparer.userId}>`
           : '';
+        const tagState =
+          editData?.tagEdits?.[scheduledEvent.id] ??
+          ({
+            pendingTags: tagService.sanitizeTagNames(
+              event?.tags?.map((tag) => tag.name) ?? [],
+            ),
+            originalTags: tagService.sanitizeTagNames(
+              event?.tags?.map((tag) => tag.name) ?? [],
+            ),
+            suggestions: [],
+          } as TagEditState);
+        const tagDisplay = this._getTagDisplay(tagState);
 
-        return `${eventInfo}: 主催者: ${hostName}${preparerDisplay}`;
+        return `${eventInfo}: 主催者: ${hostName}${preparerDisplay} / ${tagDisplay}`;
       })
       .join('\n');
 
@@ -144,21 +280,6 @@ class EventCreatorSetupCommand extends SubcommandInteraction {
       .setTitle('🥳イベント主催者設定パネル')
       .setDescription(eventTable)
       .setColor('#ff8c00');
-
-    // パネル読み込み
-    let editData = this.setupPanels[this.key(interaction)];
-
-    // パネルを保存
-    this.setupPanels[this.key(interaction)] = editData = {
-      interaction,
-      selectedEvent:
-        editData?.selectedEvent ?? eventList[0]?.scheduledEvent.id ?? '',
-    };
-
-    // 選択中のイベントを取得
-    const selectedEvent = eventList.find(
-      ({ scheduledEvent }) => scheduledEvent.id === editData?.selectedEvent,
-    );
 
     return {
       embeds: [embed],
@@ -171,6 +292,10 @@ class EventCreatorSetupCommand extends SubcommandInteraction {
         ),
         new ActionRowBuilder<UserSelectMenuBuilder>().addComponents(
           setupPreparerSelectAction.create(selectedEvent),
+        ),
+        new ActionRowBuilder<ButtonBuilder>().addComponents(
+          setupTagEditAction.create(selectedEvent),
+          setupTagConfirmAction.create(),
         ),
       ],
     };
