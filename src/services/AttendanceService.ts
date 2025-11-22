@@ -1,4 +1,4 @@
-import { Event, User } from '@prisma/client';
+import { Event, User } from '@/generated/prisma/client';
 import { prisma } from '@/utils/prisma';
 
 /**

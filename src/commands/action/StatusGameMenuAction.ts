@@ -4,7 +4,7 @@ import {
   StringSelectMenuInteraction,
 } from 'discord.js';
 import { MessageComponentActionInteraction } from '@/commands/base/actionBase';
-import { Event } from '@prisma/client';
+import { Event } from '@/generated/prisma/client';
 import { gameService } from '@/services/GameService';
 import { GameResultData } from '@/domain/queries/gameQueries';
 import { prisma } from '@/utils/prisma';

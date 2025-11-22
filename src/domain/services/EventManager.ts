@@ -6,7 +6,7 @@ import {
   VoiceBasedChannel,
 } from 'discord.js';
 import { prisma } from '@/utils/prisma';
-import { Event, Prisma } from '@prisma/client';
+import { Event, Prisma } from '@/generated/prisma/client';
 import { userManager } from './UserManager';
 import { logger } from '@/utils/log';
 import { eventIncludeHost, EventWithHost } from '@/domain/queries/eventQueries';

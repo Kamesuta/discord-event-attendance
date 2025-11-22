@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client';
+import { Prisma } from '@/generated/prisma/client';
 
 /**
  * 検索条件を解析  (空白でAND検索、「 OR 」でOR検索)

@@ -9,7 +9,7 @@ import { statusCommand } from './StatusCommand';
 import { prisma } from '@/utils/prisma';
 import { parsePeriod, Period } from '@/domain/parsers/periodParser';
 import { parseSearch } from '@/domain/parsers/searchParser';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '@/generated/prisma/client';
 import groupBy from 'lodash/groupBy.js';
 import { splitStrings } from '@/domain/formatters/splitStrings';
 

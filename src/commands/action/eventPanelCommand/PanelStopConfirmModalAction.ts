@@ -12,7 +12,7 @@ import { eventManager } from '@/domain/services/EventManager';
 import { checkEventOperationPermission } from '@/bot/permissions/checkCommandPermission';
 import { prisma } from '@/utils/prisma';
 import { config } from '@/bot/config';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '@/generated/prisma/client';
 import { userManager } from '@/domain/services/UserManager';
 
 const userStatIncludeUser = {

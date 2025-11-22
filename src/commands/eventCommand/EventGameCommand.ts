@@ -19,7 +19,7 @@ import { eventManager } from '@/domain/services/EventManager';
 import { gameResultFormatter } from '@/domain/formatters/GameResultFormatter';
 import { prisma } from '@/utils/prisma';
 import { splitStrings } from '@/domain/formatters/splitStrings';
-import { Event, GameResult, Prisma, User } from '@prisma/client';
+import { Event, GameResult, Prisma, User } from '@/generated/prisma/client';
 import omit from 'lodash/omit';
 import { gameEditButtonAction } from '@/commands/action/eventGameCommand/GameEditButtonAction';
 import { gameClearButtonAction } from '@/commands/action/eventGameCommand/GameClearButtonAction';

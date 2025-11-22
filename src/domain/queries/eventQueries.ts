@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client';
+import { Prisma } from '@/generated/prisma/client';
 
 /**
  * イベントの取得条件（ホストと準備者を含む）

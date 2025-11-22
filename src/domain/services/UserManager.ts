@@ -5,7 +5,7 @@ import {
   APIUser,
 } from 'discord.js';
 import { prisma } from '@/utils/prisma';
-import { Prisma, User } from '@prisma/client';
+import { Prisma, User } from '@/generated/prisma/client';
 
 /**
  * ユーザー情報を取得します
