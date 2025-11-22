@@ -10,6 +10,7 @@ import { Event, Prisma } from '@/generated/prisma/client';
 import { userManager } from './UserManager';
 import { logger } from '@/utils/log';
 import { eventIncludeHost, EventWithHost } from '@/domain/queries/eventQueries';
+import { tagService } from '@/domain/services/TagService';
 
 /**
  * イベント情報を取得します
@@ -353,6 +354,18 @@ class EventManager {
         lines[0] = `≪${userManager.getUserName(event.host)}主催≫ ${lines[0]}`;
       } else {
         lines.push(`≪${userManager.getUserName(event.host)}主催≫`);
+      }
+    }
+
+    // タグを1行で追加
+    const tagLine = tagService.formatTagLine(
+      event?.tags?.map((tag) => tag.name) ?? [],
+    );
+    if (tagLine) {
+      if (lines.length > 0) {
+        lines[0] = `${lines[0]} ${tagLine}`;
+      } else {
+        lines.push(tagLine);
       }
     }
 

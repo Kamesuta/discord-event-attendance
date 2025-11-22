@@ -4,6 +4,9 @@ import { setupUserSelectAction } from './SetupUserSelectAction';
 import { setupPreparerSelectAction } from './SetupPreparerSelectAction';
 import { setupConfirmButtonAction } from './SetupConfirmButtonAction';
 import { setupCancelButtonAction } from './SetupCancelButtonAction';
+import { setupTagEditAction } from './SetupTagEditAction';
+import { setupTagEditModalAction } from './SetupTagEditModalAction';
+import { setupTagConfirmAction } from './SetupTagConfirmAction';
 
 /**
  * イベントセットアップアクションの配列
@@ -14,4 +17,7 @@ export const eventSetupActions: InteractionBase[] = [
   setupPreparerSelectAction,
   setupCancelButtonAction,
   setupConfirmButtonAction,
+  setupTagEditAction,
+  setupTagEditModalAction,
+  setupTagConfirmAction,
 ];

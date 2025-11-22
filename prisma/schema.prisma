@@ -32,6 +32,7 @@ model Event {
   games         GameResult[]
   gameResults   UserGameResult[]
   userMutes     UserMute[]
+  tags          Tag[]
   host          User?            @relation("EventToHost", fields: [hostId], references: [id])
   preparer      User?            @relation("EventToPreparer", fields: [preparerId], references: [id])
   prepareStatus Boolean          @default(false)
@@ -123,4 +124,12 @@ model UserGameResult {
   user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([gameId, userId])
+}
+
+model Tag {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  createdAt DateTime @default(now())
+
+  events Event[]
 }
