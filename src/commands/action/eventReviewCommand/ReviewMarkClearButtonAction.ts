@@ -6,7 +6,7 @@ import {
 } from 'discord.js';
 import { eventManager } from '@/domain/services/EventManager';
 import { MessageComponentActionInteraction } from '@/commands/base/actionBase';
-import { Event } from '@prisma/client';
+import { Event } from '@/generated/prisma/client';
 import { eventReviewCommand } from '@/commands/eventCommand/EventReviewCommand';
 import { prisma } from '@/utils/prisma';
 

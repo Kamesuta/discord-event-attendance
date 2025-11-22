@@ -15,7 +15,7 @@ import { eventManager } from '@/domain/services/EventManager';
 import { attendanceService } from '@/services/AttendanceService';
 import { prisma } from '@/utils/prisma';
 import { config } from '@/bot/config';
-import { Event } from '@prisma/client';
+import { Event } from '@/generated/prisma/client';
 import { EditableInteraction } from '@/bot/interactions/EditableInteraction';
 import { reviewMarkUserSelectAction } from '@/commands/action/eventReviewCommand/ReviewMarkUserSelectAction';
 import { reviewMarkClearButtonAction } from '@/commands/action/eventReviewCommand/ReviewMarkClearButtonAction';

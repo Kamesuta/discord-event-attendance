@@ -7,7 +7,7 @@ import {
 import { eventManager } from '@/domain/services/EventManager';
 import { MessageComponentActionInteraction } from '@/commands/base/actionBase';
 import { reviewPasteModalAction } from './ReviewPasteModalAction';
-import { Event } from '@prisma/client';
+import { Event } from '@/generated/prisma/client';
 
 /**
  * IDをペーストするボタンアクション

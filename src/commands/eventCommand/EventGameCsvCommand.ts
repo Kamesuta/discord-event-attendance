@@ -7,7 +7,7 @@ import { SubcommandInteraction } from '@/commands/base/commandBase';
 import { eventCommand } from './EventCommand';
 import { eventManager } from '@/domain/services/EventManager';
 import { parse } from 'csv-parse';
-import { Event, User } from '@prisma/client';
+import { Event, User } from '@/generated/prisma/client';
 import { eventGameCommand, AddGameData } from './EventGameCommand';
 import { gameService } from '@/services/GameService';
 import { xpMap } from '@/domain/models/GameConstants';

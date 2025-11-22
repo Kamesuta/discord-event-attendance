@@ -25,7 +25,7 @@ import { roleManagementService } from '@/services/RoleManagementService';
 import { messageEditor } from '@/bot/interactions/MessageEditor';
 import { prisma } from '@/utils/prisma';
 import { gameService } from '@/services/GameService';
-import { Event, GameResult } from '@prisma/client';
+import { Event, GameResult } from '@/generated/prisma/client';
 import { panelStopConfirmModalAction } from './PanelStopConfirmModalAction';
 
 class PanelStopButtonAction extends MessageComponentActionInteraction<ComponentType.Button> {

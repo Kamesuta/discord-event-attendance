@@ -7,7 +7,7 @@ import {
 import { eventManager } from '@/domain/services/EventManager';
 import { MessageComponentActionInteraction } from '@/commands/base/actionBase';
 import { reviewFilterMarkModalAction } from './ReviewFilterMarkModalAction';
-import { Event } from '@prisma/client';
+import { Event } from '@/generated/prisma/client';
 
 class ReviewFilterMarkButtonAction extends MessageComponentActionInteraction<ComponentType.Button> {
   /**
