@@ -1,7 +1,8 @@
 import {
-  ActionRowBuilder,
+  LabelBuilder,
   ModalBuilder,
   ModalSubmitInteraction,
+  TextDisplayBuilder,
   TextInputBuilder,
   TextInputStyle,
 } from 'discord.js';
@@ -41,20 +42,48 @@ class SetupTagEditModalAction extends ModalActionInteraction {
       evt: params.eventId,
     });
 
-    const suggestionLabel = this._buildSuggestionLabel(params.tagState);
+    const currentLine = tagService.formatTagLine(
+      tagService.sanitizeTagNames([
+        ...params.tagState.pendingTags,
+        ...params.tagState.suggestions
+          .filter((suggestion) => !suggestion.isNew)
+          .map((suggestion) => suggestion.name),
+      ]),
+    );
+    const candidateLine = tagService
+      .sanitizeTagNames(
+        params.tagState.suggestions.map((suggestion) => suggestion.name),
+      )
+      .join(' ');
+    const allTagsLine = tagService
+      .sanitizeTagNames(params.tagState.originalTags)
+      .join(' ');
+    const presetText = `現在のタグ: ${currentLine}
+候補タグ: ${candidateLine}
+全タグ: ${allTagsLine}`.trim();
+
     const tagInput = new TextInputBuilder()
       .setCustomId('tags')
-      .setLabel(suggestionLabel)
       .setStyle(TextInputStyle.Paragraph)
       .setRequired(false)
-      .setPlaceholder('スペース区切りでタグを入力 (例: PvP 建築 交流会)')
-      .setValue(params.tagState.pendingTags.join(' '));
+      .setPlaceholder('#マイクラ #PvP #建築')
+      .setValue(presetText);
 
     return new ModalBuilder()
-      .setTitle(this._truncateLabel(`タグ編集: ${params.eventName}`, 45))
+      .setTitle(this._truncateLabel(`タグ編集:「${params.eventName}」`, 45))
       .setCustomId(customId)
-      .addComponents(
-        new ActionRowBuilder<TextInputBuilder>().addComponents(tagInput),
+      .addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(
+          'スペース区切りでタグを入力（例: #マイクラ #建築）\n全タグ/候補語に「#」をつけるとオンになります。',
+        ),
+      )
+      .addLabelComponents(
+        new LabelBuilder()
+          .setLabel('タグ編集')
+          .setDescription(
+            `#区切りでタグを入力。#がついていない単語は無視されます。`,
+          )
+          .setTextInputComponent(tagInput),
       );
   }
 
@@ -79,9 +108,8 @@ class SetupTagEditModalAction extends ModalActionInteraction {
       return;
     }
 
-    const tagInput =
-      interaction.fields.getTextInputValue('tags')?.split(/\s+/) ?? [];
-    const sanitized = tagService.sanitizeTagNames(tagInput);
+    const rawInput = interaction.fields.getTextInputValue('tags') ?? '';
+    const sanitized = tagService.parseTagInput(rawInput);
 
     const tagState = editData.tagEdits?.[eventId];
     if (!tagState) {
@@ -110,38 +138,6 @@ class SetupTagEditModalAction extends ModalActionInteraction {
           ? `タグを更新しました: ${sanitized.map((tag) => `#${tag}`).join(' ')}`
           : 'タグを更新しました（タグなし）',
     });
-  }
-
-  /**
-   * ラベルを作成します
-   * @param tagState タグ編集状態
-   * @returns ラベル文字列
-   */
-  private _buildSuggestionLabel(tagState: TagEditState): string {
-    const defaultSelected = tagState.suggestions
-      .filter((suggestion) => suggestion.preselect)
-      .slice(0, 3)
-      .map((suggestion) => suggestion.name);
-    const existing = tagState.suggestions
-      .filter((suggestion) => !suggestion.preselect && !suggestion.isNew)
-      .slice(0, 3)
-      .map((suggestion) => suggestion.name);
-    const newCandidates = tagState.suggestions
-      .filter((suggestion) => !suggestion.preselect && suggestion.isNew)
-      .slice(0, 2)
-      .map((suggestion) => suggestion.name);
-
-    const parts = [
-      defaultSelected.length > 0
-        ? `候補(選択済): ${defaultSelected.join(' / ')}`
-        : undefined,
-      existing.length > 0 ? `既存: ${existing.join(' / ')}` : undefined,
-      newCandidates.length > 0
-        ? `新規: ${newCandidates.join(' / ')}`
-        : undefined,
-    ].filter(Boolean) as string[];
-    const label = parts.join(' | ') || 'スペース区切りでタグを入力';
-    return this._truncateLabel(label, 45);
   }
 
   /**

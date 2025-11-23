@@ -51,6 +51,27 @@ class TagService {
   }
 
   /**
+   * テキスト入力からタグ配列を抽出します
+   * 「#タグ1#タグ2」や「#タグ1 #タグ2」のように # 区切りで入力された文字列を解析します
+   * @param rawInput 入力文字列
+   * @returns 正規化済みタグ配列
+   */
+  parseTagInput(rawInput: string): string[] {
+    const words = rawInput.split(/\s+/).filter(Boolean);
+    const tags: string[] = [];
+    for (const word of words) {
+      if (!word.startsWith('#')) continue;
+      const trimmed = word.replace(/^#+/, '');
+      const splitByHash = trimmed
+        .split('#')
+        .map((part) => part.trim())
+        .filter(Boolean);
+      tags.push(...splitByHash);
+    }
+    return this.sanitizeTagNames(tags);
+  }
+
+  /**
    * タグを作成または取得します
    * @param name タグ名
    * @returns タグ

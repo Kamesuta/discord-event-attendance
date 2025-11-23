@@ -159,8 +159,9 @@ class EventCreatorSetupCommand extends SubcommandInteraction {
     const tags = tagService.sanitizeTagNames(tagState?.pendingTags ?? []);
     if (tags.length === 0) return 'タグ: なし';
     const hasPending = this._hasUnsavedTags(tagState);
-    const suffix = hasPending ? ' (未確定)' : '';
-    return `タグ: ${tags.map((tag) => `#${tag}`).join(' ')}${suffix}`;
+    const tagLine = tags.map((tag) => `#${tag}`).join(' ');
+    const decorated = hasPending ? `__${tagLine}__` : tagLine;
+    return `タグ: ${decorated}`;
   }
 
   /**
