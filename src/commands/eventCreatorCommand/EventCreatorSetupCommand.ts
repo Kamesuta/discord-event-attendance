@@ -1,5 +1,6 @@
 import {
   ActionRowBuilder,
+  ButtonBuilder,
   ChatInputCommandInteraction,
   Collection,
   EmbedBuilder,
@@ -16,9 +17,24 @@ import { config } from '@/bot/config';
 import { setupUserSelectAction } from '@/commands/action/eventSetupCommand/SetupUserSelectAction';
 import { setupPreparerSelectAction } from '@/commands/action/eventSetupCommand/SetupPreparerSelectAction';
 import { setupEventSelectAction } from '@/commands/action/eventSetupCommand/SetupEventSelectAction';
+import { setupConfirmButtonAction } from '@/commands/action/eventSetupCommand/SetupConfirmButtonAction';
 import { prisma } from '@/utils/prisma';
 import { eventCreatorCommand } from './EventCreatorCommand';
 import { eventIncludeHost, EventWithHost } from '@/domain/queries/eventQueries';
+
+/**
+ * 保留中の変更
+ */
+export interface PendingChange {
+  /**
+   * 主催者DiscordID
+   */
+  hostDiscordId?: string | null;
+  /**
+   * 準備者DiscordID
+   */
+  preparerDiscordId?: string | null;
+}
 
 /**
  * イベント情報
@@ -32,6 +48,10 @@ export interface EventSpec {
    * イベント
    */
   event?: EventWithHost;
+  /**
+   * 保留中の変更
+   */
+  pendingChange?: PendingChange;
 }
 
 /**
@@ -40,6 +60,7 @@ export interface EventSpec {
 interface EditData {
   interaction: RepliableInteraction;
   selectedEvent: string;
+  pendingChanges: Record<string, PendingChange>;
 }
 
 class EventCreatorSetupCommand extends SubcommandInteraction {
@@ -92,6 +113,8 @@ class EventCreatorSetupCommand extends SubcommandInteraction {
       return;
     }
 
+    const cachedEditData = this.setupPanels[this.key(interaction)];
+
     // イベントを取得
     const events = await prisma.event.findMany({
       where: {
@@ -105,9 +128,13 @@ class EventCreatorSetupCommand extends SubcommandInteraction {
     const eventList: EventSpec[] = scheduledEvents
       .map((scheduledEvent) => {
         const event = events.find((e) => e.eventId === scheduledEvent.id);
+        const pendingChange =
+          cachedEditData?.pendingChanges[scheduledEvent.id] ?? undefined;
+
         return {
           scheduledEvent,
           event,
+          pendingChange,
         };
       })
       .sort(
@@ -122,20 +149,29 @@ class EventCreatorSetupCommand extends SubcommandInteraction {
 
     // イベントとイベント主催者の表を表示
     const eventTable = eventList
-      .map(({ event, scheduledEvent }) => {
+      .map(({ event, scheduledEvent, pendingChange }) => {
         const date = event?.scheduleTime ?? scheduledEvent.scheduledStartAt;
         const dateStr = date
           ? `<t:${Math.floor(date.getTime() / 1000)}:D>`
           : '未定';
         const eventInfo = `${dateStr} [「${event?.name ?? scheduledEvent?.name ?? '？'}」(ID: ${event?.id ?? '？'})](https://discord.com/events/${config.guild_id}/${scheduledEvent.id})`;
-        const hostName = event?.host?.userId
-          ? `<@${event.host.userId}>`
-          : 'なし';
-        const preparerDisplay = event?.preparer?.userId
-          ? ` / 準備者: <@${event.preparer.userId}>`
+        const hostDiscordId = this.resolvePendingMemberDiscordId(
+          event,
+          pendingChange,
+          'hostDiscordId',
+        );
+        const preparerDiscordId = this.resolvePendingMemberDiscordId(
+          event,
+          pendingChange,
+          'preparerDiscordId',
+        );
+        const hostName = hostDiscordId ? `<@${hostDiscordId}>` : 'なし';
+        const preparerDisplay = preparerDiscordId
+          ? ` / 準備者: <@${preparerDiscordId}>`
           : '';
+        const changeMark = pendingChange ? '🟡' : '';
 
-        return `${eventInfo}: 主催者: ${hostName}${preparerDisplay}`;
+        return `${changeMark} ${eventInfo}: 主催者: ${hostName}${preparerDisplay}`;
       })
       .join('\n');
 
@@ -153,6 +189,7 @@ class EventCreatorSetupCommand extends SubcommandInteraction {
       interaction,
       selectedEvent:
         editData?.selectedEvent ?? eventList[0]?.scheduledEvent.id ?? '',
+      pendingChanges: editData?.pendingChanges ?? {},
     };
 
     // 選択中のイベントを取得
@@ -172,8 +209,76 @@ class EventCreatorSetupCommand extends SubcommandInteraction {
         new ActionRowBuilder<UserSelectMenuBuilder>().addComponents(
           setupPreparerSelectAction.create(selectedEvent),
         ),
+        new ActionRowBuilder<ButtonBuilder>().addComponents(
+          setupConfirmButtonAction.create(
+            eventList.some((event) => Boolean(event.pendingChange)),
+          ),
+        ),
       ],
     };
+  }
+
+  resolvePendingMemberDiscordId(
+    event: EventWithHost | undefined,
+    pendingChange: PendingChange | undefined,
+    key: keyof PendingChange,
+  ): string | null {
+    const currentDiscordId =
+      key === 'hostDiscordId'
+        ? (event?.host?.userId ?? null)
+        : (event?.preparer?.userId ?? null);
+
+    if (pendingChange?.[key] === undefined) {
+      return currentDiscordId;
+    }
+
+    return pendingChange[key] ?? null;
+  }
+
+  updatePendingChanges(
+    editData: EditData,
+    eventId: string,
+    change: PendingChange,
+    baseEvent?: EventWithHost | null,
+  ): void {
+    const currentHostDiscordId = baseEvent?.host?.userId ?? null;
+    const currentPreparerDiscordId = baseEvent?.preparer?.userId ?? null;
+    const previousPending = editData.pendingChanges[eventId] ?? {};
+
+    const nextHostDiscordId =
+      change.hostDiscordId !== undefined
+        ? change.hostDiscordId
+        : previousPending.hostDiscordId;
+    const nextPreparerDiscordId =
+      change.preparerDiscordId !== undefined
+        ? change.preparerDiscordId
+        : previousPending.preparerDiscordId;
+
+    const pending: PendingChange = {};
+
+    if (
+      nextHostDiscordId !== undefined &&
+      nextHostDiscordId !== currentHostDiscordId
+    ) {
+      pending.hostDiscordId = nextHostDiscordId ?? null;
+    }
+
+    if (
+      nextPreparerDiscordId !== undefined &&
+      nextPreparerDiscordId !== currentPreparerDiscordId
+    ) {
+      pending.preparerDiscordId = nextPreparerDiscordId ?? null;
+    }
+
+    if (
+      pending.hostDiscordId === undefined &&
+      pending.preparerDiscordId === undefined
+    ) {
+      delete editData.pendingChanges[eventId];
+      return;
+    }
+
+    editData.pendingChanges[eventId] = pending;
   }
 }
 

@@ -4,20 +4,11 @@ import {
   UserSelectMenuInteraction,
 } from 'discord.js';
 import { eventManager } from '@/domain/services/EventManager';
-import { eventIncludeHost } from '@/domain/queries/eventQueries';
 import { MessageComponentActionInteraction } from '@/commands/base/actionBase';
-import { prisma } from '@/utils/prisma';
-import {
-  onCreateScheduledEvent,
-  updateSchedules,
-} from '@/handlers/eventHandler';
 import {
   eventCreatorSetupCommand,
   EventSpec,
 } from '@/commands/eventCreatorCommand/EventCreatorSetupCommand';
-import { userManager } from '@/domain/services/UserManager';
-import { messageUpdateManager } from '@/bot/client';
-import { logger } from '@/utils/log';
 
 class SetupPreparerSelectAction extends MessageComponentActionInteraction<ComponentType.UserSelect> {
   /**
@@ -38,8 +29,13 @@ class SetupPreparerSelectAction extends MessageComponentActionInteraction<Compon
       .setMinValues(0)
       .setMaxValues(1);
 
-    if (event?.event?.preparer?.userId) {
-      userSelect.setDefaultUsers([event.event.preparer.userId]);
+    const preparerUserId =
+      event?.pendingChange?.preparerDiscordId !== undefined
+        ? (event.pendingChange.preparerDiscordId ?? undefined)
+        : event?.event?.preparer?.userId;
+
+    if (preparerUserId) {
+      userSelect.setDefaultUsers([preparerUserId]);
     }
 
     return userSelect;
@@ -69,50 +65,21 @@ class SetupPreparerSelectAction extends MessageComponentActionInteraction<Compon
 
     // 準備者ユーザーを取得
     const preparerUserMember = interaction.members.first();
-    const preparerUser = preparerUserMember
-      ? await userManager.getOrCreateUser(preparerUserMember)
-      : undefined;
+    const preparerDiscordId = preparerUserMember?.user.id ?? null;
 
-    // イベントを取得
-    let event =
+    // イベントを取得（既存値との比較用）
+    const event =
       (await eventManager.getEventFromDiscordId(eventId)) ?? undefined;
-    if (!event) {
-      // イベントを作成
-      const scheduledEvent = await interaction.guild?.scheduledEvents
-        .fetch(eventId)
-        .catch(() => undefined);
-      if (!scheduledEvent) {
-        await interaction.editReply({
-          content: 'Discordイベントが見つかりませんでした',
-        });
-        return;
-      }
-      event = await onCreateScheduledEvent(scheduledEvent);
-      if (!event) {
-        await interaction.editReply({
-          content: 'イベントの作成に失敗しました',
-        });
-        return;
-      }
-    }
 
-    // イベントを更新
-    const updatedEvent = await prisma.event.update({
-      where: { id: event.id },
-      data: {
-        preparerId: preparerUser?.id ?? null,
-        prepareStatus: preparerUser?.id ? undefined : false,
+    // 保留中の変更として保存
+    eventCreatorSetupCommand.updatePendingChanges(
+      editData,
+      eventId,
+      {
+        preparerDiscordId,
       },
-      ...eventIncludeHost,
-    });
-
-    // イベントに関連する全メッセージの更新をスケジュール
-    if (updatedEvent) {
-      messageUpdateManager.enqueue(updatedEvent.id);
-      logger.info(
-        `準備者変更によりイベント ${updatedEvent.id} の関連メッセージ更新をスケジュール`,
-      );
-    }
+      event,
+    );
 
     // パネルを表示
     const reply = await eventCreatorSetupCommand.createSetupPanel(interaction);
@@ -127,9 +94,6 @@ class SetupPreparerSelectAction extends MessageComponentActionInteraction<Compon
     } else {
       await interaction.deleteReply();
     }
-
-    // スケジュールを更新
-    await updateSchedules();
   }
 }
 
