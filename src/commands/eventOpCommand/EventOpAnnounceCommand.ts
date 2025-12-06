@@ -1,6 +1,7 @@
 import {
   ChatInputCommandInteraction,
   Message,
+  MessageFlags,
   RepliableInteraction,
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
@@ -18,7 +19,7 @@ class EventOpAnnounceCommand extends SubcommandInteraction {
 
   async onCommand(interaction: ChatInputCommandInteraction): Promise<void> {
     // イベントを開始
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     const event = await eventManager.getEvent(interaction);
     if (!event) {
       await interaction.editReply({

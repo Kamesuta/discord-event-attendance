@@ -2,6 +2,7 @@ import {
   ChatInputCommandInteraction,
   EmbedBuilder,
   GuildScheduledEventStatus,
+  MessageFlags,
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
 import { SubcommandInteraction } from '@/commands/base/commandBase';
@@ -18,7 +19,7 @@ class EventCreatorScheduleCopyCommand extends SubcommandInteraction {
 
   async onCommand(interaction: ChatInputCommandInteraction): Promise<void> {
     // イベントを開始
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     // 期間を計算 (水曜日で次の週になるようにする)
     // 現在:11/19(火) → 11/17(日)～11/23(土)

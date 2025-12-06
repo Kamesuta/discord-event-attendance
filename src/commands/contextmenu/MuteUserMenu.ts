@@ -1,6 +1,7 @@
 import {
   ContextMenuCommandBuilder,
   GuildScheduledEventStatus,
+  MessageFlags,
   PermissionFlagsBits,
   UserContextMenuCommandInteraction,
   VoiceChannel,
@@ -20,7 +21,7 @@ class MuteUserMenu extends UserContextMenuInteraction {
   async onCommand(
     interaction: UserContextMenuCommandInteraction,
   ): Promise<void> {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     const event = await eventManager.getEvent(interaction);
     if (!event) {
       await interaction.editReply({

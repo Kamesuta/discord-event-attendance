@@ -3,6 +3,7 @@ import {
   ChatInputCommandInteraction,
   EmbedBuilder,
   GuildScheduledEventStatus,
+  MessageFlags,
   RepliableInteraction,
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
@@ -41,7 +42,7 @@ class StatusUserCommand extends SubcommandInteraction {
   async onCommand(interaction: ChatInputCommandInteraction): Promise<void> {
     // ユーザーの過去のイベント参加状況を表示
     const show = interaction.options.getBoolean('show') ?? false;
-    await interaction.deferReply({ ephemeral: !show });
+    await interaction.deferReply(show ? {} : { flags: MessageFlags.Ephemeral });
     const user = interaction.options.getUser('user') ?? interaction.user;
     const page = interaction.options.getInteger('page') ?? 1;
     await this.showUserStatus(interaction, user.id, page);

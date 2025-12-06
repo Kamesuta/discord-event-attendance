@@ -4,6 +4,7 @@ import {
   ButtonBuilder,
   ChatInputCommandInteraction,
   GuildScheduledEvent,
+  MessageFlags,
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
 import { SubcommandInteraction } from '@/commands/base/commandBase';
@@ -47,7 +48,7 @@ class EventOpPanelCommand extends SubcommandInteraction {
   ): Promise<void> {
     // イベントを開始
     const show = interaction.options.getBoolean('show') ?? true;
-    await interaction.deferReply({ ephemeral: !show });
+    await interaction.deferReply(show ? {} : { flags: MessageFlags.Ephemeral });
 
     // DiscordイベントIDからイベントを取得
     const discordEventId = interaction.options.getString('discord_event_id');

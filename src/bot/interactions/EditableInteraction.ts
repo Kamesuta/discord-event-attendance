@@ -2,6 +2,7 @@ import {
   DiscordAPIError,
   InteractionEditReplyOptions,
   Message,
+  MessageFlags,
   MessagePayload,
   RepliableInteraction,
 } from 'discord.js';
@@ -41,9 +42,11 @@ export class EditableInteraction {
           logger.warn(
             `インタラクションの期限切れ${this.interaction.isMessageComponent() ? `: メッセージID: ${this.interaction.message.id}` : ''}`,
           );
-          const reply = await fallbackInteraction.followUp({
-            ephemeral: this.interaction.ephemeral ?? true,
-          });
+          const reply = await fallbackInteraction.followUp(
+            (this.interaction.ephemeral ?? true)
+              ? { flags: MessageFlags.Ephemeral }
+              : {},
+          );
           // 新しいInteractionに更新
           this.interaction = fallbackInteraction;
           return reply;

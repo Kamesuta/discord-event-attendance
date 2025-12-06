@@ -1,5 +1,6 @@
 import {
   ContextMenuCommandBuilder,
+  MessageFlags,
   PermissionFlagsBits,
   UserContextMenuCommandInteraction,
 } from 'discord.js';
@@ -17,7 +18,7 @@ class MarkHideUserMenu extends UserContextMenuInteraction {
   async onCommand(
     interaction: UserContextMenuCommandInteraction,
   ): Promise<void> {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     // イベントを取得
     const event = await eventManager.getEvent(interaction);

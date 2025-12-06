@@ -1,5 +1,6 @@
 import {
   ComponentType,
+  MessageFlags,
   StringSelectMenuBuilder,
   StringSelectMenuInteraction,
 } from 'discord.js';
@@ -50,7 +51,7 @@ class SetupEventSelectAction extends MessageComponentActionInteraction<Component
     interaction: StringSelectMenuInteraction,
     _params: URLSearchParams,
   ): Promise<void> {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     // イベントを取得
     const eventId = interaction.values[0];

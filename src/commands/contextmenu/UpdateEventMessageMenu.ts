@@ -1,6 +1,7 @@
 import {
   ContextMenuCommandBuilder,
   MessageContextMenuCommandInteraction,
+  MessageFlags,
   PermissionFlagsBits,
 } from 'discord.js';
 import { MessageContextMenuInteraction } from '@/commands/base/contextmenuBase';
@@ -14,7 +15,7 @@ class UpdateEventMessageMenu extends MessageContextMenuInteraction {
   async onCommand(
     interaction: MessageContextMenuCommandInteraction,
   ): Promise<void> {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     try {
       const updatedMessage = await messageUpdateManager.updateMessage(

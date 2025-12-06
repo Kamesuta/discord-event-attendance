@@ -3,6 +3,7 @@ import {
   ButtonInteraction,
   ButtonStyle,
   ComponentType,
+  MessageFlags,
 } from 'discord.js';
 import { MessageComponentActionInteraction } from '@/commands/base/actionBase';
 import { eventCreatorSetupCommand } from '@/commands/eventCreatorCommand/EventCreatorSetupCommand';
@@ -38,7 +39,7 @@ class SetupConfirmButtonAction extends MessageComponentActionInteraction<Compone
     interaction: ButtonInteraction,
     _params: URLSearchParams,
   ): Promise<void> {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     const editKey = eventCreatorSetupCommand.key(interaction);
     const editData = eventCreatorSetupCommand.setupPanels[editKey];

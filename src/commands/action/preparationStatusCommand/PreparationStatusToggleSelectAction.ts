@@ -1,5 +1,6 @@
 import {
   ComponentType,
+  MessageFlags,
   StringSelectMenuBuilder,
   StringSelectMenuInteraction,
 } from 'discord.js';
@@ -44,7 +45,7 @@ class PreparationStatusToggleSelectAction extends MessageComponentActionInteract
     interaction: StringSelectMenuInteraction,
     _params: URLSearchParams,
   ): Promise<void> {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     const eventId = parseInt(interaction.values[0] ?? '');
     if (!eventId) {

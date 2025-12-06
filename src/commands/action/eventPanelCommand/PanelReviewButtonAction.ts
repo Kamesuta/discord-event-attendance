@@ -3,6 +3,7 @@ import {
   ButtonInteraction,
   ButtonStyle,
   ComponentType,
+  MessageFlags,
 } from 'discord.js';
 import { eventManager } from '@/domain/services/EventManager';
 import { MessageComponentActionInteraction } from '@/commands/base/actionBase';
@@ -36,7 +37,7 @@ class PanelReviewButtonAction extends MessageComponentActionInteraction<Componen
     const eventId = params.get('evt');
     if (!eventId) return; // 必要なパラメータがない場合は旧形式の可能性があるため無視
 
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     // イベントを取得
     const event = await eventManager.getEventFromId(

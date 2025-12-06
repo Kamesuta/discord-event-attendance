@@ -4,6 +4,7 @@ import {
   ButtonInteraction,
   ButtonStyle,
   ComponentType,
+  MessageFlags,
   StringSelectMenuBuilder,
   GuildScheduledEventStatus,
 } from 'discord.js';
@@ -27,7 +28,7 @@ class PreparationStatusReportButtonAction extends MessageComponentActionInteract
 
   /** @inheritdoc */
   async onCommand(interaction: ButtonInteraction): Promise<void> {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     const member = await interaction.guild?.members
       .fetch(interaction.user.id)

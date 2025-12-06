@@ -1,6 +1,7 @@
 import {
   ActionRowBuilder,
   ComponentType,
+  MessageFlags,
   ModalBuilder,
   ModalSubmitInteraction,
   TextInputBuilder,
@@ -62,13 +63,13 @@ class ReviewFilterMarkModalAction extends ModalActionInteraction {
     const minutes = parseInt(minutesText);
     if (isNaN(minutes) || minutes < config.required_time) {
       await interaction.reply({
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
         content: '分数は10以上の数値で入力してください',
       });
       return;
     }
 
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     // イベントを取得
     const event = await eventManager.getEventFromId(

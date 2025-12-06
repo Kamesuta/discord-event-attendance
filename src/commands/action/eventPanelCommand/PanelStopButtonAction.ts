@@ -241,7 +241,7 @@ class PanelStopButtonAction extends MessageComponentActionInteraction<ComponentT
     const panelMessageId = interaction.message.id;
 
     // モーダルのためdeferReplyを使わない
-    // await interaction.deferReply({ ephemeral: true });
+    // await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     // イベントを取得
     const event = await eventManager.getEventFromId(

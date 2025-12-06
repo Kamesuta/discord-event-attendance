@@ -34,7 +34,7 @@ class EventCreatorScheduleCommand extends SubcommandInteraction {
 
   async onCommand(interaction: ChatInputCommandInteraction): Promise<void> {
     const show = interaction.options.getBoolean('show') ?? true;
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     const dateString = interaction.options.getString('date');
     const now = dateString ? parseDate(dateString) : new Date();
