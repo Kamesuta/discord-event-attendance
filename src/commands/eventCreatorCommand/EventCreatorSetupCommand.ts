@@ -149,30 +149,7 @@ class EventCreatorSetupCommand extends SubcommandInteraction {
 
     // イベントとイベント主催者の表を表示
     const eventTable = eventList
-      .map(({ event, scheduledEvent, pendingChange }) => {
-        const date = event?.scheduleTime ?? scheduledEvent.scheduledStartAt;
-        const dateStr = date
-          ? `<t:${Math.floor(date.getTime() / 1000)}:D>`
-          : '未定';
-        const eventInfo = `${dateStr} [「${event?.name ?? scheduledEvent?.name ?? '？'}」(ID: ${event?.id ?? '？'})](https://discord.com/events/${config.guild_id}/${scheduledEvent.id})`;
-        const hostDiscordId = this.resolvePendingMemberDiscordId(
-          event,
-          pendingChange,
-          'hostDiscordId',
-        );
-        const preparerDiscordId = this.resolvePendingMemberDiscordId(
-          event,
-          pendingChange,
-          'preparerDiscordId',
-        );
-        const hostName = hostDiscordId ? `<@${hostDiscordId}>` : 'なし';
-        const preparerDisplay = preparerDiscordId
-          ? ` / 準備者: <@${preparerDiscordId}>`
-          : '';
-        const changeMark = pendingChange ? '🟡' : '';
-
-        return `${changeMark} ${eventInfo}: 主催者: ${hostName}${preparerDisplay}`;
-      })
+      .map((eventSpec) => this.formatEventSummary(eventSpec))
       .join('\n');
 
     // パネルを作成
@@ -216,6 +193,39 @@ class EventCreatorSetupCommand extends SubcommandInteraction {
         ),
       ],
     };
+  }
+
+  formatEventSummary(eventSpec: EventSpec): string {
+    const { event, scheduledEvent, pendingChange } = eventSpec;
+    const date = event?.scheduleTime ?? scheduledEvent.scheduledStartAt;
+    const dateStr = date
+      ? `<t:${Math.floor(date.getTime() / 1000)}:D>`
+      : '未定';
+    const eventTitle = event?.name ?? scheduledEvent?.name ?? '？';
+    const eventId = event?.id ?? '未生成';
+    const changeMark = pendingChange ? ' 🟡' : '';
+    const eventLink = `https://discord.com/events/${config.guild_id}/${scheduledEvent.id}`;
+    const hostDiscordId = this.resolvePendingMemberDiscordId(
+      event,
+      pendingChange,
+      'hostDiscordId',
+    );
+    const preparerDiscordId = this.resolvePendingMemberDiscordId(
+      event,
+      pendingChange,
+      'preparerDiscordId',
+    );
+    const hostDisplay = hostDiscordId ? `<@${hostDiscordId}>` : 'なし';
+    const summaryLines = [
+      `### ${dateStr} [${eventTitle}](${eventLink}) (ID: ${eventId})${changeMark}`,
+      `- 主催者: ${hostDisplay}`,
+    ];
+
+    if (preparerDiscordId) {
+      summaryLines.push(`- 準備者: <@${preparerDiscordId}>`);
+    }
+
+    return summaryLines.join('\n');
   }
 
   resolvePendingMemberDiscordId(
