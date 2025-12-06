@@ -18,6 +18,7 @@ import { setupUserSelectAction } from '@/commands/action/eventSetupCommand/Setup
 import { setupPreparerSelectAction } from '@/commands/action/eventSetupCommand/SetupPreparerSelectAction';
 import { setupEventSelectAction } from '@/commands/action/eventSetupCommand/SetupEventSelectAction';
 import { setupConfirmButtonAction } from '@/commands/action/eventSetupCommand/SetupConfirmButtonAction';
+import { setupCancelButtonAction } from '@/commands/action/eventSetupCommand/SetupCancelButtonAction';
 import { prisma } from '@/utils/prisma';
 import { eventCreatorCommand } from './EventCreatorCommand';
 import { eventIncludeHost, EventWithHost } from '@/domain/queries/eventQueries';
@@ -188,6 +189,9 @@ class EventCreatorSetupCommand extends SubcommandInteraction {
         ),
         new ActionRowBuilder<ButtonBuilder>().addComponents(
           setupConfirmButtonAction.create(
+            eventList.some((event) => Boolean(event.pendingChange)),
+          ),
+          setupCancelButtonAction.create(
             eventList.some((event) => Boolean(event.pendingChange)),
           ),
         ),
