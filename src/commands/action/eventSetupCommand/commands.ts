@@ -6,7 +6,6 @@ import { setupConfirmButtonAction } from './SetupConfirmButtonAction';
 import { setupCancelButtonAction } from './SetupCancelButtonAction';
 import { setupTagEditAction } from './SetupTagEditAction';
 import { setupTagEditModalAction } from './SetupTagEditModalAction';
-import { setupTagConfirmAction } from './SetupTagConfirmAction';
 
 /**
  * イベントセットアップアクションの配列
@@ -19,5 +18,4 @@ export const eventSetupActions: InteractionBase[] = [
   setupConfirmButtonAction,
   setupTagEditAction,
   setupTagEditModalAction,
-  setupTagConfirmAction,
 ];

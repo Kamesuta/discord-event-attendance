@@ -24,7 +24,6 @@ import { prisma } from '@/utils/prisma';
 import { eventCreatorCommand } from './EventCreatorCommand';
 import { eventIncludeHost, EventWithHost } from '@/domain/queries/eventQueries';
 import { setupTagEditAction } from '@/commands/action/eventSetupCommand/SetupTagEditAction';
-import { setupTagConfirmAction } from '@/commands/action/eventSetupCommand/SetupTagConfirmAction';
 import { tagService, TagSuggestion } from '@/domain/services/TagService';
 
 /**
@@ -158,10 +157,9 @@ class EventCreatorSetupCommand extends SubcommandInteraction {
   private _getTagDisplay(tagState?: TagEditState): string {
     const tags = tagService.sanitizeTagNames(tagState?.pendingTags ?? []);
     if (tags.length === 0) return 'タグ: なし';
-    const hasPending = this._hasUnsavedTags(tagState);
-    const tagLine = tags.map((tag) => `#${tag}`).join(' ');
-    const decorated = hasPending ? `__${tagLine}__` : tagLine;
-    return `タグ: ${decorated}`;
+    const hasPending = this.hasUnsavedTags(tagState);
+    const suffix = hasPending ? ' (未確定)' : '';
+    return `タグ: ${tags.map((tag) => `#${tag}`).join(' ')}${suffix}`;
   }
 
   /**
@@ -169,7 +167,7 @@ class EventCreatorSetupCommand extends SubcommandInteraction {
    * @param tagState タグ編集状態
    * @returns 未確定かどうか
    */
-  private _hasUnsavedTags(tagState?: TagEditState): boolean {
+  hasUnsavedTags(tagState?: TagEditState): boolean {
     if (!tagState) return false;
     const normalize = (tags: string[]): string =>
       tagService.sanitizeTagNames(tags).sort().join(' ');
@@ -294,6 +292,10 @@ class EventCreatorSetupCommand extends SubcommandInteraction {
     const hasPendingChanges = eventList.some((event) =>
       Boolean(event.pendingChange),
     );
+    const hasPendingTags = Object.values(editData.tagEdits ?? {}).some((tag) =>
+      this.hasUnsavedTags(tag),
+    );
+    const hasConfirmableChanges = hasPendingChanges || hasPendingTags;
     return {
       embeds: [embed],
       components: [
@@ -307,12 +309,9 @@ class EventCreatorSetupCommand extends SubcommandInteraction {
           setupPreparerSelectAction.create(selectedEvent),
         ),
         new ActionRowBuilder<ButtonBuilder>().addComponents(
-          setupConfirmButtonAction.create(hasPendingChanges),
-          setupCancelButtonAction.create(hasPendingChanges),
-        ),
-        new ActionRowBuilder<ButtonBuilder>().addComponents(
           setupTagEditAction.create(selectedEvent),
-          setupTagConfirmAction.create(),
+          setupConfirmButtonAction.create(hasConfirmableChanges),
+          setupCancelButtonAction.create(hasConfirmableChanges),
         ),
       ],
     };

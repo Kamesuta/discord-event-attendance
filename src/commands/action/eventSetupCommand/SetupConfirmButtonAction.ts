@@ -6,7 +6,10 @@ import {
   MessageFlags,
 } from 'discord.js';
 import { MessageComponentActionInteraction } from '@/commands/base/actionBase';
-import { eventCreatorSetupCommand } from '@/commands/eventCreatorCommand/EventCreatorSetupCommand';
+import {
+  eventCreatorSetupCommand,
+  TagEditState,
+} from '@/commands/eventCreatorCommand/EventCreatorSetupCommand';
 import { eventManager } from '@/domain/services/EventManager';
 import {
   onCreateScheduledEvent,
@@ -17,6 +20,7 @@ import { eventIncludeHost } from '@/domain/queries/eventQueries';
 import { messageUpdateManager } from '@/bot/client';
 import { logger } from '@/utils/log';
 import { userManager } from '@/domain/services/UserManager';
+import { tagService } from '@/domain/services/TagService';
 
 class SetupConfirmButtonAction extends MessageComponentActionInteraction<ComponentType.Button> {
   /**
@@ -51,12 +55,17 @@ class SetupConfirmButtonAction extends MessageComponentActionInteraction<Compone
     }
 
     const pendingEntries = Object.entries(editData.pendingChanges ?? {});
-    if (pendingEntries.length === 0) {
+    const pendingTagEntries = Object.entries(editData.tagEdits ?? {}).filter(
+      ([, tagState]) => eventCreatorSetupCommand.hasUnsavedTags(tagState),
+    );
+    if (pendingEntries.length === 0 && pendingTagEntries.length === 0) {
       await interaction.editReply({ content: '確定する変更がありません。' });
       return;
     }
 
-    const results: string[] = [];
+    const memberResults: string[] = [];
+    const tagResults: string[] = [];
+    const tagFailures: string[] = [];
 
     for (const [eventId, pending] of pendingEntries) {
       const scheduledEvent =
@@ -68,14 +77,14 @@ class SetupConfirmButtonAction extends MessageComponentActionInteraction<Compone
       let event = await eventManager.getEventFromDiscordId(eventId);
       if (!event) {
         if (!scheduledEvent) {
-          results.push(
+          memberResults.push(
             `ID: ${eventId} のDiscordイベントが見つかりませんでした`,
           );
           continue;
         }
         event = (await onCreateScheduledEvent(scheduledEvent)) ?? null;
         if (!event) {
-          results.push(`イベント(${eventId})の作成に失敗しました`);
+          memberResults.push(`イベント(${eventId})の作成に失敗しました`);
           continue;
         }
       }
@@ -90,7 +99,7 @@ class SetupConfirmButtonAction extends MessageComponentActionInteraction<Compone
             .fetch(pending.hostDiscordId)
             .catch(() => undefined);
           if (!hostMember) {
-            results.push(
+            memberResults.push(
               `イベント(${eventId}) 主催者: ユーザー取得に失敗しました`,
             );
             continue;
@@ -109,7 +118,7 @@ class SetupConfirmButtonAction extends MessageComponentActionInteraction<Compone
             .fetch(pending.preparerDiscordId)
             .catch(() => undefined);
           if (!preparerMember) {
-            results.push(
+            memberResults.push(
               `イベント(${eventId}) 準備者: ユーザー取得に失敗しました`,
             );
             continue;
@@ -138,7 +147,7 @@ class SetupConfirmButtonAction extends MessageComponentActionInteraction<Compone
       messageUpdateManager.enqueue(updatedEvent.id);
       logger.info(`イベント ${updatedEvent.id} の変更を確定`);
 
-      results.push(
+      memberResults.push(
         `イベント(ID: ${updatedEvent.id}) の変更を確定しました。主催者: ${
           pending.hostDiscordId !== undefined
             ? pending.hostDiscordId
@@ -157,6 +166,19 @@ class SetupConfirmButtonAction extends MessageComponentActionInteraction<Compone
       delete editData.pendingChanges[eventId];
     }
 
+    for (const [scheduledEventId, tagState] of pendingTagEntries) {
+      const result = await this._saveTags(
+        scheduledEventId,
+        tagState,
+        interaction,
+      );
+      if (result) {
+        tagResults.push(result);
+      } else {
+        tagFailures.push(scheduledEventId);
+      }
+    }
+
     await updateSchedules();
 
     const reply = await eventCreatorSetupCommand.createSetupPanel(interaction);
@@ -169,11 +191,77 @@ class SetupConfirmButtonAction extends MessageComponentActionInteraction<Compone
       }
     }
 
+    const summaryLines = [
+      memberResults.length
+        ? `メンバー変更:\n${memberResults.join('\n')}`
+        : undefined,
+      tagResults.length ? `タグ更新:\n${tagResults.join('\n')}` : undefined,
+      tagFailures.length
+        ? `タグ更新に失敗: ${tagFailures.join(', ')}`
+        : undefined,
+    ].filter(Boolean) as string[];
+
     await interaction.editReply({
-      content: results.length
-        ? results.join('\n')
+      content: summaryLines.length
+        ? summaryLines.join('\n\n')
         : '変更が反映されませんでした。対象イベントが見つかりませんでした。',
     });
+  }
+
+  /**
+   * タグを保存します
+   * @param scheduledEventId DiscordイベントID
+   * @param tagState タグ編集状態
+   * @param interaction インタラクション
+   * @returns 保存結果
+   */
+  private async _saveTags(
+    scheduledEventId: string,
+    tagState: TagEditState,
+    interaction: ButtonInteraction,
+  ): Promise<string | undefined> {
+    const scheduledEvent =
+      eventCreatorSetupCommand.scheduledEvents?.get(scheduledEventId) ??
+      (await interaction.guild?.scheduledEvents
+        .fetch(scheduledEventId)
+        .catch(() => undefined));
+    if (!scheduledEvent) {
+      logger.warn(`Discordイベントが見つかりませんでした: ${scheduledEventId}`);
+      return;
+    }
+
+    const existingEvent =
+      await eventManager.getEventFromDiscordId(scheduledEventId);
+    const event =
+      existingEvent ?? (await onCreateScheduledEvent(scheduledEvent));
+    if (!event) {
+      logger.warn(`イベントが作成できませんでした: ${scheduledEventId}`);
+      return;
+    }
+
+    const pendingTags = tagService.sanitizeTagNames(tagState.pendingTags);
+    const savedTags = await tagService.setEventTags(event.id, pendingTags);
+
+    tagState.originalTags = pendingTags;
+    tagState.pendingTags = pendingTags;
+
+    const updatedEvent = await eventManager.getEventFromId(event.id);
+    if (updatedEvent) {
+      const newDescription = eventManager.formatEventDescription(
+        scheduledEvent.description ?? updatedEvent.description,
+        updatedEvent,
+      );
+      await prisma.event.update({
+        where: { id: updatedEvent.id },
+        data: { description: newDescription },
+      });
+      await eventManager.updateEventDescription(scheduledEvent, updatedEvent);
+      messageUpdateManager.enqueue(updatedEvent.id);
+    }
+
+    return `${scheduledEvent.name}: ${
+      tagService.formatTagLine(savedTags.map((tag) => tag.name)) || 'なし'
+    }`;
   }
 }
 
