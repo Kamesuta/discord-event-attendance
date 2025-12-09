@@ -1,5 +1,6 @@
 import {
   ContextMenuCommandBuilder,
+  MessageFlags,
   UserContextMenuCommandInteraction,
 } from 'discord.js';
 import { UserContextMenuInteraction } from '@/commands/base/contextmenuBase';
@@ -11,7 +12,7 @@ class StatusUserMenu extends UserContextMenuInteraction {
   async onCommand(
     interaction: UserContextMenuCommandInteraction,
   ): Promise<void> {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     await statusUserCommand.showUserStatus(
       interaction,
       interaction.targetUser.id,

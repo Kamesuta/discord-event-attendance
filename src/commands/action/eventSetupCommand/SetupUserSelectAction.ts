@@ -1,5 +1,6 @@
 import {
   ComponentType,
+  MessageFlags,
   UserSelectMenuBuilder,
   UserSelectMenuInteraction,
 } from 'discord.js';
@@ -49,7 +50,7 @@ class SetupUserSelectAction extends MessageComponentActionInteraction<ComponentT
     const eventId = params.get('evt');
     if (!eventId) return; // 必要なパラメータがない場合は旧形式の可能性があるため無視
 
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     // パネルを取得
     const editData =

@@ -2,6 +2,7 @@ import {
   ChatInputCommandInteraction,
   EmbedBuilder,
   GuildScheduledEventStatus,
+  MessageFlags,
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
 import { SubcommandInteraction } from '@/commands/base/commandBase';
@@ -34,7 +35,7 @@ class EventOpSelectCommand extends SubcommandInteraction {
 
   async onCommand(interaction: ChatInputCommandInteraction): Promise<void> {
     // イベントを終了
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     const suggest = interaction.options.getBoolean('suggest') ?? false;
     const embeds = suggest ? [await this._makeSuggestionEmbed()] : [];
     const eventId = interaction.options.getInteger('event_id') ?? undefined;

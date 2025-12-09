@@ -43,7 +43,7 @@ class GameConfirmButtonAction extends MessageComponentActionInteraction<Componen
     const key = params.get('key');
     if (!eventId || !key) return; // 必要なパラメータがない場合は旧形式の可能性があるため無視
 
-    await interaction.deferReply({ ephemeral: false }); // Confirm時はみんなに公開する
+    await interaction.deferReply(); // Confirm時はみんなに公開する
     const event = await eventManager.getEventFromId(
       eventId ? parseInt(eventId) : undefined,
     );

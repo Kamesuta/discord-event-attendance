@@ -1,5 +1,6 @@
 import {
   ComponentType,
+  MessageFlags,
   StringSelectMenuBuilder,
   StringSelectMenuInteraction,
 } from 'discord.js';
@@ -47,7 +48,7 @@ class StatusGameMenuAction extends MessageComponentActionInteraction<ComponentTy
     const eventId = params.get('event');
     if (!eventId) return; // 必要なパラメータがない場合は旧形式の可能性があるため無視
 
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     // ゲーム結果を取得
     const gameId = parseInt(interaction.values[0]);
     const game = await prisma.gameResult.findFirst({

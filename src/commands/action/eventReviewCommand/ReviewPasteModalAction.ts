@@ -1,6 +1,7 @@
 import {
   ActionRowBuilder,
   ComponentType,
+  MessageFlags,
   ModalBuilder,
   ModalSubmitInteraction,
   TextInputBuilder,
@@ -61,13 +62,13 @@ class ReviewPasteModalAction extends ModalActionInteraction {
         : undefined;
     if (!idsText || !idsText.trim()) {
       await interaction.reply({
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
         content: 'IDまたはユーザー名を入力してください',
       });
       return;
     }
 
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     // イベントを取得
     const event = await eventManager.getEventFromId(

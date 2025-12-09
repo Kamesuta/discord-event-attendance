@@ -1,5 +1,6 @@
 import {
   ChatInputCommandInteraction,
+  MessageFlags,
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
 import { SubcommandInteraction } from '@/commands/base/commandBase';
@@ -26,7 +27,7 @@ class StatusGameCommand extends SubcommandInteraction {
   async onCommand(interaction: ChatInputCommandInteraction): Promise<void> {
     // ゲームの勝敗を表示
     const show = interaction.options.getBoolean('show') ?? false;
-    await interaction.deferReply({ ephemeral: !show });
+    await interaction.deferReply(show ? {} : { flags: MessageFlags.Ephemeral });
     const gameId = interaction.options.getInteger('game_id');
     const game = await prisma.gameResult.findFirst({
       where: {

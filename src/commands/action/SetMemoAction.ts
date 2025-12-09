@@ -1,6 +1,7 @@
 import {
   ActionRowBuilder,
   ComponentType,
+  MessageFlags,
   ModalBuilder,
   ModalSubmitInteraction,
   TextInputBuilder,
@@ -59,7 +60,7 @@ class SetMemoModalAction extends ModalActionInteraction {
     const eventId = params.get('event');
     if (!userId || !eventId) return; // 必要なパラメータがない場合は旧形式の可能性があるため無視
 
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     const event = await eventManager.getEventFromId(
       eventId ? parseInt(eventId) : undefined,
     );

@@ -5,6 +5,7 @@ import {
   GuildScheduledEventEntityType,
   GuildScheduledEventPrivacyLevel,
   GuildScheduledEventStatus,
+  MessageFlags,
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
 import { SubcommandInteraction } from '@/commands/base/commandBase';
@@ -63,7 +64,7 @@ class EventCreatorCreateCommand extends SubcommandInteraction {
   ): Promise<void> {
     // イベントを開始
     const show = interaction.options.getBoolean('show') ?? false;
-    await interaction.deferReply({ ephemeral: !show });
+    await interaction.deferReply(show ? {} : { flags: MessageFlags.Ephemeral });
 
     // 検索条件
     const search = interaction.options.getString('search');

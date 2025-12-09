@@ -43,7 +43,7 @@ class GameEditButtonAction extends MessageComponentActionInteraction<ComponentTy
     if (!eventId || !key) return; // 必要なパラメータがない場合は旧形式の可能性があるため無視
 
     // モーダルのため、deferできない
-    // await interaction.deferReply({ ephemeral: true });
+    // await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     const event = await eventManager.getEventFromId(
       eventId ? parseInt(eventId) : undefined,
     );

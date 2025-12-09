@@ -2,6 +2,7 @@ import {
   ChatInputCommandInteraction,
   EmbedBuilder,
   GuildScheduledEventStatus,
+  MessageFlags,
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
 import { SubcommandInteraction } from '@/commands/base/commandBase';
@@ -72,7 +73,7 @@ class StatusRankingCommand extends SubcommandInteraction {
   async onCommand(interaction: ChatInputCommandInteraction): Promise<void> {
     // イベントの出欠状況を表示
     const show = interaction.options.getBoolean('show') ?? false;
-    await interaction.deferReply({ ephemeral: !show });
+    await interaction.deferReply(show ? {} : { flags: MessageFlags.Ephemeral });
 
     // 統計をとる対象
     const type = interaction.options.getString('type');

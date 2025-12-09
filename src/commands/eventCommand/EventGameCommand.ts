@@ -4,6 +4,7 @@ import {
   ChatInputCommandInteraction,
   EmbedBuilder,
   InteractionEditReplyOptions,
+  MessageFlags,
   RepliableInteraction,
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
@@ -96,7 +97,7 @@ class EventGameCommand extends SubcommandInteraction {
 
   async onCommand(interaction: ChatInputCommandInteraction): Promise<void> {
     // ゲームの勝敗を記録
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     // イベントを取得
     const event = await eventManager.getEvent(interaction);

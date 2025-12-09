@@ -3,6 +3,7 @@ import {
   ButtonInteraction,
   ButtonStyle,
   ComponentType,
+  MessageFlags,
 } from 'discord.js';
 import { eventManager } from '@/domain/services/EventManager';
 import { MessageComponentActionInteraction } from '@/commands/base/actionBase';
@@ -47,7 +48,7 @@ class ReviewPasteButtonAction extends MessageComponentActionInteraction<Componen
     if (!event) {
       await interaction.reply({
         content: 'イベントが見つかりませんでした',
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       });
       return;
     }

@@ -5,6 +5,7 @@ import {
   TextInputBuilder,
   TextInputStyle,
   GuildScheduledEventStatus,
+  MessageFlags,
 } from 'discord.js';
 import { ModalActionInteraction } from '@/commands/base/actionBase';
 import { panelStopButtonAction } from './PanelStopButtonAction';
@@ -122,7 +123,7 @@ class PanelStopConfirmModalAction extends ModalActionInteraction {
     const panelMessageId = params.get('pmid');
     if (!eventId) return; // 必要なパラメータがない場合は旧形式の可能性があるため無視
 
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     // イベントを取得
     const event = await eventManager.getEventFromId(

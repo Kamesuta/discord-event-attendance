@@ -7,6 +7,7 @@ import {
   GuildScheduledEvent,
   GuildScheduledEventStatus,
   InteractionEditReplyOptions,
+  MessageFlags,
   RepliableInteraction,
   SlashCommandSubcommandBuilder,
   StringSelectMenuBuilder,
@@ -75,7 +76,7 @@ class EventCreatorSetupCommand extends SubcommandInteraction {
     .setDescription('1週間分のイベントの主催者と準備者を設定します');
 
   async onCommand(interaction: ChatInputCommandInteraction): Promise<void> {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     // イベントを取得してキャッシュしておく。プルダウンメニューを選んだときなどは取得する代わりにキャッシュを使う
     this.scheduledEvents = await interaction.guild?.scheduledEvents.fetch();

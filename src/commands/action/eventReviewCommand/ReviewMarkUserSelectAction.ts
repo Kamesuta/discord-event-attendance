@@ -1,5 +1,6 @@
 import {
   ComponentType,
+  MessageFlags,
   RepliableInteraction,
   UserSelectMenuBuilder,
   UserSelectMenuInteraction,
@@ -57,7 +58,7 @@ class ReviewMarkUserSelectAction extends MessageComponentActionInteraction<Compo
     const uuid = params.get('uuid');
     if (!eventId || !uuid) return; // 必要なパラメータがない場合は旧形式の可能性があるため無視
 
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     // 選択済みのユーザーIDを取得
     const selectedUserIds = this._userIds[uuid];

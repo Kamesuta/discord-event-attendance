@@ -1,5 +1,6 @@
 import {
   ChatInputCommandInteraction,
+  MessageFlags,
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
 import { SubcommandInteraction } from '@/commands/base/commandBase';
@@ -25,7 +26,7 @@ class EventOpShowCommand extends SubcommandInteraction {
     );
 
   async onCommand(interaction: ChatInputCommandInteraction): Promise<void> {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     const event = await eventManager.getEvent(interaction);
     if (!event) {
       await interaction.editReply({

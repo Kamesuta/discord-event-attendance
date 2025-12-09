@@ -71,7 +71,7 @@ class EventCreatorPreparationPanelCommand extends SubcommandInteraction {
   }
 
   async onCommand(interaction: ChatInputCommandInteraction): Promise<void> {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     await this.outputPanel(interaction, true);
     await interaction.editReply('準備状況パネルを投稿しました！');

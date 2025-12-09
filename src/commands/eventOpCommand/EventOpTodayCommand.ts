@@ -6,6 +6,7 @@ import {
   ButtonBuilder,
   GuildScheduledEvent,
   GuildTextBasedChannel,
+  MessageFlags,
 } from 'discord.js';
 import { SubcommandInteraction } from '@/commands/base/commandBase';
 import { config } from '@/bot/config';
@@ -22,7 +23,7 @@ class EventOpTodayCommand extends SubcommandInteraction {
     .setDescription('本日のイベント予定を表示します');
 
   async onCommand(interaction: ChatInputCommandInteraction): Promise<void> {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     // アナウンスチャンネルを取得
     const channel = interaction.guild?.channels.cache.get(

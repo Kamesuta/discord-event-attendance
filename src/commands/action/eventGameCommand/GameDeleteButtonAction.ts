@@ -3,6 +3,7 @@ import {
   ButtonInteraction,
   ButtonStyle,
   ComponentType,
+  MessageFlags,
 } from 'discord.js';
 import { eventManager } from '@/domain/services/EventManager';
 import { MessageComponentActionInteraction } from '@/commands/base/actionBase';
@@ -40,7 +41,7 @@ class GameDeleteButtonAction extends MessageComponentActionInteraction<Component
     const key = params.get('key');
     if (!eventId || !key) return; // 必要なパラメータがない場合は旧形式の可能性があるため無視
 
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     const event = await eventManager.getEventFromId(
       eventId ? parseInt(eventId) : undefined,
     );

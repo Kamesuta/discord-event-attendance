@@ -1,5 +1,6 @@
 import {
   ContextMenuCommandBuilder,
+  MessageFlags,
   PermissionFlagsBits,
   UserContextMenuCommandInteraction,
 } from 'discord.js';
@@ -20,7 +21,7 @@ class SetMemoUserMenu extends UserContextMenuInteraction {
     const event = await eventManager.getEvent(interaction);
     if (!event) {
       await interaction.reply({
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
         content: 'イベントが見つかりませんでした',
       });
       return;

@@ -3,6 +3,7 @@ import {
   ButtonInteraction,
   ButtonStyle,
   ComponentType,
+  MessageFlags,
 } from 'discord.js';
 import { MessageComponentActionInteraction } from '@/commands/base/actionBase';
 import { config } from '@/bot/config';
@@ -29,7 +30,7 @@ class AddRoleButtonAction extends MessageComponentActionInteraction<ComponentTyp
     interaction: ButtonInteraction,
     _params: URLSearchParams,
   ): Promise<void> {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     // メンバーを取得
     const member = await interaction.guild?.members

@@ -1,5 +1,6 @@
 import {
   ChatInputCommandInteraction,
+  MessageFlags,
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
 import { SubcommandInteraction } from '@/commands/base/commandBase';
@@ -14,7 +15,7 @@ class EventAdminStopCommand extends SubcommandInteraction {
 
   async onCommand(interaction: ChatInputCommandInteraction): Promise<void> {
     // イベントを終了
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     const event = await eventManager.getEvent(interaction);
     const scheduledEvent = await eventManager.getScheduleEvent(
       interaction,
