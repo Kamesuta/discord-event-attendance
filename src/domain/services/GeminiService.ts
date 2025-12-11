@@ -95,9 +95,14 @@ class GeminiService {
   async suggestTagsBatch(
     params: GeminiBatchTagRequest[],
   ): Promise<Record<string, GeminiTagSuggestionResult>> {
-    if (!this.isEnabled() || params.length === 0) return {};
+    if (params.length === 0) return {};
+    if (!this.isEnabled()) {
+      throw new Error('Gemini APIキーが設定されていません');
+    }
     const client = this._getClient();
-    if (!client) return {};
+    if (!client) {
+      throw new Error('Gemini APIクライアントの初期化に失敗しました');
+    }
 
     const prompt = this._buildPrompt(params);
     logger.info('[Gemini] Tag batch request prompt', { prompt });
@@ -119,14 +124,14 @@ class GeminiService {
       const rawJson = this._extractJson(response.text ?? '');
       if (!rawJson) {
         logger.warn('Geminiの応答からJSONを抽出できませんでした');
-        return {};
+        throw new Error('Geminiの応答からJSONを抽出できませんでした');
       }
       const parsed = geminiBatchResponseSchema.safeParse(rawJson);
       if (!parsed.success) {
         logger.warn(
           `Geminiの応答JSONの解析に失敗しました: ${parsed.error.message}`,
         );
-        return {};
+        throw new Error('Geminiの応答JSONの解析に失敗しました');
       }
       const map: Record<string, GeminiTagSuggestionResult> = {};
       for (const entry of parsed.data) {
@@ -136,7 +141,10 @@ class GeminiService {
       return map;
     } catch (error) {
       logger.error('Gemini APIの呼び出しに失敗しました', error);
-      return {};
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Gemini APIの呼び出しに失敗しました');
     }
   }
 

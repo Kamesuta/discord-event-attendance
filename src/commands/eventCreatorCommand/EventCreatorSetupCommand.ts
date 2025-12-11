@@ -24,7 +24,12 @@ import { prisma } from '@/utils/prisma';
 import { eventCreatorCommand } from './EventCreatorCommand';
 import { eventIncludeHost, EventWithHost } from '@/domain/queries/eventQueries';
 import { setupTagEditAction } from '@/commands/action/eventSetupCommand/SetupTagEditAction';
-import { tagService, TagSuggestion } from '@/domain/services/TagService';
+import {
+  tagService,
+  TagSuggestion,
+  TagSuggestionInput,
+} from '@/domain/services/TagService';
+import { logger } from '@/utils/log';
 
 /**
  * 保留中の変更
@@ -85,6 +90,14 @@ interface EditData {
   pendingChanges: Record<string, PendingChange>;
   tagEdits?: Record<string, TagEditState>;
   tagSuggestions?: Record<string, TagSuggestion[]>;
+  aiAttemptedEventIds?: Set<string>;
+  isRefreshingTagSuggestions?: boolean;
+  tagSuggestionError?: string;
+}
+
+interface CreateSetupPanelOptions {
+  forceRefreshAi?: boolean;
+  skipAutoRefresh?: boolean;
 }
 
 class EventCreatorSetupCommand extends SubcommandInteraction {
@@ -95,7 +108,144 @@ class EventCreatorSetupCommand extends SubcommandInteraction {
 
   command = new SlashCommandSubcommandBuilder()
     .setName('setup')
-    .setDescription('1週間分のイベントの主催者と準備者を設定します');
+    .setDescription('1週間分のイベントの主催者と準備者を設定します')
+    .addBooleanOption((option) =>
+      option
+        .setName('refresh_tag_suggestions')
+        .setDescription('AIタグサジェストを再生成するか')
+        .setRequired(false),
+    );
+
+  private _buildSuggestionInputs(eventList: EventSpec[]): TagSuggestionInput[] {
+    return eventList.map((eventSpec) => ({
+      eventId: eventSpec.scheduledEvent.id,
+      title: eventSpec.event?.name ?? eventSpec.scheduledEvent.name,
+      description:
+        eventSpec.event?.description ?? eventSpec.scheduledEvent.description,
+      currentTags: eventSpec.event?.tags?.map((tag) => tag.name) ?? [],
+    }));
+  }
+
+  private async _ensureTagSuggestions(
+    editData: EditData,
+    suggestionInputs: TagSuggestionInput[],
+  ): Promise<void> {
+    if (suggestionInputs.length === 0) return;
+    if (
+      !editData.tagSuggestions ||
+      !Object.keys(editData.tagSuggestions).length
+    ) {
+      editData.tagSuggestions = await tagService.buildSuggestionsForEvents(
+        suggestionInputs,
+        { useAi: false },
+      );
+      return;
+    }
+    const missingInputs = suggestionInputs.filter(
+      (input) => !editData.tagSuggestions?.[input.eventId],
+    );
+    if (missingInputs.length === 0) return;
+    const additionalSuggestions = await tagService.buildSuggestionsForEvents(
+      missingInputs,
+      { useAi: false },
+    );
+    editData.tagSuggestions = {
+      ...editData.tagSuggestions,
+      ...additionalSuggestions,
+    };
+  }
+
+  private _needsAiTagSuggestions(
+    editData: EditData,
+    eventList: EventSpec[],
+  ): boolean {
+    if (eventList.length === 0) return false;
+    const attempted = editData.aiAttemptedEventIds;
+    if (!attempted || attempted.size === 0) {
+      return true;
+    }
+    return eventList.some(
+      ({ scheduledEvent }) => !attempted.has(scheduledEvent.id),
+    );
+  }
+
+  private _triggerTagSuggestionRefresh(
+    editData: EditData,
+    suggestionInputs: TagSuggestionInput[],
+  ): void {
+    if (suggestionInputs.length === 0) return;
+    if (editData.isRefreshingTagSuggestions) return;
+    editData.isRefreshingTagSuggestions = true;
+    editData.tagSuggestionError = undefined;
+    void this._refreshTagSuggestions(editData, suggestionInputs);
+  }
+
+  private async _refreshTagSuggestions(
+    editData: EditData,
+    suggestionInputs: TagSuggestionInput[],
+  ): Promise<void> {
+    const targetEventIds = suggestionInputs.map((input) => input.eventId);
+    try {
+      const aiSuggestions =
+        await tagService.buildSuggestionsForEvents(suggestionInputs);
+      if (!editData.tagSuggestions) {
+        editData.tagSuggestions = {};
+      }
+      if (Object.keys(aiSuggestions).length > 0) {
+        editData.tagSuggestions = {
+          ...editData.tagSuggestions,
+          ...aiSuggestions,
+        };
+        for (const eventId of targetEventIds) {
+          const nextSuggestions = aiSuggestions[eventId];
+          if (!nextSuggestions) continue;
+          const tagState = editData.tagEdits?.[eventId];
+          if (tagState) {
+            tagState.suggestions = nextSuggestions;
+          }
+        }
+      }
+      editData.tagSuggestionError = undefined;
+    } catch (error) {
+      logger.error('AIタグサジェストの更新に失敗しました', error);
+      editData.tagSuggestionError =
+        'タグ生成に失敗しました。 `/event_creator setup refresh_tag_suggestions:true` を打ってもう一度お試しください。';
+    } finally {
+      if (!editData.aiAttemptedEventIds) {
+        editData.aiAttemptedEventIds = new Set<string>();
+      }
+      for (const eventId of targetEventIds) {
+        editData.aiAttemptedEventIds.add(eventId);
+      }
+      editData.isRefreshingTagSuggestions = false;
+      const panelKey = this.key(editData.interaction);
+      if (this.setupPanels[panelKey] === editData) {
+        try {
+          const reply = await this.createSetupPanel(editData.interaction, {
+            skipAutoRefresh: true,
+          });
+          if (reply) {
+            await editData.interaction.editReply(reply);
+          }
+        } catch (error) {
+          logger.warn(
+            'AIタグサジェスト更新後のパネル更新に失敗しました',
+            error,
+          );
+        }
+      }
+    }
+  }
+
+  private _getTagSuggestionStatusLine(editData: EditData): string | undefined {
+    if (editData.isRefreshingTagSuggestions) {
+      return 'タグ生成中⏳ AIタグサジェストを更新しています...';
+    }
+    if (editData.tagSuggestionError) {
+      return `タグ生成失敗⚠️ ${editData.tagSuggestionError}`;
+    }
+    return undefined;
+  }
 
   /**
    * タグ編集状態を生成します
@@ -205,11 +355,16 @@ class EventCreatorSetupCommand extends SubcommandInteraction {
   async onCommand(interaction: ChatInputCommandInteraction): Promise<void> {
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
+    const refreshTagSuggestions =
+      interaction.options.getBoolean('refresh_tag_suggestions') ?? false;
+
     // イベントを取得してキャッシュしておく。プルダウンメニューを選んだときなどは取得する代わりにキャッシュを使う
     this.scheduledEvents = await interaction.guild?.scheduledEvents.fetch();
 
     // パネルを作成
-    const reply = await this.createSetupPanel(interaction);
+    const reply = await this.createSetupPanel(interaction, {
+      forceRefreshAi: refreshTagSuggestions,
+    });
     if (!reply) return;
     await interaction.editReply(reply);
   }
@@ -229,11 +384,15 @@ class EventCreatorSetupCommand extends SubcommandInteraction {
   /**
    * セットアップパネルを作成
    * @param interaction インタラクション
+   * @param options パネル作成オプション
    * @returns 作成したパネル
    */
   async createSetupPanel(
     interaction: RepliableInteraction,
+    options?: CreateSetupPanelOptions,
   ): Promise<InteractionEditReplyOptions | undefined> {
+    const forceRefreshAi = options?.forceRefreshAi ?? false;
+    const skipAutoRefresh = options?.skipAutoRefresh ?? false;
     const scheduledEvents = this.scheduledEvents;
     if (!scheduledEvents || scheduledEvents.size === 0) {
       await interaction.editReply({
@@ -288,22 +447,21 @@ class EventCreatorSetupCommand extends SubcommandInteraction {
       pendingChanges: editData?.pendingChanges ?? {},
       tagEdits: editData?.tagEdits ?? {},
       tagSuggestions: editData?.tagSuggestions ?? {},
+      aiAttemptedEventIds: editData?.aiAttemptedEventIds ?? new Set<string>(),
+      isRefreshingTagSuggestions: editData?.isRefreshingTagSuggestions ?? false,
+      tagSuggestionError: editData?.tagSuggestionError,
     };
 
-    // タグサジェストを初期化
-    if (
-      !editData.tagSuggestions ||
-      !Object.keys(editData.tagSuggestions).length
-    ) {
-      const suggestionInputs = eventList.map((eventSpec) => ({
-        eventId: eventSpec.scheduledEvent.id,
-        title: eventSpec.event?.name ?? eventSpec.scheduledEvent.name,
-        description:
-          eventSpec.event?.description ?? eventSpec.scheduledEvent.description,
-        currentTags: eventSpec.event?.tags?.map((tag) => tag.name) ?? [],
-      }));
-      editData.tagSuggestions =
-        await tagService.buildSuggestionsForEvents(suggestionInputs);
+    const suggestionInputs = this._buildSuggestionInputs(eventList);
+    await this._ensureTagSuggestions(editData, suggestionInputs);
+
+    const shouldAutoRefresh =
+      !skipAutoRefresh && this._needsAiTagSuggestions(editData, eventList);
+    const shouldStartRefresh =
+      (forceRefreshAi || shouldAutoRefresh) &&
+      !editData.isRefreshingTagSuggestions;
+    if (shouldStartRefresh) {
+      this._triggerTagSuggestionRefresh(editData, suggestionInputs);
     }
 
     // タグ編集状態を初期化
@@ -335,6 +493,11 @@ class EventCreatorSetupCommand extends SubcommandInteraction {
       .setTitle('🥳イベント主催者設定パネル')
       .setDescription(eventTable)
       .setColor('#ff8c00');
+
+    const statusLine = this._getTagSuggestionStatusLine(editData);
+    if (statusLine) {
+      embed.setFooter({ text: statusLine });
+    }
 
     const hasPendingChanges = eventList.some((event) =>
       Boolean(event.pendingChange),

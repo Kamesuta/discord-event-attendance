@@ -228,9 +228,6 @@ class TagService {
     }>,
     availableTags: string[],
   ): Promise<Record<string, TagSuggestion[]>> {
-    if (!geminiService.isEnabled()) {
-      return {};
-    }
     const aiResult = await geminiService.suggestTagsBatch(
       inputs.map((input) => ({
         eventId: input.eventId,
