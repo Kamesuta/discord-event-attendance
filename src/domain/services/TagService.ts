@@ -1,5 +1,13 @@
 import type { Tag } from '@/generated/prisma/client';
+import { geminiService } from '@/domain/services/GeminiService';
 import { prisma } from '@/utils/prisma';
+
+type TagWithUsageCount = Tag & {
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  _count: {
+    events: number;
+  };
+};
 
 /**
  * タグ候補
@@ -144,6 +152,114 @@ class TagService {
       take: 32,
     });
 
+    const fallbackSuggestions = this._buildFallbackSuggestions(
+      normalizedCurrent,
+      popularTags,
+      keywords,
+    );
+    const aiSuggestions = await this._getAiSuggestions(
+      title,
+      description,
+      normalizedCurrent,
+      popularTags,
+    );
+
+    return this._mergeSuggestions(aiSuggestions, fallbackSuggestions);
+  }
+
+  /**
+   * タグの表示用文字列を生成します
+   * @param tagNames タグ名配列
+   * @returns 表示用文字列
+   */
+  formatTagLine(tagNames: string[]): string {
+    const sanitized = this.sanitizeTagNames(tagNames);
+    if (sanitized.length === 0) return '';
+    return sanitized.map((tag) => `#${tag}`).join(' ');
+  }
+
+  /**
+   * キーワードを抽出します
+   * @param text テキスト
+   * @returns キーワード配列
+   */
+  private _extractKeywords(text: string): string[] {
+    const hashtags = Array.from(text.matchAll(/#([^\s#]+)/g)).map(
+      (match) => match[1],
+    );
+    const tokens = text
+      .replace(/【|】|［|］|\[|\]|\(|\)|（|）/g, ' ')
+      .split(/[\s、，,。.!?／/]+/)
+      .filter((token) => token.length >= 2);
+    const joined = [...hashtags, ...tokens].map((token) =>
+      this.normalizeTagName(token),
+    );
+    return Array.from(new Set(joined)).slice(0, 16);
+  }
+
+  /**
+   * Geminiのサジェスト結果を取得します
+   * @param title タイトル
+   * @param description 説明
+   * @param normalizedCurrent 正規化済み現在タグ
+   * @param popularTags 人気タグ
+   * @returns タグ候補
+   */
+  private async _getAiSuggestions(
+    title: string,
+    description: string | null | undefined,
+    normalizedCurrent: string[],
+    popularTags: TagWithUsageCount[],
+  ): Promise<TagSuggestion[] | undefined> {
+    if (!geminiService.isEnabled()) {
+      return undefined;
+    }
+    const availableTags = popularTags.map((tag) => tag.name);
+    const aiResult = await geminiService.suggestTags({
+      title,
+      description,
+      currentTags: normalizedCurrent,
+      availableTags,
+    });
+    if (!aiResult) {
+      return undefined;
+    }
+    const availableSet = new Set(availableTags);
+    const fromExisting = (
+      names: string[],
+      preselect: boolean,
+    ): TagSuggestion[] =>
+      names.map((name) => ({
+        name,
+        isNew: !availableSet.has(this.normalizeTagName(name)),
+        preselect,
+      }));
+    const fromNew = (names: string[]): TagSuggestion[] =>
+      names.map((name) => ({
+        name,
+        isNew: true,
+        preselect: false,
+      }));
+
+    return this._dedupeSuggestions([
+      ...fromExisting(aiResult.preselectExisting, true),
+      ...fromExisting(aiResult.optionalExisting, false),
+      ...fromNew(aiResult.newSuggestions),
+    ]);
+  }
+
+  /**
+   * 既存のロジックによるフォールバック候補を生成します
+   * @param normalizedCurrent 正規化済み現在タグ
+   * @param popularTags 人気タグ
+   * @param keywords キーワード
+   * @returns タグ候補
+   */
+  private _buildFallbackSuggestions(
+    normalizedCurrent: string[],
+    popularTags: TagWithUsageCount[],
+    keywords: string[],
+  ): TagSuggestion[] {
     // 既存タグから1～3個をデフォルト選択候補に
     const defaultSelected: TagSuggestion[] = normalizedCurrent
       .slice(0, 3)
@@ -218,33 +334,40 @@ class TagService {
   }
 
   /**
-   * タグの表示用文字列を生成します
-   * @param tagNames タグ名配列
-   * @returns 表示用文字列
+   * タグ候補をマージします
+   * @param primary 第一候補
+   * @param fallback フォールバック候補
+   * @returns マージ結果
    */
-  formatTagLine(tagNames: string[]): string {
-    const sanitized = this.sanitizeTagNames(tagNames);
-    if (sanitized.length === 0) return '';
-    return sanitized.map((tag) => `#${tag}`).join(' ');
+  private _mergeSuggestions(
+    primary: TagSuggestion[] | undefined,
+    fallback: TagSuggestion[],
+  ): TagSuggestion[] {
+    const merged = this._dedupeSuggestions([...(primary ?? []), ...fallback]);
+    if (merged.length > 0) {
+      return merged;
+    }
+    return this._dedupeSuggestions(fallback);
   }
 
   /**
-   * キーワードを抽出します
-   * @param text テキスト
-   * @returns キーワード配列
+   * タグ候補から重複を除去し正規化します
+   * @param suggestions タグ候補
+   * @returns 正規化済み候補
    */
-  private _extractKeywords(text: string): string[] {
-    const hashtags = Array.from(text.matchAll(/#([^\s#]+)/g)).map(
-      (match) => match[1],
-    );
-    const tokens = text
-      .replace(/【|】|［|］|\[|\]|\(|\)|（|）/g, ' ')
-      .split(/[\s、，,。.!?／/]+/)
-      .filter((token) => token.length >= 2);
-    const joined = [...hashtags, ...tokens].map((token) =>
-      this.normalizeTagName(token),
-    );
-    return Array.from(new Set(joined)).slice(0, 16);
+  private _dedupeSuggestions(suggestions: TagSuggestion[]): TagSuggestion[] {
+    const seen = new Set<string>();
+    const normalized: TagSuggestion[] = [];
+    for (const suggestion of suggestions) {
+      const name = this.normalizeTagName(suggestion.name);
+      if (!name || seen.has(name)) continue;
+      seen.add(name);
+      normalized.push({
+        ...suggestion,
+        name,
+      });
+    }
+    return normalized;
   }
 }
 

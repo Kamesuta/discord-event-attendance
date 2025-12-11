@@ -43,24 +43,32 @@ class SetupTagEditModalAction extends ModalActionInteraction {
     });
 
     const currentLine = tagService.formatTagLine(
-      tagService.sanitizeTagNames([
-        ...params.tagState.pendingTags,
-        ...params.tagState.suggestions
+      tagService.sanitizeTagNames(params.tagState.pendingTags),
+    );
+    const existingCandidates = tagService.formatTagLine(
+      tagService.sanitizeTagNames(
+        params.tagState.suggestions
           .filter((suggestion) => !suggestion.isNew)
           .map((suggestion) => suggestion.name),
-      ]),
+      ),
     );
-    const candidateLine = tagService
-      .sanitizeTagNames(
-        params.tagState.suggestions.map((suggestion) => suggestion.name),
-      )
-      .join(' ');
-    const allTagsLine = tagService
-      .sanitizeTagNames(params.tagState.originalTags)
-      .join(' ');
-    const presetText = `現在のタグ: ${currentLine}
-候補タグ: ${candidateLine}
-全タグ: ${allTagsLine}`.trim();
+    const newCandidates = tagService.formatTagLine(
+      tagService.sanitizeTagNames(
+        params.tagState.suggestions
+          .filter((suggestion) => suggestion.isNew)
+          .map((suggestion) => suggestion.name),
+      ),
+    );
+    const allTagsLine = tagService.formatTagLine(
+      tagService.sanitizeTagNames(params.tagState.originalTags),
+    );
+    const presetLines = [
+      `現在のタグ: ${currentLine || 'なし'}`,
+      existingCandidates ? `既存候補: ${existingCandidates}` : undefined,
+      newCandidates ? `新規候補: ${newCandidates}` : undefined,
+      allTagsLine ? `全タグ: ${allTagsLine}` : undefined,
+    ].filter(Boolean) as string[];
+    const presetText = presetLines.join('\n');
 
     const tagInput = new TextInputBuilder()
       .setCustomId('tags')
@@ -74,7 +82,7 @@ class SetupTagEditModalAction extends ModalActionInteraction {
       .setCustomId(customId)
       .addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
-          'スペース区切りでタグを入力（例: #マイクラ #建築）\n全タグ/候補語に「#」をつけるとオンになります。',
+          'スペース区切りでタグを入力（例: #マイクラ #建築）\nAI提案の既存候補/新規候補にも「#」をつけるとまとめて反映されます。',
         ),
       )
       .addLabelComponents(
