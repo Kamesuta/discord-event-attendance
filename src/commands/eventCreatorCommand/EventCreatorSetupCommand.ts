@@ -84,6 +84,7 @@ interface EditData {
   selectedEvent: string;
   pendingChanges: Record<string, PendingChange>;
   tagEdits?: Record<string, TagEditState>;
+  tagSuggestions?: Record<string, TagSuggestion[]>;
 }
 
 class EventCreatorSetupCommand extends SubcommandInteraction {
@@ -100,22 +101,20 @@ class EventCreatorSetupCommand extends SubcommandInteraction {
    * タグ編集状態を生成します
    * @param eventSpec イベント情報
    * @param existingState 既存の編集状態
+   * @param prefetchedSuggestions 事前サジェスト
    * @returns タグ編集状態
    */
-  private async _buildTagEditState(
+  private _buildTagEditState(
     eventSpec: EventSpec,
     existingState?: TagEditState,
-  ): Promise<TagEditState> {
+    prefetchedSuggestions?: TagSuggestion[],
+  ): TagEditState {
     if (existingState) return existingState;
 
     const currentTags = tagService.sanitizeTagNames(
       eventSpec.event?.tags?.map((tag) => tag.name) ?? [],
     );
-    const suggestions = await tagService.suggestTags(
-      eventSpec.event?.name ?? eventSpec.scheduledEvent.name,
-      eventSpec.event?.description ?? eventSpec.scheduledEvent.description,
-      currentTags,
-    );
+    const suggestions = prefetchedSuggestions ?? [];
     const defaultPending =
       currentTags.length > 0
         ? currentTags
@@ -133,18 +132,45 @@ class EventCreatorSetupCommand extends SubcommandInteraction {
    * タグ編集状態を取得します
    * @param editData 編集データ
    * @param eventSpec イベント情報
+   * @param prefetchedSuggestions 事前サジェスト
    * @returns タグ編集状態
    */
   private async _getTagEditState(
     editData: EditData,
     eventSpec: EventSpec,
+    prefetchedSuggestions?: TagSuggestion[],
   ): Promise<TagEditState> {
     const eventKey = eventSpec.scheduledEvent.id;
     if (!editData.tagEdits) {
       editData.tagEdits = {};
     }
     const existingState = editData.tagEdits[eventKey];
-    const state = await this._buildTagEditState(eventSpec, existingState);
+    let suggestions = prefetchedSuggestions;
+    if (!suggestions) {
+      const fallbackMap = await tagService.buildSuggestionsForEvents(
+        [
+          {
+            eventId: eventKey,
+            title: eventSpec.event?.name ?? eventSpec.scheduledEvent.name,
+            description:
+              eventSpec.event?.description ??
+              eventSpec.scheduledEvent.description,
+            currentTags: eventSpec.event?.tags?.map((tag) => tag.name) ?? [],
+          },
+        ],
+        { useAi: false },
+      );
+      suggestions = fallbackMap[eventKey] ?? [];
+      if (!editData.tagSuggestions) {
+        editData.tagSuggestions = {};
+      }
+      editData.tagSuggestions[eventKey] = suggestions;
+    }
+    const state = this._buildTagEditState(
+      eventSpec,
+      existingState,
+      suggestions,
+    );
     editData.tagEdits[eventKey] = state;
     return state;
   }
@@ -261,11 +287,32 @@ class EventCreatorSetupCommand extends SubcommandInteraction {
         editData?.selectedEvent ?? eventList[0]?.scheduledEvent.id ?? '',
       pendingChanges: editData?.pendingChanges ?? {},
       tagEdits: editData?.tagEdits ?? {},
+      tagSuggestions: editData?.tagSuggestions ?? {},
     };
+
+    // タグサジェストを初期化
+    if (
+      !editData.tagSuggestions ||
+      !Object.keys(editData.tagSuggestions).length
+    ) {
+      const suggestionInputs = eventList.map((eventSpec) => ({
+        eventId: eventSpec.scheduledEvent.id,
+        title: eventSpec.event?.name ?? eventSpec.scheduledEvent.name,
+        description:
+          eventSpec.event?.description ?? eventSpec.scheduledEvent.description,
+        currentTags: eventSpec.event?.tags?.map((tag) => tag.name) ?? [],
+      }));
+      editData.tagSuggestions =
+        await tagService.buildSuggestionsForEvents(suggestionInputs);
+    }
 
     // タグ編集状態を初期化
     for (const eventSpec of eventList) {
-      await this._getTagEditState(editData, eventSpec);
+      await this._getTagEditState(
+        editData,
+        eventSpec,
+        editData.tagSuggestions?.[eventSpec.scheduledEvent.id],
+      );
     }
 
     // 選択中のイベントを取得

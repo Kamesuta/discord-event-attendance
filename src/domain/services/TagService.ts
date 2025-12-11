@@ -28,6 +28,28 @@ export interface TagSuggestion {
 }
 
 /**
+ * サジェスト入力
+ */
+export interface TagSuggestionInput {
+  /**
+   * DiscordイベントID
+   */
+  eventId: string;
+  /**
+   * イベントタイトル
+   */
+  title: string;
+  /**
+   * イベント説明
+   */
+  description?: string | null;
+  /**
+   * 現在のタグ
+   */
+  currentTags: string[];
+}
+
+/**
  * タグを管理するサービス
  */
 class TagService {
@@ -118,53 +140,47 @@ class TagService {
   }
 
   /**
-   * タグ候補を生成します
-   * @param title イベントタイトル
-   * @param description イベント説明
-   * @param currentTags 現在のタグ
-   * @returns タグ候補配列
+   * イベント一覧のタグ候補を生成します
+   * @param inputs イベント入力
+   * @param options オプション
+   * @returns イベントIDをキーにしたタグ候補
    */
-  async suggestTags(
-    title: string,
-    description: string | null | undefined,
-    currentTags: string[],
-  ): Promise<TagSuggestion[]> {
-    const normalizedCurrent = this.sanitizeTagNames(currentTags);
-    const baseText = `${title} ${description ?? ''}`;
-    const keywords = this._extractKeywords(baseText);
-
-    const popularTags = await prisma.tag.findMany({
-      include: {
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        _count: {
-          select: { events: true },
-        },
-      },
-      orderBy: [
-        {
-          events: {
-            // eslint-disable-next-line @typescript-eslint/naming-convention
-            _count: 'desc',
-          },
-        },
-        { createdAt: 'desc' },
-      ],
-      take: 32,
+  async buildSuggestionsForEvents(
+    inputs: TagSuggestionInput[],
+    options?: { useAi?: boolean },
+  ): Promise<Record<string, TagSuggestion[]>> {
+    if (inputs.length === 0) return {};
+    const sanitizedInputs = inputs.map((input) => {
+      const sanitizedTags = this.sanitizeTagNames(input.currentTags);
+      const keywords = this._extractKeywords(
+        `${input.title} ${input.description ?? ''}`,
+      );
+      return {
+        ...input,
+        currentTags: sanitizedTags,
+        keywords,
+      };
     });
-
-    const fallbackSuggestions = this._buildFallbackSuggestions(
-      normalizedCurrent,
-      popularTags,
-      keywords,
-    );
-    const aiSuggestions = await this._getAiSuggestions(
-      title,
-      description,
-      normalizedCurrent,
-      popularTags,
-    );
-
-    return this._mergeSuggestions(aiSuggestions, fallbackSuggestions);
+    const popularTags = await this._fetchPopularTags();
+    const availableTagNames = popularTags.map((tag) => tag.name);
+    const useAi = options?.useAi !== false;
+    const aiMap = useAi
+      ? await this._getAiSuggestionsBatch(sanitizedInputs, availableTagNames)
+      : {};
+    const suggestions: Record<string, TagSuggestion[]> = {};
+    for (const input of sanitizedInputs) {
+      const fallback = this._buildFallbackSuggestions(
+        input.currentTags,
+        popularTags,
+        input.keywords,
+      );
+      const aiSuggestions = aiMap[input.eventId];
+      suggestions[input.eventId] = this._mergeSuggestions(
+        aiSuggestions,
+        fallback,
+      );
+    }
+    return suggestions;
   }
 
   /**
@@ -199,53 +215,79 @@ class TagService {
 
   /**
    * Geminiのサジェスト結果を取得します
-   * @param title タイトル
-   * @param description 説明
-   * @param normalizedCurrent 正規化済み現在タグ
-   * @param popularTags 人気タグ
-   * @returns タグ候補
+   * @param inputs サジェスト入力
+   * @param availableTags 利用可能なタグ一覧
+   * @returns イベントIDをキーにしたタグ候補
    */
-  private async _getAiSuggestions(
-    title: string,
-    description: string | null | undefined,
-    normalizedCurrent: string[],
-    popularTags: TagWithUsageCount[],
-  ): Promise<TagSuggestion[] | undefined> {
+  private async _getAiSuggestionsBatch(
+    inputs: Array<{
+      eventId: string;
+      title: string;
+      description?: string | null;
+      currentTags: string[];
+    }>,
+    availableTags: string[],
+  ): Promise<Record<string, TagSuggestion[]>> {
     if (!geminiService.isEnabled()) {
-      return undefined;
+      return {};
     }
-    const availableTags = popularTags.map((tag) => tag.name);
-    const aiResult = await geminiService.suggestTags({
-      title,
-      description,
-      currentTags: normalizedCurrent,
-      availableTags,
-    });
-    if (!aiResult) {
-      return undefined;
-    }
+    const aiResult = await geminiService.suggestTagsBatch(
+      inputs.map((input) => ({
+        eventId: input.eventId,
+        title: input.title,
+        description: input.description,
+        currentTags: input.currentTags,
+        availableTags,
+      })),
+    );
     const availableSet = new Set(availableTags);
-    const fromExisting = (
-      names: string[],
-      preselect: boolean,
-    ): TagSuggestion[] =>
-      names.map((name) => ({
-        name,
-        isNew: !availableSet.has(this.normalizeTagName(name)),
-        preselect,
-      }));
-    const fromNew = (names: string[]): TagSuggestion[] =>
-      names.map((name) => ({
-        name,
-        isNew: true,
-        preselect: false,
-      }));
+    const suggestions: Record<string, TagSuggestion[]> = {};
+    for (const [eventId, result] of Object.entries(aiResult)) {
+      const current = this._dedupeSuggestions([
+        ...result.preselectExisting.map((name) => ({
+          name,
+          isNew: !availableSet.has(this.normalizeTagName(name)),
+          preselect: true,
+        })),
+        ...result.optionalExisting.map((name) => ({
+          name,
+          isNew: !availableSet.has(this.normalizeTagName(name)),
+          preselect: false,
+        })),
+        ...result.newSuggestions.map((name) => ({
+          name,
+          isNew: true,
+          preselect: false,
+        })),
+      ]);
+      suggestions[eventId] = current;
+    }
+    return suggestions;
+  }
 
-    return this._dedupeSuggestions([
-      ...fromExisting(aiResult.preselectExisting, true),
-      ...fromExisting(aiResult.optionalExisting, false),
-      ...fromNew(aiResult.newSuggestions),
-    ]);
+  /**
+   * 人気タグを取得します
+   * @returns 人気タグ一覧
+   */
+  private async _fetchPopularTags(): Promise<TagWithUsageCount[]> {
+    return await prisma.tag.findMany({
+      include: {
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        _count: {
+          select: { events: true },
+        },
+      },
+      orderBy: [
+        {
+          events: {
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            _count: 'desc',
+          },
+        },
+        { createdAt: 'desc' },
+      ],
+      take: 32,
+    });
   }
 
   /**
