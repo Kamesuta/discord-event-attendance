@@ -20,7 +20,7 @@ import { eventIncludeHost } from '@/domain/queries/eventQueries';
 import { messageUpdateManager } from '@/bot/client';
 import { logger } from '@/utils/log';
 import { userManager } from '@/domain/services/UserManager';
-import { tagService } from '@/domain/services/TagService';
+import { tagService } from '@/domain/tag/TagService';
 
 class SetupConfirmButtonAction extends MessageComponentActionInteraction<ComponentType.Button> {
   /**

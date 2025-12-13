@@ -28,7 +28,7 @@ import {
   tagService,
   TagSuggestion,
   TagSuggestionInput,
-} from '@/domain/services/TagService';
+} from '@/domain/tag/TagService';
 import { logger } from '@/utils/log';
 
 /**

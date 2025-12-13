@@ -11,7 +11,7 @@ import {
   eventCreatorSetupCommand,
   TagEditState,
 } from '@/commands/eventCreatorCommand/EventCreatorSetupCommand';
-import { tagService } from '@/domain/services/TagService';
+import { tagService } from '@/domain/tag/TagService';
 
 /**
  * タグ編集モーダルのパラメータ

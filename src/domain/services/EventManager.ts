@@ -10,7 +10,7 @@ import { Event, Prisma } from '@/generated/prisma/client';
 import { userManager } from './UserManager';
 import { logger } from '@/utils/log';
 import { eventIncludeHost, EventWithHost } from '@/domain/queries/eventQueries';
-import { tagService } from '@/domain/services/TagService';
+import { tagService } from '@/domain/tag/TagService';
 
 /**
  * イベント情報を取得します
