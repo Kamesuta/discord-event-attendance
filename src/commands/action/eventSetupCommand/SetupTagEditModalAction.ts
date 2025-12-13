@@ -7,11 +7,9 @@ import {
   TextInputStyle,
 } from 'discord.js';
 import { ModalActionInteraction } from '@/commands/base/actionBase';
-import {
-  eventCreatorSetupCommand,
-  TagEditState,
-} from '@/commands/eventCreatorCommand/EventCreatorSetupCommand';
+import { eventCreatorSetupCommand } from '@/commands/eventCreatorCommand/EventCreatorSetupCommand';
 import { tagService } from '@/domain/tag/TagService';
+import type { TagEditState } from '@/domain/tag/EventTagData';
 
 /**
  * タグ編集モーダルのパラメータ
@@ -119,7 +117,7 @@ class SetupTagEditModalAction extends ModalActionInteraction {
     const rawInput = interaction.fields.getTextInputValue('tags') ?? '';
     const sanitized = tagService.parseTagInput(rawInput);
 
-    const tagState = editData.tagEdits?.[eventId];
+    const tagState = editData.tagData.getState(eventId);
     if (!tagState) {
       await interaction.editReply({
         content:
@@ -127,10 +125,7 @@ class SetupTagEditModalAction extends ModalActionInteraction {
       });
       return;
     }
-    tagState.pendingTags = sanitized;
-    if (editData.tagEdits) {
-      editData.tagEdits[eventId] = tagState;
-    }
+    editData.tagData.setPendingTags(eventId, sanitized);
 
     // パネルを更新
     const reply = await eventCreatorSetupCommand.createSetupPanel(

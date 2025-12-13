@@ -41,9 +41,7 @@ class SetupCancelButtonAction extends MessageComponentActionInteraction<Componen
     }
 
     const hasPendingMembers = Object.keys(editData.pendingChanges).length > 0;
-    const hasPendingTags = Object.values(editData.tagEdits ?? {}).some(
-      (state) => eventCreatorSetupCommand.hasUnsavedTags(state),
-    );
+    const hasPendingTags = editData.tagData.hasUnsavedChanges();
     if (!hasPendingMembers && !hasPendingTags) {
       await interaction.editReply({
         content: '取り消す変更がありません。',
@@ -52,9 +50,7 @@ class SetupCancelButtonAction extends MessageComponentActionInteraction<Componen
     }
 
     editData.pendingChanges = {};
-    Object.values(editData.tagEdits ?? {}).forEach((tagState) => {
-      tagState.pendingTags = [...tagState.originalTags];
-    });
+    editData.tagData.discardPendingChanges();
 
     const reply = await eventCreatorSetupCommand.createSetupPanel(interaction);
     if (!reply) return;

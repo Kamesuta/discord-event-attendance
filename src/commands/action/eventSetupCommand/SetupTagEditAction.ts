@@ -56,7 +56,7 @@ class SetupTagEditAction extends MessageComponentActionInteraction<ComponentType
       return;
     }
 
-    const tagState = editData.tagEdits?.[eventId];
+    const tagState = editData.tagData.getState(eventId);
     if (!tagState) {
       await interaction.reply({
         content:

@@ -6,10 +6,7 @@ import {
   MessageFlags,
 } from 'discord.js';
 import { MessageComponentActionInteraction } from '@/commands/base/actionBase';
-import {
-  eventCreatorSetupCommand,
-  TagEditState,
-} from '@/commands/eventCreatorCommand/EventCreatorSetupCommand';
+import { eventCreatorSetupCommand } from '@/commands/eventCreatorCommand/EventCreatorSetupCommand';
 import { eventManager } from '@/domain/services/EventManager';
 import {
   onCreateScheduledEvent,
@@ -21,6 +18,7 @@ import { messageUpdateManager } from '@/bot/client';
 import { logger } from '@/utils/log';
 import { userManager } from '@/domain/services/UserManager';
 import { tagService } from '@/domain/tag/TagService';
+import type { TagEditState } from '@/domain/tag/EventTagData';
 
 class SetupConfirmButtonAction extends MessageComponentActionInteraction<ComponentType.Button> {
   /**
@@ -55,9 +53,7 @@ class SetupConfirmButtonAction extends MessageComponentActionInteraction<Compone
     }
 
     const pendingEntries = Object.entries(editData.pendingChanges ?? {});
-    const pendingTagEntries = Object.entries(editData.tagEdits ?? {}).filter(
-      ([, tagState]) => eventCreatorSetupCommand.hasUnsavedTags(tagState),
-    );
+    const pendingTagEntries = editData.tagData.getDirtyEntries();
     if (pendingEntries.length === 0 && pendingTagEntries.length === 0) {
       await interaction.editReply({ content: '確定する変更がありません。' });
       return;
@@ -170,6 +166,7 @@ class SetupConfirmButtonAction extends MessageComponentActionInteraction<Compone
       const result = await this._saveTags(
         scheduledEventId,
         tagState,
+        (eventId, tags) => editData.tagData.markTagsSaved(eventId, tags),
         interaction,
       );
       if (result) {
@@ -212,12 +209,14 @@ class SetupConfirmButtonAction extends MessageComponentActionInteraction<Compone
    * タグを保存します
    * @param scheduledEventId DiscordイベントID
    * @param tagState タグ編集状態
+   * @param markTagsSaved 保存後同期関数
    * @param interaction インタラクション
    * @returns 保存結果
    */
   private async _saveTags(
     scheduledEventId: string,
     tagState: TagEditState,
+    markTagsSaved: (eventId: string, tags: string[]) => void,
     interaction: ButtonInteraction,
   ): Promise<string | undefined> {
     const scheduledEvent =
@@ -242,8 +241,7 @@ class SetupConfirmButtonAction extends MessageComponentActionInteraction<Compone
     const pendingTags = tagService.sanitizeTagNames(tagState.pendingTags);
     const savedTags = await tagService.setEventTags(event.id, pendingTags);
 
-    tagState.originalTags = pendingTags;
-    tagState.pendingTags = pendingTags;
+    markTagsSaved(scheduledEventId, pendingTags);
 
     const updatedEvent = await eventManager.getEventFromId(event.id);
     if (updatedEvent) {
