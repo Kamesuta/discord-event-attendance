@@ -65,4 +65,4 @@ Discordのイベント機能を使ってイベントを作成します。
 
 ## 環境変数
 
-- `GEMINI_API_KEY`: Gemini AIのAPIキー。`/event_creator setup` でイベントタイトルと説明を送信し、タグ候補を自動生成する際に使用します。未設定の場合はローカルロジックでタグ候補を生成します。
+- `GEMINI_API_KEY` / `GOOGLE_API_KEY`: Gemini AIのAPIキー。`/event_creator setup` でイベントタイトルと説明を送信し、タグ候補を自動生成する際に使用します。未設定の場合はローカルロジックでタグ候補を生成します。

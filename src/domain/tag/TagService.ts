@@ -1,5 +1,5 @@
 import type { Tag } from '@/generated/prisma/client';
-import { geminiService } from '@/domain/services/GeminiService';
+import { aiService } from '@/domain/services/AiService';
 import { prisma } from '@/utils/prisma';
 
 type TagWithUsageCount = Tag & {
@@ -214,7 +214,7 @@ class TagService {
   }
 
   /**
-   * Geminiのサジェスト結果を取得します
+   * AIのサジェスト結果を取得します
    * @param inputs サジェスト入力
    * @param availableTags 利用可能なタグ一覧
    * @returns イベントIDをキーにしたタグ候補
@@ -228,7 +228,7 @@ class TagService {
     }>,
     availableTags: string[],
   ): Promise<Record<string, TagSuggestion[]>> {
-    const aiResult = await geminiService.suggestTagsBatch(
+    const aiResult = await aiService.suggestTagsBatch(
       inputs.map((input) => ({
         eventId: input.eventId,
         title: input.title,
