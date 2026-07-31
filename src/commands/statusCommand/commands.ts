@@ -5,6 +5,7 @@ import { statusEventCommand } from './StatusEventCommand';
 import { statusGameCommand } from './StatusGameCommand';
 import { statusEventListCommand } from './StatusEventListCommand';
 import { statusRankingCommand } from './StatusRankingCommand';
+import { statusSummaryForMeetingCommand } from './StatusSummaryForMeetingCommand';
 
 /**
  * ステータスコマンドの配列
@@ -16,4 +17,5 @@ export const statusCommands: InteractionBase[] = [
   statusEventListCommand,
   statusGameCommand,
   statusRankingCommand,
+  statusSummaryForMeetingCommand,
 ];
